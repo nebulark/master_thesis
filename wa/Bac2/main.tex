@@ -1,0 +1,132 @@
+
+% !TeX spellcheck = en_GB 
+
+\documentclass[english]{article}
+
+\usepackage[utf8]{luainputenc}
+\usepackage{mathptmx}
+\usepackage{graphicx}
+\usepackage{times}
+\usepackage{subfig}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{makecell}
+\usepackage[acronym]{glossaries}
+
+\usepackage{amsmath}
+\usepackage[autostyle,german=quotes]{csquotes}
+
+\usepackage{pgfplots}
+	\usepgfplotslibrary{external} 
+	\tikzexternalize
+
+% moved to cls file. use \selectthesislanguage to switch to default language
+%\usepackage[english,ngerman]{babel}
+
+\usepackage{abbrevs}
+%% the following solves a bug in the abbrevs package, that adds an empty
+%% space after the abbrev
+\makeatletter
+\renewcommand\maybe@space@{%
+  % \@tempswatrue % <= this is in the original
+  \maybe@ictrue % <= this is new
+  \expandafter   \@tfor
+    \expandafter \reserved@a
+    \expandafter :%
+    \expandafter =%
+                 \nospacelist
+                 \do \t@st@ic
+  % \if@tempswa % <= this is in the original
+  \ifmaybe@ic % <= this is new
+    \space
+  \fi
+}
+\makeatother
+%%
+
+
+\usepackage{listings}
+\usepackage{color}
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+\lstdefinelanguage{JavaScript}{
+  keywords={break, case, catch, continue, debugger, default, delete, do, else, false, finally, for, function, if, in, instanceof, new, null, return, switch, this, throw, true, try, typeof, var, let, const, void, while, with},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  sensitive=true
+}
+
+\lstset{
+   language=JavaScript,
+   backgroundcolor=\color{lightgray},
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   numbers=left,
+   numberstyle=\footnotesize,
+   numbersep=9pt,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b
+}
+
+\usepackage[authordate,bibencoding=auto,strict,noibid,backend=biber]{biblatex-chicago}
+\bibliography{bibliography}
+
+\input{Abkurzungen}
+
+
+
+\makeglossaries
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%% START OF THE PAPER %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+
+\pagenumbering{gobble}
+   
+\onecolumn           
+
+\pagenumbering{roman}
+
+\newpage
+
+
+\glsresetall
+\input{body} % the main text
+
+\newpage
+\listoffigures
+\lstlistoflistings
+\listoftables
+
+\newpage
+
+\appendix
+%\input{Exzerpts}
+\printglossary[type=\acronymtype]
+\printbibliography
+
+
+\newpage
+\onecolumn
+%\input{appendix}
+
+
+
+
+\end{document}
