@@ -21,11 +21,31 @@ A implicit function $\Phi(\vec{x})$ is defined on all points $\vec{x} \in \Re^n$
 The implicit function version of the previous example would be $\Phi(x) = x^2 - 1$, which gives 0 for the case $x = -1$ and $x = +1$.
 In two dimensions the implicit function $\Phi(\vec{x}) = x^2 + y^2 - 1$ defines a circle, while in three dimensions  $\Phi(\vec{x}) = x^2 + y^2 + z^2 - 1$ defines a sphere. $x$, $y$ and $z$ are the respective components of $\vec{x}$.
 
+% normal and gradient
 A useful property of an implicit function its gradient. The gradient will always point in the direction where the value of $\Phi$ increases. For a point on the interface this is also the direction of its normal. The gradient $\nabla\phi$ is defined as a vector, the components of which are the resulting value of the partial differential of $\phi$, differentiated in its corresponding dimension. Formally: $\nabla\phi = (\frac{\partial\phi}{\partial x},\frac{\partial\phi}{\partial y},\frac{\partial\phi}{\partial z})$ 
 
 To create the unit normal of a point on the interface we need to normalize the gradient $\vec{N} = \frac{\nabla\phi}{|\nabla\phi|}$. In addition this does not only work for points on the interface, but for any point, with a few a exceptions where the denominator becomes zero. For $\Phi(x) = x^2 - 1$ and its derivative $\Phi(x)' = 2x$, the normal of $x = 0$ would not be defined.
 
-Another useful property of 
+In cases where the exact derivative cannot be used, it can be approximated. Some examples for approximations are:
+\begin{itemize}
+	\item forward difference:  $\frac{\partial\phi(\vec{x})}{\partial x} \approx \frac{\phi(x+\Delta x, y, z) - \phi(\vec{x})}{\Delta}$
+	\item backward difference: $\frac{\partial\phi(\vec{x})}{\partial x} \approx \frac{\phi(\vec{x}) - \phi(x-\Delta, y, z)}{\Delta}$
+	\item central difference: $\frac{\partial\phi(\vec{x})}{\partial x} \approx \frac{\phi(x+\Delta, y, z) - \phi(x-\Delta, y, z)}{2*\Delta}$
+\end{itemize}
+
+The versions for the partial derivatives for y, z are analogous to the above examples.
+
+
+% Boolean operations
+Another useful property of implicit function is that they can easily composed with other implicit functions and Boolean operations. For example the union of the interior regions from two implicit functions $\phi_1(\vec{x})$ and $\phi_2(\vec{x})$ can be described as another implicit function $\phi(\vec{x})$ like this: $\phi(\vec{x}) = min(\phi_1(\vec{x}), \phi_2(\vec{x}))$. Other Boolean operations of the implicit functions' interior regions are:
+ 
+\begin{itemize}
+	\item Intersection:  $\phi(\vec{x}) = max(\phi_1(\vec{x}), \phi_2(\vec{x}))$
+	\item Counterpart or Negation: $\phi(\vec{x}) = -\phi_1(\vec{x})$ 
+	\item Subtracting $\phi_2(\vec{x})$ from $\phi_1(\vec{x})$ :  $\phi(\vec{x}) = max(\phi_1(\vec{x}), -\phi_2(\vec{x}))$
+\end{itemize}
+
+
 
 \glspl{sdf}.
 In addition a \gls{sdf}'s absolute value is equal to the distance between $\vec{x}$ and it's nearest point on the interface. Formally:  $|\Phi(\vec{x})| = min(|\vec{x} - \vec{y}|) \, \forall \, \vec{y} \in \partial\Omega$
