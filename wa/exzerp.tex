@@ -1,0 +1,38 @@
+% !TeX spellcheck = en_GB
+\section{Level Set Methods and Dynamic Implicit Surfaces}
+\cite{osher:2006:level}
+
+In one spatial dimension, a line can be divide in separate pieces using points. For example with the two points  $x = -1$ and $x = +1$ the line is split into the three separate segments.
+
+In one spatial dimension a line can be enclosed by two points to form a sub-domain. For example the two points $x = -1$ and $x = +1$ would split the dimension into three different segments. The segment $(-1, +1)$ represents the inside portion of the domain $\Omega^+$, while the union of other two segments  $(-\infty,-1) \cup (+1,+\infty) $ represents the outside portion $\Omega^-$. The border of the two portions is called interface  $\partial\Omega$. In this example the interface would be represented by the two points $x = -1$ and $x = +1$.
+
+A similar concept can be applied in two dimensions, defining a surface by using lines as interface, as well as in three dimension, defining a volume and using surfaces as interface. Note that the interface is always one less dimension than the sub-domain it encloses.
+
+% Implicit functions
+
+While interfaces can be explicitly defined, it is also possible to define them using implicit functions.
+A implicit function $\Phi(\vec{x})$ is defined on all points $\vec{x} \in \Re^n$. If $\vec{x}$ lies on the interface the \gls{sdf} returns 0. For points in $\Omega^+$ the result is a negative value, while for $\Omega^-$ it is positive value. Formally:
+\begin{itemize}
+	\item $\forall \vec{x} \in \partial\Omega,  \Phi(\vec{x}) = 0$ 
+	\item $\forall \vec{x} \in \Omega^+,  \Phi(\vec{x}) < 0$
+	\item $\forall \vec{x} \in \Omega^-,  \Phi(\vec{x}) > 0$
+\end{itemize}
+
+The implicit function version of the previous example would be $\Phi(x) = x^2 - 1$, which gives 0 for the case $x = -1$ and $x = +1$.
+In two dimensions the implicit function $\Phi(\vec{x}) = x^2 + y^2 - 1$ defines a circle, while in three dimensions  $\Phi(\vec{x}) = x^2 + y^2 + z^2 - 1$ defines a sphere. $x$, $y$ and $z$ are the respective components of $\vec{x}$.
+
+A useful property of an implicit function its gradient. The gradient will always point in the direction where the value of $\Phi$ increases. For a point on the interface this is also the direction of its normal. The gradient $\nabla\phi$ is defined as a vector, the components of which are the resulting value of the partial differential of $\phi$, differentiated in its corresponding dimension. Formally: $\nabla\phi = (\frac{\partial\phi}{\partial x},\frac{\partial\phi}{\partial y},\frac{\partial\phi}{\partial z})$ 
+
+To create the unit normal of a point on the interface we need to normalize the gradient $\vec{N} = \frac{\nabla\phi}{|\nabla\phi|}$. In addition this does not only work for points on the interface, but for any point, with a few a exceptions where the denominator becomes zero. For $\Phi(x) = x^2 - 1$ and its derivative $\Phi(x)' = 2x$, the normal of $x = 0$ would not be defined.
+
+Another useful property of 
+
+\glspl{sdf}.
+In addition a \gls{sdf}'s absolute value is equal to the distance between $\vec{x}$ and it's nearest point on the interface. Formally:  $|\Phi(\vec{x})| = min(|\vec{x} - \vec{y}|) \, \forall \, \vec{y} \in \partial\Omega$
+
+
+
+
+
+
+
