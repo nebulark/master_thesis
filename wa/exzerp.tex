@@ -55,12 +55,28 @@ $$\vec{y} = \vec{x} - \phi(\vec{x}) * \vec{N}(\vec{x}) $$
 This can be simplified as  $\vec{N}(\vec{x}) = \frac{\nabla\phi(\vec{x})}{|\nabla\phi(\vec{x})|}$ and $|\nabla\phi| = 1$, resulting in 
 $$\vec{y} = \vec{x} - \phi(\vec{x}) * \nabla\phi(\vec{x}) $$
 
+
+\section{Raytracing}
+
+\section{Ray Marching}
+\cite{tuy:1984:direct} \cite{perlin:1989:hypertexture}
+
+Ray marching is an iterative algorithm to find the first intersection, of a ray which is cast into a scene. The algorithm consists of $x_i$ and $\vec{ \Delta x}$, which are to current location and the increment respectively. The initial value $x_0$ is the rays origin. $\vec{ \Delta x}$ is a fixed vector of a chosen length, which points into rays direction. With each step the algorithm checks whether $x$ is currently inside an object. For instance this could be done with a lookup in a density map or the evaluation of a function. If $x$ is not inside an object increment $x$ by $\vec{ \Delta x}$. Repeat this step until $x$ is inside an object. The intersection is lies between the current position  $x_i$ and its previous position  $x_{i-1}$. This process is aborted if a certain amount of iterations is exceeded or $x$ has reached the end of the scene. In this case no intersection was found.
+
+\cite{tuy:1984:direct} \cite{perlin:1989:hypertexture}
+
+
+
 \section{Lipschitz continuity, Lipschitz constant and Lipschitz bound}
 A function fulfils the Lipschitz continuity if and only if the magnitude of its derivative is bounded by a constant value. The smallest possible value for this bound Lipschitz constant for that function. For functions, which contain components with known Lipschitz constants, the Lipschitz constant can be overestimated by the Lipschitz bound. A functions Lipschitz bound is greater or equal than its Lipschitz constant. Lipschitz bound of the sum of two functions is equal or less than the sum of Lipschitz bounds of those functions. 
-\cite{hart:1996:sphere}\cite{Heuser:2003}
+\cite{hart:1996:sphere} \cite{Heuser:2003}
 
 \section{Sphere tracing}
 \cite{hart:1996:sphere}
+
+Sphere tracing can be used to raytrace surfaces.
+
+
 
 
 
