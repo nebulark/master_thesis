@@ -68,13 +68,16 @@ Ray marching is an iterative algorithm to find the first intersection, of a ray 
 
 
 \section{Lipschitz continuity, Lipschitz constant and Lipschitz bound}
-A function fulfils the Lipschitz continuity if and only if the magnitude of its derivative is bounded by a constant value. The smallest possible value for this bound Lipschitz constant for that function. For functions, which contain components with known Lipschitz constants, the Lipschitz constant can be overestimated by the Lipschitz bound. A functions Lipschitz bound is greater or equal than its Lipschitz constant. Lipschitz bound of the sum of two functions is equal or less than the sum of Lipschitz bounds of those functions. 
+A function fulfils the Lipschitz continuity if and only if the functions is continuous and the magnitude of its derivative is bounded by a constant value. The smallest possible value for this bound Lipschitz constant for that function. For functions, which contain components with known Lipschitz constants, the Lipschitz constant can be overestimated by the Lipschitz bound. A functions Lipschitz bound is greater or equal than its Lipschitz constant. Lipschitz bound of the sum of two functions is equal or less than the sum of Lipschitz bounds of those functions. 
 \cite{hart:1996:sphere} \cite{Heuser:2003}
 
 \section{Sphere tracing}
 \cite{hart:1996:sphere}
 
-Sphere tracing can be used to raytrace surfaces.
+Sphere tracing can be used to raytrace implicit surfaces, the function of which are Lipschitz continuous. However, the function's derivative does not have to be continuous. It may not even be defined. Sphere tracing finds the first intersection with the implicit surface.
+
+
+
 
 
 
