@@ -76,7 +76,11 @@ A function fulfils the Lipschitz continuity if and only if the functions is cont
 
 Sphere tracing can be used to raytrace implicit surfaces, the function of which are Lipschitz continuous. However, the function's derivative does not have to be continuous. It may not even be defined. Sphere tracing finds the first intersection with the implicit surface.
 
-Sphere tracing works similar to raymarching. However, instead of a fixed increment it dynamically calculates it using an unbounding sphere. While a bounding sphere would contain an object, an unbounding sphere does not contain any object. To calcuate the unbounding sphere the requirements of sphere tracing are used. If the implict surface's function is evaluated a point, then the point is moved by one unit and evaluated again, the two results cannot differ by more than the function's Lipschitz bound. Thus, if we evaluate the implict surface's function a given point and divide the result be the Lipschitz bound, we get the radius of the unbounding sphere. The implicit function's surface function will never evaluate to zero, unless the evaluation point is moved at least by the unbounding spheres radius.
+Sphere tracing works similar to raymarching. However, instead of a fixed increment it dynamically calculates it using an unbounding sphere. While a bounding sphere would contain an object, an unbounding sphere does not contain any object. The increment is then always set so that its length equals the radius of the unbounding sphere.
+
+To calcuate the unbounding sphere the requirements of sphere tracing are used. If the implict surface's function is evaluated a point, then the point is moved by one unit and evaluated again, the two results cannot differ by more than the function's Lipschitz bound. Thus, if we evaluate the implict surface's function a given point and divide the result be the Lipschitz bound, we get the radius of the unbounding sphere. The implicit function's surface function will never evaluate to zero, unless the evaluation point is moved at least by the unbounding sphere's radius. Signed Distance Functions have a Lipschitz Bound of 1. When a Surface is described by Signed Distance Functions, the the unbounding sphere's radius is equal to the function's evaluation result.
+
+
 
 
 
