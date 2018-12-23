@@ -1,17 +1,18 @@
 % !TeX spellcheck = en_GB
 \section{Level Set Methods and Dynamic Implicit Surfaces}
-\cite{osher:2006:level}
 
-In one spatial dimension, a line can be divide in separate pieces using points. For example with the two points  $x = -1$ and $x = +1$ the line is split into the three separate segments.
+In one spatial dimension, a line can be divide in separate pieces using points. For example with the two points  $x = -1$ and $x = +1$ the line is split into the three separate segments \cite{osher:2006:level}
+.
 
-In one spatial dimension a line can be enclosed by two points to form a sub-domain. For example the two points $x = -1$ and $x = +1$ would split the dimension into three different segments. The segment $(-1, +1)$ represents the inside portion of the domain $\Omega^+$, while the union of other two segments  $(-\infty,-1) \cup (+1,+\infty) $ represents the outside portion $\Omega^-$. The border of the two portions is called interface  $\partial\Omega$. In this example the interface would be represented by the two points $x = -1$ and $x = +1$.
+In one spatial dimension a line can be enclosed by two points to form a sub-domain. For example the two points $x = -1$ and $x = +1$ would split the dimension into three different segments. The segment $(-1, +1)$ represents the inside portion of the domain $\Omega^+$, while the union of other two segments  $(-\infty,-1) \cup (+1,+\infty) $ represents the outside portion $\Omega^-$. The border of the two portions is called interface  $\partial\Omega$. In this example the interface would be represented by the two points $x = -1$ and $x = +1$ \cite{osher:2006:level}
+.
 
-A similar concept can be applied in two dimensions, defining a surface by using lines as interface, as well as in three dimension, defining a volume and using surfaces as interface. Note that the interface is always one less dimension than the sub-domain it encloses.
+A similar concept can be applied in two dimensions, defining a surface by using lines as interface, as well as in three dimension, defining a volume and using surfaces as interface. Note that the interface is always one less dimension than the sub-domain it encloses \cite{osher:2006:level}
+.
 
 \subsection{Implicit functions}
 
-While interfaces can be explicitly defined, it is also possible to define them using implicit functions.
-A implicit function $\Phi(\vec{x})$ is defined on all points $\vec{x} \in \Re^n$. If $\vec{x}$ lies on the interface the \gls{sdf} returns 0. For points in $\Omega^+$ the result is a negative value, while for $\Omega^-$ it is positive value. Formally:
+While interfaces can be explicitly defined, it is also possible to define them using implicit functions. A implicit function $\Phi(\vec{x})$ is defined on all points $\vec{x} \in \Re^n$. If $\vec{x}$ lies on the interface the \gls{sdf} returns 0. For points in $\Omega^+$ the result is a negative value, while for $\Omega^-$ it is positive value \cite{osher:2006:level}. Formally:
 \begin{itemize}
 	\item $\forall \vec{x} \in \partial\Omega,  \Phi(\vec{x}) = 0$ 
 	\item $\forall \vec{x} \in \Omega^+,  \Phi(\vec{x}) < 0$
@@ -19,13 +20,13 @@ A implicit function $\Phi(\vec{x})$ is defined on all points $\vec{x} \in \Re^n$
 \end{itemize}
 
 The implicit function version of the previous example would be $\Phi(x) = x^2 - 1$, which gives 0 for the case $x = -1$ and $x = +1$.
-In two dimensions the implicit function $\Phi(\vec{x}) = x^2 + y^2 - 1$ defines a circle, while in three dimensions  $\Phi(\vec{x}) = x^2 + y^2 + z^2 - 1$ defines a sphere. $x$, $y$ and $z$ are the respective components of $\vec{x}$.
+In two dimensions the implicit function $\Phi(\vec{x}) = x^2 + y^2 - 1$ defines a circle, while in three dimensions  $\Phi(\vec{x}) = x^2 + y^2 + z^2 - 1$ defines a sphere. $x$, $y$ and $z$ are the respective components of $\vec{x}$ \cite{osher:2006:level}.
 
 \subsection{Normal and gradient}
 
-A useful property of an implicit function its gradient. The gradient will always point in the direction where the value of $\Phi$ increases. For a point on the interface this is also the direction of its normal. The gradient $\nabla\phi$ is defined as a vector, the components of which are the resulting value of the partial differential of $\phi$, differentiated in its corresponding dimension. Formally: $\nabla\phi = (\frac{\partial\phi}{\partial x},\frac{\partial\phi}{\partial y},\frac{\partial\phi}{\partial z})$ 
+A useful property of an implicit function its gradient. The gradient will always point in the direction where the value of $\Phi$ increases. For a point on the interface this is also the direction of its normal. The gradient $\nabla\phi$ is defined as a vector, the components of which are the resulting value of the partial differential of $\phi$, differentiated in its corresponding dimension\cite{osher:2006:level}. Formally: $\nabla\phi = (\frac{\partial\phi}{\partial x},\frac{\partial\phi}{\partial y},\frac{\partial\phi}{\partial z})$ 
 
-To create the unit normal of a point on the interface we need to normalize the gradient, resulting in the following function: $\vec{N}(\vec{x}) = \frac{\nabla\phi(\vec{x})}{|\nabla\phi(\vec{x})|}$. In addition this does not only work for points on the interface, but for any point, with a few a exceptions where the denominator becomes zero. For $\Phi(x) = x^2 - 1$ and its derivative $\Phi(x)' = 2x$, the normal of $x = 0$ would not be defined.
+To create the unit normal of a point on the interface we need to normalize the gradient, resulting in the following function: $\vec{N}(\vec{x}) = \frac{\nabla\phi(\vec{x})}{|\nabla\phi(\vec{x})|}$. In addition this does not only work for points on the interface, but for any point, with a few a exceptions where the denominator becomes zero. For $\Phi(x) = x^2 - 1$ and its derivative $\Phi(x)' = 2x$, the normal of $x = 0$ would not be defined \cite{osher:2006:level}.
 
 In cases where the exact derivative cannot be used, it can be approximated. Some examples for approximations are:
 \begin{itemize}
@@ -34,12 +35,12 @@ In cases where the exact derivative cannot be used, it can be approximated. Some
 	\item central difference: $\frac{\partial\phi(\vec{x})}{\partial x} \approx \frac{\phi(x+\Delta, y, z) - \phi(x-\Delta, y, z)}{2*\Delta}$
 \end{itemize}
 
-The versions for the partial derivatives for y, z are analogous to the above examples.
+The versions for the partial derivatives for y, z are analogous to the above examples \cite{osher:2006:level}.
 
 
 \subsection{Boolean Operations}
 \label{section:boolean}
-Another useful property of implicit function is that they can easily composed with other implicit functions and Boolean operations. For example the union of the interior regions from two implicit functions $\phi_1(\vec{x})$ and $\phi_2(\vec{x})$ can be described as another implicit function $\phi(\vec{x})$ like this: $\phi(\vec{x}) = min(\phi_1(\vec{x}), \phi_2(\vec{x}))$. Other Boolean operations of the implicit functions' interior regions are:
+Another useful property of implicit function is that they can easily composed with other implicit functions and Boolean operations. For example the union of the interior regions from two implicit functions $\phi_1(\vec{x})$ and $\phi_2(\vec{x})$ can be described as another implicit function $\phi(\vec{x})$ such as: $\phi(\vec{x}) = min(\phi_1(\vec{x}), \phi_2(\vec{x}))$. Other Boolean operations of the implicit functions' interior regions are:
  
 \begin{itemize}
 	\item Intersection:  $\phi(\vec{x}) = max(\phi_1(\vec{x}), \phi_2(\vec{x}))$
@@ -48,27 +49,20 @@ Another useful property of implicit function is that they can easily composed wi
 \end{itemize}
 
 
-\Glspl{sdf} are implicit functions, the absolute value of which is equal to the distance between $\vec{x}$ and it's nearest point on the interface. Formally:  $|\Phi(\vec{x})| = min(|\vec{x} - \vec{y}|) \, \forall \, \vec{y} \in \partial\Omega$. They also posses the property that the length of their gradient is almost always 1, or formally  $|\nabla\phi| = |(\frac{\partial\phi}{\partial x},\frac{\partial\phi}{\partial y},\frac{\partial\phi}{\partial z})| = 1$. However, this is only true for the general case, but not for points which are equidistant to two or more points on the interface.
+\Glspl{sdf} are implicit functions, the absolute value of which is equal to the distance between $\vec{x}$ and it's nearest point on the interface. Formally:  $|\Phi(\vec{x})| = min(|\vec{x} - \vec{y}|) \, \forall \, \vec{y} \in \partial\Omega$. They also posses the property that the length of their gradient is almost always 1, or formally  $|\nabla\phi| = |(\frac{\partial\phi}{\partial x},\frac{\partial\phi}{\partial y},\frac{\partial\phi}{\partial z})| = 1$. However, this is only true for the general case, but not for points which are equidistant to two or more points on the interface \cite{osher:2006:level}.
 
-If the general case is assumed, for a given point $\vec{x}$ the nearest point on the interface $\vec{y}$ can be calculated using the following formula:
-$$\vec{y} = \vec{x} - \phi(\vec{x}) * \vec{N}(\vec{x}) $$
+If the general case is assumed, for a given point $\vec{x}$ the nearest point on the interface $\vec{y}$ can be calculated using the following formula: $\vec{y} = \vec{x} - \phi(\vec{x}) * \vec{N}(\vec{x}) $
 
 This can be simplified as  $\vec{N}(\vec{x}) = \frac{\nabla\phi(\vec{x})}{|\nabla\phi(\vec{x})|}$ and $|\nabla\phi| = 1$, resulting in 
-$$\vec{y} = \vec{x} - \phi(\vec{x}) * \nabla\phi(\vec{x}) $$
+$\vec{y} = \vec{x} - \phi(\vec{x}) * \nabla\phi(\vec{x}) $ \cite{osher:2006:level}
 
 
 \section{Ray Marching}
-\cite{tuy:1984:direct} \cite{perlin:1989:hypertexture}
-
-Ray marching is an iterative algorithm to find the first intersection, of a ray which is cast into a scene. The algorithm consists of $x_i$ and $\vec{ \Delta x}$, which are the current location and the increment respectively. The initial value for $x_0$ is the rays origin. $\vec{ \Delta x}$ is a fixed vector of a chosen length, which points into rays direction. With each step the algorithm checks whether $x$ is currently inside an object. For instance this could be done with a lookup in a density map or the evaluation of a function. If $x$ is not inside an object increment $x$ by $\vec{ \Delta x}$. Repeat this step until $x$ is inside an object. The intersection lies between the current position  $x_i$ and its previous position  $x_{i-1}$. This process is aborted if a certain amount of iterations is exceeded or $x$ has reached the end of the scene. In this case no intersection was found.
-
-\cite{tuy:1984:direct} \cite{perlin:1989:hypertexture}
-
-
+Ray marching is an iterative algorithm to find the first intersection, of a ray which is cast into a scene. The algorithm consists of $x_i$ and $\vec{ \Delta x}$, which are the current location and the increment respectively. The initial value for $x_0$ is the rays origin. $\vec{ \Delta x}$ is a fixed vector of a chosen length, which points into rays direction. With each step the algorithm checks whether $x$ is currently inside an object. For instance this could be done with a lookup in a density map or the evaluation of a function. If $x$ is not inside an object increment $x$ by $\vec{ \Delta x}$. Repeat this step until $x$ is inside an object. The intersection lies between the current position  $x_i$ and its previous position  $x_{i-1}$. This process is aborted if a certain amount of iterations is exceeded or $x$ has reached the end of the scene. In this case no intersection was found \cite{tuy:1984:direct} \cite{perlin:1989:hypertexture}.
 
 \section{Lipschitz continuity, Lipschitz constant and Lipschitz bound}
-A function fulfils the Lipschitz continuity if and only if the functions is continuous and the magnitude of its derivative is bounded by a constant value. The smallest possible value for this bound Lipschitz constant for that function. For functions, which contain components with known Lipschitz constants, the Lipschitz constant can be overestimated by the Lipschitz bound. A functions Lipschitz bound is greater or equal than its Lipschitz constant. Lipschitz bound of the sum of two functions is equal or less than the sum of Lipschitz bounds of those functions. 
-\cite{hart:1996:sphere} \cite{Heuser:2003}
+A function fulfils the Lipschitz continuity if and only if the functions is continuous and the magnitude of its derivative is bounded by a constant value. The smallest possible value for this bound Lipschitz constant for that function. For functions, which contain components with known Lipschitz constants, the Lipschitz constant can be overestimated by the Lipschitz bound. A functions Lipschitz bound is greater or equal than its Lipschitz constant. Lipschitz bound of the sum of two functions is equal or less than the sum of Lipschitz bounds of those functions 
+\cite{hart:1996:sphere} \cite{Heuser:2003}.
 
 \section{Sphere tracing}
 Sphere tracing can be used to raytrace implicit surfaces, the function of which are Lipschitz continuous. However, the function's derivative does not have to be continuous. It may not even be defined. Sphere tracing finds the first intersection with the implicit surface \cite{hart:1996:sphere}.
@@ -89,8 +83,9 @@ Repetition is probably one of the most useful operations. A object can be repeat
 \subsection{Smooth Union, Subtraction and Intersection}
 Regular boolean operation do work very well with organic object, as they introduce hard edges. For these objects  \textcite{quilez:2008:distfunctions} recommends using smooth version. They work very similarly to the regular one, but replace $min$ and $max$ functions, by with their smooth versions $smin$ and $smax$. $smin$ behaves (almost) identically to $min$, when the two input values are far apart. However, when the two input parameters are close some kind of smoothing should occur, for example linearly interpolating between the two parameters. There exist multiple possible implementations for $smin$, which have a different speed / quality trade offs. 
 \cite{quilez:2008:distfunctions}\cite{quilez:2008:smoothmin}.
+
 \subsection{Rounding}
-\subsection{Rounding}
+To perform rounding, some distance can be subtracted after the \gls{sdf} is evaluated. This will also have the side effect of increasing the volume of the object. So, if the overall volume should stay the same, the orginal object must be shrunk by the rounding distance \cite{quilez:2008:distfunctions}.
 
 
 
