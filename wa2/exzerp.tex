@@ -8,7 +8,7 @@ In one spatial dimension a line can be enclosed by two points to form a sub-doma
 
 A similar concept can be applied in two dimensions, defining a surface by using lines as interface, as well as in three dimension, defining a volume and using surfaces as interface. Note that the interface is always one less dimension than the sub-domain it encloses.
 
-% Implicit functions
+\subsection{Implicit functions}
 
 While interfaces can be explicitly defined, it is also possible to define them using implicit functions.
 A implicit function $\Phi(\vec{x})$ is defined on all points $\vec{x} \in \Re^n$. If $\vec{x}$ lies on the interface the \gls{sdf} returns 0. For points in $\Omega^+$ the result is a negative value, while for $\Omega^-$ it is positive value. Formally:
@@ -21,7 +21,8 @@ A implicit function $\Phi(\vec{x})$ is defined on all points $\vec{x} \in \Re^n$
 The implicit function version of the previous example would be $\Phi(x) = x^2 - 1$, which gives 0 for the case $x = -1$ and $x = +1$.
 In two dimensions the implicit function $\Phi(\vec{x}) = x^2 + y^2 - 1$ defines a circle, while in three dimensions  $\Phi(\vec{x}) = x^2 + y^2 + z^2 - 1$ defines a sphere. $x$, $y$ and $z$ are the respective components of $\vec{x}$.
 
-% normal and gradient
+\subsection{Normal and gradient}
+
 A useful property of an implicit function its gradient. The gradient will always point in the direction where the value of $\Phi$ increases. For a point on the interface this is also the direction of its normal. The gradient $\nabla\phi$ is defined as a vector, the components of which are the resulting value of the partial differential of $\phi$, differentiated in its corresponding dimension. Formally: $\nabla\phi = (\frac{\partial\phi}{\partial x},\frac{\partial\phi}{\partial y},\frac{\partial\phi}{\partial z})$ 
 
 To create the unit normal of a point on the interface we need to normalize the gradient, resulting in the following function: $\vec{N}(\vec{x}) = \frac{\nabla\phi(\vec{x})}{|\nabla\phi(\vec{x})|}$. In addition this does not only work for points on the interface, but for any point, with a few a exceptions where the denominator becomes zero. For $\Phi(x) = x^2 - 1$ and its derivative $\Phi(x)' = 2x$, the normal of $x = 0$ would not be defined.
@@ -36,7 +37,8 @@ In cases where the exact derivative cannot be used, it can be approximated. Some
 The versions for the partial derivatives for y, z are analogous to the above examples.
 
 
-% Boolean operations
+\subsection{Boolean Operations}
+\label{section:boolean}
 Another useful property of implicit function is that they can easily composed with other implicit functions and Boolean operations. For example the union of the interior regions from two implicit functions $\phi_1(\vec{x})$ and $\phi_2(\vec{x})$ can be described as another implicit function $\phi(\vec{x})$ like this: $\phi(\vec{x}) = min(\phi_1(\vec{x}), \phi_2(\vec{x}))$. Other Boolean operations of the implicit functions' interior regions are:
  
 \begin{itemize}
@@ -55,8 +57,6 @@ This can be simplified as  $\vec{N}(\vec{x}) = \frac{\nabla\phi(\vec{x})}{|\nabl
 $$\vec{y} = \vec{x} - \phi(\vec{x}) * \nabla\phi(\vec{x}) $$
 
 
-\section{Raytracing}
-
 \section{Ray Marching}
 \cite{tuy:1984:direct} \cite{perlin:1989:hypertexture}
 
@@ -71,13 +71,27 @@ A function fulfils the Lipschitz continuity if and only if the functions is cont
 \cite{hart:1996:sphere} \cite{Heuser:2003}
 
 \section{Sphere tracing}
-\cite{hart:1996:sphere}
+Sphere tracing can be used to raytrace implicit surfaces, the function of which are Lipschitz continuous. However, the function's derivative does not have to be continuous. It may not even be defined. Sphere tracing finds the first intersection with the implicit surface \cite{hart:1996:sphere}.
 
-Sphere tracing can be used to raytrace implicit surfaces, the function of which are Lipschitz continuous. However, the function's derivative does not have to be continuous. It may not even be defined. Sphere tracing finds the first intersection with the implicit surface.
+Sphere tracing works similar to raymarching. However, instead of a fixed increment it dynamically calculates it using an unbounding sphere. While a bounding sphere would contain an object, an unbounding sphere does not contain any object. The increment is then always set so that its length equals the radius of the unbounding sphere \cite{hart:1996:sphere}.
 
-Sphere tracing works similar to raymarching. However, instead of a fixed increment it dynamically calculates it using an unbounding sphere. While a bounding sphere would contain an object, an unbounding sphere does not contain any object. The increment is then always set so that its length equals the radius of the unbounding sphere.
+To calcuate the unbounding sphere the requirements of sphere tracing are used. If the implict surface's function is evaluated a point, then the point is moved by one unit and evaluated again, the two results cannot differ by more than the function's Lipschitz bound. Thus, if we evaluate the implict surface's function a given point and divide the result be the Lipschitz bound, we get the radius of the unbounding sphere. The implicit function's surface function will never evaluate to zero, unless the evaluation point is moved at least by the unbounding sphere's radius. Signed Distance Functions have a Lipschitz Bound of 1. When a Surface is described by Signed Distance Functions, the the unbounding sphere's radius is equal to the function's evaluation result \cite{hart:1996:sphere}.
 
-To calcuate the unbounding sphere the requirements of sphere tracing are used. If the implict surface's function is evaluated a point, then the point is moved by one unit and evaluated again, the two results cannot differ by more than the function's Lipschitz bound. Thus, if we evaluate the implict surface's function a given point and divide the result be the Lipschitz bound, we get the radius of the unbounding sphere. The implicit function's surface function will never evaluate to zero, unless the evaluation point is moved at least by the unbounding sphere's radius. Signed Distance Functions have a Lipschitz Bound of 1. When a Surface is described by Signed Distance Functions, the the unbounding sphere's radius is equal to the function's evaluation result.
+\section{Signed Distance Function Manipulation}
+As described in chapter \ref{section:boolean}, when using \glspl{sdf} a new surface can be created by combining two surfaces using boolean operations. But these are not the only kind of operations that can be used. \textcite{quilez:2008:distfunctions} describes in his article many more operations. This chapter will cover the most significant ones.
+
+\subsection{Rotation, Translation and Scaling}
+Rotation can be achieved by rotating the evaluation point by the inverse of the desired rotation. Then then just evaluate the \gls{sdf} as usual. The same process can be used analogously to create translation. Scaling also works the same way. However, after evaluation the resulting value must be multiplied by the scale again to preserve the \gls{sdf}'s properties \cite{quilez:2008:distfunctions}.
+
+\subsection{Repetition}
+Repetition is probably one of the most useful operations. A object can be repeated many times without needing to story any extra information. This is done by applying the modulus operator on any of the evaluations points axis, which repeats the object infinitely in that axis \cite{quilez:2008:distfunctions}.
+
+\subsection{Smooth Union, Subtraction and Intersection}
+Regular boolean operation do work very well with organic object, as they introduce hard edges. For these objects  \textcite{quilez:2008:distfunctions} recommends using smooth version. They work very similarly to the regular one, but replace $min$ and $max$ functions, by with their smooth versions $smin$ and $smax$. $smin$ behaves (almost) identically to $min$, when the two input values are far apart. However, when the two input parameters are close some kind of smoothing should occur, for example linearly interpolating between the two parameters. There exist multiple possible implementations for $smin$, which have a different speed / quality trade offs. 
+\cite{quilez:2008:distfunctions}\cite{quilez:2008:smoothmin}.
+\subsection{Rounding}
+\subsection{Rounding}
+
 
 
 
