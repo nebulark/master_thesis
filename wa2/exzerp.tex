@@ -1,14 +1,12 @@
 % !TeX spellcheck = en_GB
-\section{Level Set Methods and Dynamic Implicit Surfaces}
+\section{Implicit Surfaces}
+This chapter covers the implicit representation of a object or surface, which are defined using implicit functions. It starts with a few definitions, which will be used later. Then implicit functions properties are discussed. Lastly \glspl{sdf}, which are a specialisation of implicit functions, are covered.
 
-In one spatial dimension, a line can be divide in separate pieces using points. For example with the two points  $x = -1$ and $x = +1$ the line is split into the three separate segments \cite{osher:2006:level}
-.
+\subsection{Definitions for Surfaces}
 
-In one spatial dimension a line can be enclosed by two points to form a sub-domain. For example the two points $x = -1$ and $x = +1$ would split the dimension into three different segments. The segment $(-1, +1)$ represents the inside portion of the domain $\Omega^+$, while the union of other two segments  $(-\infty,-1) \cup (+1,+\infty) $ represents the outside portion $\Omega^-$. The border of the two portions is called interface  $\partial\Omega$. In this example the interface would be represented by the two points $x = -1$ and $x = +1$ \cite{osher:2006:level}
-.
+In one spatial dimension a line can be enclosed by two points to form a sub-domain. For example the two points $x = -1$ and $x = +1$ would split the dimension into three different segments. The segment $(-1, +1)$ represents the inside portion of the domain $\Omega^+$, while the union of other two segments  $(-\infty,-1) \cup (+1,+\infty) $ represents the outside portion $\Omega^-$. The border of the two portions is called interface  $\partial\Omega$. In this example the interface would be represented by the two points $x = -1$ and $x = +1$ \cite{osher:2006:level}.
 
-A similar concept can be applied in two dimensions, defining a surface by using lines as interface, as well as in three dimension, defining a volume and using surfaces as interface. Note that the interface is always one less dimension than the sub-domain it encloses \cite{osher:2006:level}
-.
+A similar concept can be applied in two dimensions, defining a surface by using lines as interface, as well as in three dimension, defining a volume and using surfaces as interface. Note that the interface is always one less dimension than the sub-domain it encloses \cite{osher:2006:level}.
 
 \subsection{Implicit functions}
 
@@ -48,7 +46,7 @@ Another useful property of implicit function is that they can easily composed wi
 	\item Subtracting $\phi_2(\vec{x})$ from $\phi_1(\vec{x})$ :  $\phi(\vec{x}) = max(\phi_1(\vec{x}), -\phi_2(\vec{x}))$
 \end{itemize}
 
-
+\subsection{Signed Distance Functions}
 \Glspl{sdf} are implicit functions, the absolute value of which is equal to the distance between $\vec{x}$ and it's nearest point on the interface. Formally:  $|\Phi(\vec{x})| = min(|\vec{x} - \vec{y}|) \, \forall \, \vec{y} \in \partial\Omega$. They also posses the property that the length of their gradient is almost always 1, or formally  $|\nabla\phi| = |(\frac{\partial\phi}{\partial x},\frac{\partial\phi}{\partial y},\frac{\partial\phi}{\partial z})| = 1$. However, this is only true for the general case, but not for points which are equidistant to two or more points on the interface \cite{osher:2006:level}.
 
 If the general case is assumed, for a given point $\vec{x}$ the nearest point on the interface $\vec{y}$ can be calculated using the following formula: $\vec{y} = \vec{x} - \phi(\vec{x}) * \vec{N}(\vec{x}) $
@@ -56,20 +54,35 @@ If the general case is assumed, for a given point $\vec{x}$ the nearest point on
 This can be simplified as  $\vec{N}(\vec{x}) = \frac{\nabla\phi(\vec{x})}{|\nabla\phi(\vec{x})|}$ and $|\nabla\phi| = 1$, resulting in 
 $\vec{y} = \vec{x} - \phi(\vec{x}) * \nabla\phi(\vec{x}) $ \cite{osher:2006:level}
 
+\section{Ray tracing Implicit Surfaces}
+Ray tracing is a rendering technique, which create an image by casting rays into the scene. For each pixel a ray is cast and checked for intersections with objects in the scene. The pixels is then the color of that intersected object at its intersection point. Actual ray tracing may involve more than just casting one ray per pixel, but this will be left out for simplicity. The main problem that needs to be solved for ray casting, is to be able to intersect the ray with the objects contained in a scene \cite{bungartz:2013:einfuhrung}.
 
-\section{Ray Marching}
+\subsection{Mathematical Calculation}
+One method of finding the intersection is by directly calculating it. Let $r(t) = r_0 + t*r_d$ be the rays equation, where $r_0$ is the rays origin and $r_d$ the normalized direction of the ray. Then by plugging the ray equation $r : \Re \rightarrow \Re^{3} $ into the implicit function $\phi : \Re^{3} \rightarrow \Re $, the composite function $F : \Re \rightarrow \Re$ is created. The least positive $t$ where $F(t) = 0$ (root of $F$) can then be inserted to into the rays equation to calculate the intersection point\cite{hart:1996:sphere}.
+
+However, for more complicated functions it may not be possible to calculate the root. On solution is to use Newton’s method to find the roots. However, this only works if the functions is derivable \cite{hart:1996:sphere}. There also exist other methods to find the roots such as interval analysis \cite{mitchell:1990:robust}.
+
+
+\subsection{Ray Marching}
 Ray marching is an iterative algorithm to find the first intersection, of a ray which is cast into a scene. The algorithm consists of $x_i$ and $\vec{ \Delta x}$, which are the current location and the increment respectively. The initial value for $x_0$ is the rays origin. $\vec{ \Delta x}$ is a fixed vector of a chosen length, which points into rays direction. With each step the algorithm checks whether $x$ is currently inside an object. For instance this could be done with a lookup in a density map or the evaluation of a function. If $x$ is not inside an object increment $x$ by $\vec{ \Delta x}$. Repeat this step until $x$ is inside an object. The intersection lies between the current position  $x_i$ and its previous position  $x_{i-1}$. This process is aborted if a certain amount of iterations is exceeded or $x$ has reached the end of the scene. In this case no intersection was found \cite{tuy:1984:direct} \cite{perlin:1989:hypertexture}.
 
-\section{Lipschitz continuity, Lipschitz constant and Lipschitz bound}
+\subsection{Lipschitz continuity, Lipschitz constant and Lipschitz bound}
 A function fulfils the Lipschitz continuity if and only if the functions is continuous and the magnitude of its derivative is bounded by a constant value. The smallest possible value for this bound Lipschitz constant for that function. For functions, which contain components with known Lipschitz constants, the Lipschitz constant can be overestimated by the Lipschitz bound. A functions Lipschitz bound is greater or equal than its Lipschitz constant. Lipschitz bound of the sum of two functions is equal or less than the sum of Lipschitz bounds of those functions 
 \cite{hart:1996:sphere} \cite{Heuser:2003}.
 
-\section{Sphere tracing}
-Sphere tracing can be used to raytrace implicit surfaces, the function of which are Lipschitz continuous. However, the function's derivative does not have to be continuous. It may not even be defined. Sphere tracing finds the first intersection with the implicit surface \cite{hart:1996:sphere}.
+\subsection{Sphere tracing}
 
-Sphere tracing works similar to raymarching. However, instead of a fixed increment it dynamically calculates it using an unbounding sphere. While a bounding sphere would contain an object, an unbounding sphere does not contain any object. The increment is then always set so that its length equals the radius of the unbounding sphere \cite{hart:1996:sphere}.
+Sphere tracing can be used to ray trace implicit surfaces, the function of which are Lipschitz continuous. However, the function's derivative does not have to be continuous. It may not even be defined. Sphere tracing finds the first intersection with the implicit surface \cite{hart:1996:sphere}.
 
-To calcuate the unbounding sphere the requirements of sphere tracing are used. If the implict surface's function is evaluated a point, then the point is moved by one unit and evaluated again, the two results cannot differ by more than the function's Lipschitz bound. Thus, if we evaluate the implict surface's function a given point and divide the result be the Lipschitz bound, we get the radius of the unbounding sphere. The implicit function's surface function will never evaluate to zero, unless the evaluation point is moved at least by the unbounding sphere's radius. Signed Distance Functions have a Lipschitz Bound of 1. When a Surface is described by Signed Distance Functions, the the unbounding sphere's radius is equal to the function's evaluation result \cite{hart:1996:sphere}.
+Sphere tracing works similar to raymarching. However, instead of a fixed increment it dynamically calculates it using an unbounding sphere. While a bounding sphere would contain an object, an unbounding sphere does not contain any object. The increment is then always set so that its length equals the radius of the unbounding sphere \cite{hart:1996:sphere}. Figure \ref{fig:sphere-trace} shows two different sphere traces, the unbounding spheres and how the increment changes each step.
+
+\begin{figure}
+	\includegraphics[width=\linewidth]{sphere-trace-hit-and-miss.png}
+	\caption{Sphere trace hit and miss (taken from \cite{hart:1996:sphere})}
+	\label{fig:sphere-trace}
+\end{figure}
+
+To calcuate the unbounding sphere the requirements of sphere tracing are used. If the implict surface's function is evaluated a point, then the point is moved by one unit and evaluated again, the two results cannot differ by more than the function's Lipschitz bound. Thus, if we evaluate the implict surface's function a given point and divide the result be the Lipschitz bound, we get the radius of the unbounding sphere. The implicit function's surface function will never evaluate to zero, unless the evaluation point is moved at least by the unbounding sphere's radius. \Glspl{sdf} have a Lipschitz Bound of 1. When a Surface is described by  \glspl{sdf}, the the unbounding sphere's radius is equal to the function's evaluation result \cite{hart:1996:sphere}.
 
 \section{Signed Distance Function Manipulation}
 As described in chapter \ref{section:boolean}, when using \glspl{sdf} a new surface can be created by combining two surfaces using boolean operations. But these are not the only kind of operations that can be used. \textcite{quilez:2008:distfunctions} describes in his article many more operations. This chapter will cover the most significant ones.
