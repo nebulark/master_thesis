@@ -1,0 +1,40 @@
+\section{Implementation}
+\subsection{Why Vulkan}
+Cross plattform with MoltenVK
+(Probably) More possibilities due to more explicit compared to OpenGL
+More Potential to optimize
+(Learn effekt)
+
+\subsection{Portal Rendering}
+1 Draw Scene
+2 Render Portals, setting coresponding stencil buffer
+
+3 for each visible Portal
+
+3.1 Move Camera to portal Pos
+3.2 Portal Depth texture (set everything to maxdepth)
+3.3 Render one Portal store depth Values in Portal depth (coud be paralell to regular scene rendering)
+3.4 Render Scene with depth and stencil test (only in portal area). Discard fragments before portal depth.
+(Instead of portal depth, a clip plane could be used for planar portals)
+3.5 The for each visible portal do 3
+
+endfor
+
+Rekursion? Need to handle it for curve portals. Line could cross portal 2 or more times for curved portals
+
+
+To Move the camera a matrix is applied, which would move a portal excatly at its partner-Portals position. Scaling??? Would be nice.
+When cursing 2 times, the rendering of the first portal is disabled as it would be discarded due to the portal depth texture.
+
+\subsection{Stencil Buffer}
+Valve talk
+
+\subsection{Open CL / Vulkan}
+\section{GPU Data Structures}
+\subsection{Sparse Data Structure}
+
+\section{General Purpose GPU}
+
+\section{GPU Data Structures}
+
+test \cite{Heuser:2003}

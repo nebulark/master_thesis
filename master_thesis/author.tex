@@ -1,0 +1,50 @@
+%%%%%%%%%%%%%%%%%%%% author.tex %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% sample root file for your "contribution" to a proceedings volume
+%
+% Use this file as a template for your own input.
+%
+%%%%%%%%%%%%%%%% Springer %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\documentclass{article}
+%
+% RECOMMENDED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+
+% to typeset URLs, URIs, and DOIs
+\usepackage{url}
+\usepackage{abbrevs}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage[backend=biber]{biblatex}
+
+\def\UrlFont{\rmfamily}
+\usepackage[acronym]{glossaries}
+
+
+\bibliography{bibliography}
+\input{Abkurzungen}
+
+\begin{document}
+
+
+\begin{abstract}
+	\input{abstract}
+\end{abstract}
+
+\glsresetall
+
+\tableofcontents
+
+\input{body}
+
+\input{exzerp}
+
+%
+% ---- Bibliography ----
+%
+
+\printbibliography
+
+\end{document}
