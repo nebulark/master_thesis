@@ -26,6 +26,15 @@ Rekursion? Need to handle it for curve portals. Line could cross portal 2 or mor
 To Move the camera a matrix is applied, which would move a portal excatly at its partner-Portals position. Scaling??? Would be nice.
 When cursing 2 times, the rendering of the first portal is disabled as it would be discarded due to the portal depth texture.
 
+\subsection{Occlusion Queries}
+Use Occulusion queries to selectively render portals? Requires Readback. Could hide latency by delaying frames. Seems difficult.
+Alternativly use Draw Indirect to skip drawing (or the conditional drawing extension). Needs to be able to set stencil buffer (shader stencil export) in Shader or use a technique similar to stencil buffer.
+
+
+\subsection{Software Raytracing}
+Is too slow. But only bare. It it were 10 Times faster (before further optimisations) this could have worked.
+
+
 \subsection{Stencil Buffer}
 Valve talk
 
