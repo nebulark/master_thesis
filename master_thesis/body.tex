@@ -59,6 +59,40 @@ Decting number of portals for further passes seems to difficult and mostly not w
 
 
 
+\subsection{Dont draw camera in intial scene rendering!!!}
+
+\subsection{ Curved space: Matrix to transform plane into curved plane}
+maybe something like this
+1 0 0
+0 1 0
+1 1 1
+scales z, depending on x an y
+
+using orhograhic camera?
+chane perspective angle
+
+\subsection{Portal drawing orderer Depth first vs breadth first}
+
+
+
+
+breadth first seems better as we only need to clear depth buffer after each layer, because
+each draw in a layer will never rendert to the same pixel as another draw in that layer
+
+breadth first is easier to stop at a layer
+
+depth first might be useful to easier skip portals, but probably only influences code complexity
+
+\subsection{Stencil value generation, bit patterns}
+bit pattern analyse
+
+most significan bits parent child num
+
+can generate mask directly if using power of 2 portal count
+mask = index + V
+
+V(Layer) = 4^{Layer-1} + V(Layer-1)
+V(0) = 0;
 
 
 
