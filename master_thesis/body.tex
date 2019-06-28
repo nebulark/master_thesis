@@ -26,6 +26,42 @@ Rekursion? Need to handle it for curve portals. Line could cross portal 2 or mor
 To Move the camera a matrix is applied, which would move a portal excatly at its partner-Portals position. Scaling??? Would be nice.
 When cursing 2 times, the rendering of the first portal is disabled as it would be discarded due to the portal depth texture.
 
+\subsection{Stencil values}
+increasing numbers for each portals?
+Reuse previous used values, but clearing stencil greater than value needed to keep?
+only one reference value, use read and write mask? Toggle between most/least 4 significan bits? Or use incrementing?
+use write mask with invert operation so set specific value if we the value in the stencil buffer.
+to compare with 2 and set to 3 we would
+readmask FF -> equal to ref value 2
+writemask = 2 xor 3 and invert if passed -> we know its to so we have 2 xor 2 xor 3 -> 3
+
+readmask + ref value for test
+writemask + invert to write exact value (only for equality tests)
+
+how to write with ref value?
+
+readmask
+writemask all + ref value
+
+found no "clever" way to set stencil ref in shader and use it as good compare value
+stencil ref value is the compare value + additional value so it is unique for later operations.
+
+so first iteration portals ids are ????XXXX
+second iteration use bits from previous -> ??YY XXXX, we can mask the prefix and use that as compare value
+
+number of bits can vary for each iteration. First iterations should have the most bits. Later iterations only render in a smal fraction of the screen so it is unlikely that that many portals exist.
+Probably use 4 bits for first iteration to be able to see 16 portals at once
+second iteration might also have a high number of bits, so that we cover the case of directly standing in front of portal
+third iteration probably doesn need many bits as we can design the level to avoid 2 portals close to each other, so that the screen coverage would be small.
+
+Maybe allow to adjust this dynamically? Probably possible to dectect how many portals could be visible initially. And give the second iteration more bits. If we stand in front of a portal, we only need 1 bit for that iteration but the second one probably could need a lot more, as the screen coverage is bit.
+Decting number of portals for further passes seems to difficult and mostly not worth it. But potentially decreasing iteration 1 and giving those to iteration 2 could be really worth it.
+
+
+
+
+
+
 \subsection{Occlusion Queries}
 Use Occulusion queries to selectively render portals? Requires Readback. Could hide latency by delaying frames. Seems difficult.
 Alternativly use Draw Indirect to skip drawing (or the conditional drawing extension). Needs to be able to set stencil buffer (shader stencil export) in Shader or use a technique similar to stencil buffer.
