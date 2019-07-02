@@ -58,6 +58,40 @@ Maybe allow to adjust this dynamically? Probably possible to dectect how many po
 Decting number of portals for further passes seems to difficult and mostly not worth it. But potentially decreasing iteration 1 and giving those to iteration 2 could be really worth it.
 
 
+portal ids must begin with 1, so that they can always be differentiated from their parents
+this effectively reduces the portal count by iteration by 1.
+
+However as no parent can have a zero prefix, we can create new intial portal with a zero prefix, with id starting at 1, however this uses up twice the bits an limits the recursion for that portal. Could be useful if we want to have many portals and we know that some of them won't need to recurse as often.
+This can be done again, but limits iteration even further for such portals
+
+example for 2 bit portal ids
+
+initial portals
+
+01 - portal 1
+10 - portal 2
+11 - portal 3
+00 01 - portal 4
+00 10 - portal 5
+00 11 - portal 6
+
+01 00 XX portal 7-9
+10 00 XX portal 10-12
+11 00 XX portal 13-15
+
+00 00 XX Portal 16-18
+
+But  maybe there are other usecases?
+
+
+
+
+\subsection{Max portals vs Max visible portals}
+instead of using a portal id for stencil ref, we calculate the id by finden how many portals were drawn before the current portal.
+To count this we can use a buffer, initially set to 0. Each portals fragment shader writes a 1 to that buffer at its index. If it is never invoked the initial zero is automagically kept. The calculate the value we add all the numbers of the buffer together.
+We also need to indirect the camera mats with an index. Drawn portals will write their index for their camera mat into this camera index array.
+To find a camera index, look at the correct location in the index array get the index and use it to look up the camera mat in the camera array. a 0 could represent that there is now drawing, due to few than max visible portals beeing visible. If its zero we can just set all vertices to the same value, to create a degenerate triangle.
+This could maybe be improved with indirect drawcall to save vertex shader ivokations.
 
 \subsection{Dont draw camera in intial scene rendering!!!}
 
@@ -73,11 +107,9 @@ chane perspective angle
 
 \subsection{Portal drawing orderer Depth first vs breadth first}
 
-
-
-
 breadth first seems better as we only need to clear depth buffer after each layer, because
 each draw in a layer will never rendert to the same pixel as another draw in that layer
+breadth first allows us to reduce pipelinecount if we use dynamic stencil ref and stencil compare mask
 
 breadth first is easier to stop at a layer
 
@@ -94,6 +126,16 @@ mask = index + V
 V(Layer) = 4^{Layer-1} + V(Layer-1)
 V(0) = 0;
 
+\subsection{Subpasses}
+Initial idea one subpass for each element in our draw portal tree.
+Inital layer: Scene pass and Portal pass
+Next layer: for each Portal pass from pervious layer, do a scene + portal pass
+-> superlinear increase of Subpasses!!!
+-> Specifying dependencies and clears are complicated
+
+New approach
+One Scene + Portal pass for each layer
+Use dynamic depth stencil state
 
 
 \subsection{Occlusion Queries}
