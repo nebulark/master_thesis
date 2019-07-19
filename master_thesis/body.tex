@@ -1,9 +1,27 @@
+
+\section{Sewing Worlds Together With SEAMS}
+https://www.cg.tuwien.ac.at/research/vr/seams/index.html
 \section{Implementation}
 \subsection{Why Vulkan}
 Cross plattform with MoltenVK
 (Probably) More possibilities due to more explicit compared to OpenGL
 More Potential to optimize
-(Learn effekt)
+(Learn effekt
+
+
+\subsection{layout(earlyfragmenttests)}
+
+\subsection{Remove Stencil + Add instance drawing}
+as we are rendering the object multiple times we could use instance drawing. However this doesn't work if we want to switch stencil inbetween.
+we fall back to manual stencil testing (which also helps us to render on nvidia), with almost no performance drop
+instanced drawing improved rendering speed portal only instanced 23 -> 18 ms
+scene instanced 18 ms -> 8ms
+this is huge.
+it also allows us to increase stencil buffer bits if needed
+
+\subsection{possible draw indirect improvement}
+we repeat ourselves quit a bit, we could improve this with draw indirect
+additionally the code that detects portal visibility could conditionally set the instance count to 0 or the right value, which could improve performance drastically
 
 \subsection{Portal Rendering}
 1 Draw Scene
@@ -26,6 +44,43 @@ Rekursion? Need to handle it for curve portals. Line could cross portal 2 or mor
 To Move the camera a matrix is applied, which would move a portal excatly at its partner-Portals position. Scaling??? Would be nice.
 When cursing 2 times, the rendering of the first portal is disabled as it would be discarded due to the portal depth texture.
 
+\subsection{Actual Portal rendering}
+2 Passes for iteration, scene pass then portal pass
+scene pass can contain different pipelines (regular objects, lines .etc)
+portal pass uses stencil export and writes stencil and depth values into rendered depth stencil. It also calculates if it is drawn and sets matrix indices accordingly
+
+subsequent passes use rendered depth as additional dicard potential, as well as using stencil and using the matrix index to find correct matrix
+subsequene portal pass uses rendered stencil to cut down the amount of portals drawn. 
+
+1 Pass Draw Scene
+2 Pass Draw Portal
+2 +2 * i Pass draw scene (multiple times for each previously drawn portal)
+2 + 2* i + 1 pass draw portals (multiple times for each previously drawn portal)
+
+
+
+Maybe use a pre depth only pass? Would reduce the amount of "visible" portals. Maybe could even speed up
+
+\subsection{ Dynamic protals : Discarding in Fragment shader}
+stencil check happens after we instantiate the shader, portals count as visible even if they would have been cut out by stencil test. This limits the number of visible portals and we can't use the property that the portal window is so small that only a few portals will be visible.
+
+maybe we can perform a manual stencil test
+
+\subsection{Not Translating portals}
+e.g. scaling / mirror ...
+render twice once with only front faces and onces with only backfaces as the front and back face each have a different camera matrix and stencil value.
+Does only work for ojects that would look the same after the transformation. i.e. any rotation for spheres, 90 degree rotation for cubes, inverting (scalie with - 1)for symetrical objects ...
+Proabably only rotation can be used for these. Scaling maybe only for inverting / mirroring. Others won't work.
+
+
+\subsection{Teleporting}
+Dectect collision with portal with raytrace. Old and new pos are the eye position.
+Teleport by applying the teleport matrix (matrix with transforms from endpoint a to endpoint b) to camera. Position and Camera matrix are multiplied by this matrix every time. it starts with identity matrix.
+
+Maybe keep an matrix stack, so we can recalculate, allow the perfect cancelation of with inverse matrices. Otherwise we might get numerical differences.
+
+\subsection{Kd Tree Surface area heuristic}
+\cite{ macdonald:1990:heuristics}
 \subsection{Stencil values}
 increasing numbers for each portals?
 Reuse previous used values, but clearing stencil greater than value needed to keep?
@@ -90,7 +145,7 @@ But  maybe there are other usecases?
 instead of using a portal id for stencil ref, we calculate the id by finden how many portals were drawn before the current portal.
 To count this we can use a buffer, initially set to 0. Each portals fragment shader writes a 1 to that buffer at its index. If it is never invoked the initial zero is automagically kept. The calculate the value we add all the numbers of the buffer together.
 We also need to indirect the camera mats with an index. Drawn portals will write their index for their camera mat into this camera index array.
-To find a camera index, look at the correct location in the index array get the index and use it to look up the camera mat in the camera array. a 0 could represent that there is now drawing, due to few than max visible portals beeing visible. If its zero we can just set all vertices to the same value, to create a degenerate triangle.
+To find a camera index, look at the correct location in the index array get the index and use it to look up the camera mat in the camera array. a -1 could represent that there is no drawing, due to fewer than max visible portals beeing visible. If its zero we can just set all vertices to the same value, to create a degenerate triangle.
 This could maybe be improved with indirect drawcall to save vertex shader ivokations.
 
 \subsection{Dont draw camera in intial scene rendering!!!}
@@ -104,6 +159,24 @@ scales z, depending on x an y
 
 using orhograhic camera?
 chane perspective angle
+
+
+\subsection{skipping self render helper}
+\subsection{how to translate camera}
+matrix multiplication does not work.
+calc vector camera -> PortalA
+rotate that vector by aToB rotation
+subtract it from PortalB location
+-> Translation
+
+Rotation = camera rotation * aToB rotation
+
+\subsection{How to really translate camera using matrices}
+Bring the camera into Portal a space by multiplying it with the inverse of the portal a transform
+transform the camera using Portal B transform which would move a point to portal Bs loaction. Camera is not a origin, so it will not be at portal b location, but some relative transformation away from Portal B.
+
+
+
 
 \subsection{Portal drawing orderer Depth first vs breadth first}
 
