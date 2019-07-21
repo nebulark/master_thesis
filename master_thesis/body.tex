@@ -11,6 +11,20 @@ More Potential to optimize
 
 \subsection{layout(earlyfragmenttests)}
 
+\subsection{inverse scaling portals}
+if portals can invert axis then it is important to disable face culling, as this changes the winding order of the portals
+
+\subsection{Watertight portals}
+if nothing else is changed watertight portals have no real effect, besides changing the matrix of objects within them. This could also have been achived by applying that matrix manually.
+However, if the portals transform is only applied once to the to the camera position, it results in distortions, which result in non-seamless traversals.
+This could make paths shorter.
+
+Another way would be to move/scale/etc.. the portal at runtime, then it actually has an effect, as the matrix changes for the contained objects, as well as that it contains different objects if it moves. This cannnot be used to make paths shorter however.
+
+
+\subsection{portal z fighting}
+when rendering a portal, it is easily z fights with its partner portal, as it would render directly in it. To avoid this we store the winding order as the sign in our rendered depth.  depth is nearly equal and winding order is the same, we have exactly the previously mentionend case and need to discard the fragment. This is easily done by incrasing the comparisions value by some small amout or percentage.
+
 \subsection{Remove Stencil + Add instance drawing}
 as we are rendering the object multiple times we could use instance drawing. However this doesn't work if we want to switch stencil inbetween.
 we fall back to manual stencil testing (which also helps us to render on nvidia), with almost no performance drop
