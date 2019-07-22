@@ -1,0 +1,156 @@
+\section{Introduction}
+
+\section{Literatur}
+
+\subsection{Graphics Programming}
+
+
+\subsubsection{Raytracing}
+software,
+gpu,
+NVIDIA RTX cards, Ray shaders?
+
+\subsubsection{Rasterization}
+
+\subsubsection{GPU Synchronisation}
+
+\subsubsection{Uniforms / Storage Buffer Objects}
+
+\subsubsection{Shaders / (Vulkan-) GLSL / SPIR-V}
+branching, fragment discard, early stencil / depth, force early test, Stencil Export
+
+\subsubsection{Occlusion Queries}
+
+\subsubsection{OpenGL}
+History
+
+\subsubsection{Vulkan Overview}
+input attachments, tile renderers,
+
+(Sub-)Renderpass, Push Constants, Validation Layers, Pipelines, Dynamic state,
+
+Molten VK-Framwork
+
+\subsubsection{Depth / Stencil Test}
+Limitations, common uses
+Early Z! Fragment discard
+Z Fighting,
+Depth Formtas
+inverse depth buffer with floating point is magic!
+
+combined depth / stencil
+\url{https://developer.nvidia.com/content/depth-precision-visualized}
+
+
+\subsubsection{Instanced Drawing}
+
+\section{Implementation}
+
+\subsection{Software Raytracing}
+Even after optimizing, very unlikely to be realtime suitable. 
+
+Include statistics
+
+\subsection{Why Vulkan}
+Cross plattform with MoltenVK (apple deprecated openGL)
+(Probably) More possibilities due to more explicit compared to OpenGL
+More Potential to optimize
+Learn effect
+Stateless
+Validation layers
+
+\subsection{Rendertargets vs Stencil}
+
+\subsection{Generating Camera Matrices}
+
+\subsection{Stencil Values}
+Problem, value to set stencil must be also be used to compare
+
+use prefixing and compare masks, lessens number of values
+start at 1 to avoid ambiguities -> needs more bits, especially problematic for 2 and 4 Portals, which require one more bit than normal
+
+
+\subsection{Initial Portal Rendering}
+In subsequent draws, perform stencil test as well as test against "rendered depth" (similar to clip plane used in Portal 2).
+We can force early depth/stencil as we never draw a pixels if it failes the test. We only maybe discard it if the test succeds.
+
+Use pushconstant to decide camera index
+clear depth between iterations
+use dynamic stencil ref and stencil compare mask, to cut down number of pipelines drastically. Might not be optimal?
+
+
+\subsubsection{Properties}
+fixed number of portals, scales poorly
+stencil values known at compile time
+Not flexible
+Very limited amout of portals an recursions
+
+\subsection{Dynamic Portal Rendering}
+Camera matrices are not accessed directly. Instead an an array is accessed which stores the id. Allows to dynamically change camera matrices
+Invalid ids means we can skipp that draw -> Set all values in vertex shader to same value to create a degenerate triangle, to improve performance.
+Calculate portal Id, dicard if portal id is greater than visible portals
+Use portal Id to generate stencil value and the camera id.
+
+
+\subsubsection{Visible Portal Number algorithm}
+in fragmentshader: counter, traverse array, increase for non zeros, ignore at index corresponding to the current portal
+write own number or 1 at the ignored location -> Multiple writes of same value should be save, accross "threads", when counting this is skipped so we have no reader at the moment
+Needs synchornisation so that value is visible for the next portal!
+-> Pseudo occlusion query with immediate result.
+-> very conservatic. Portals totaly occluded by later portals or discarded by stencil test still counts as "visible". We can't check for stencil failure, as we can't access the stencil buffer.
+-> depth prepass could mitigate this
+
+\subsubsection{Occlusion query alternative}
+probably slow
+needs to process portals and then again with the result
+probably needs some extra throwaway texture
+
+\subsubsection{Properties}
+fixed number of visible portals in each portal, which can be dynamic for recursion. E.G inital 4 visible portals, but in each of those only 2 visible portals
+Number can be changed at runtime.
+Even if visible portal count is too high, we can at least only produce degenerate triangles to save performance.
+
+Requires stencil export (!). Not supported on nvidia cards (source: \url{https://vulkan.gpuinfo.org/listdevices.php?platform=windows&extension=VK_EXT_shader_stencil_export})
+No early test for Portal rendering, as we are using stencil export.
+
+\subsubsection{Opportunity: Dynamic Visible Portals count}
+If we can detect the initial pass only has few visible portals (e.g. via frustrum culling like techniques), we lower the amount for the initial rendering, and increase it for
+the subsequent pass.
+
+Handles case of directly standing in front of a portal!
+Have not implemented this
+
+\subsection{Dynamic Portal instance rendering}
+We render objects for each rendered portal of previous pass. Only difference is stencil value and camera index.
+Camera Index can be calculated with InstanceIndex
+Can't change stencil during instance drawing -> Drop Stencil Test. Use extra texture an perform it manually in shader, similar to rendered depth test. 
+
+\subsection{Properties}
+No early test for Scene.
+Recursion and Portal count is only limited by performance, as we can use any number of bits for our test.
+Number of draw calls now scales linearly with recursion count (although actuall draw count remains the same).
+Huge Performance Improvement!!! Was 6 times fast in my case. 
+(should I measure this and create diagram?)
+
+\subsection{Opportunity: Draw Indirect}
+Using draw Indirect allows us to only use one draw call per pass, instead of one per object!
+Additionally we can manipulate the draw indirect buffer, while calculating the portal id, so that the instance count matches the amount of actually drawn portals.
+This way instead of producing degenerate triangles, we don't even draw meshes.
+However, could be problematic as we would need to set each value in the shader, having a loop for each scene element, and many writes.
+
+The conditional execution extension could be used, but only to disable drawin entirely, if no portal is rended. probably not useful
+
+
+\subsection{Renderpass Setup}
+\subsubsection{Current Solution}
+\subsubsection{Previous Solution}
+
+
+
+
+
+
+
+
+
+
