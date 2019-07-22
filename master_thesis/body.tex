@@ -2,6 +2,38 @@
 
 \section{Literatur}
 
+\subsection{Portals Algorithms History}
+
+
+Portal Rendering in SEAMS (\cite{schmalstieg:1999:sewing})
+
+Complex Portal rendering. (I use the same near Buffer technique) \cite{ lowe:2005:technique}
+
+\subsection{Portal Applications}
+
+
+\subsubsection{VR Interaction 3D Lenses}
+\cite{borst:2009:real}
+3D lenses which change, the properties. E.g. other rendered objects (x ray lense), inverted colors, fish eye effect.
+
+\subsubsection{Navigation}
+Portal Rendering in SEAMS (\cite{schmalstieg:1999:sewing})
+\cite{pausch:1995:navigation} navigation with hand held minatures
+
+
+\subsubsection{Game Mechanik}
+Portal, Antichamber
+
+\subsubsection{VR Movement}
+
+Portal Locomotion in Budget Cuts\url{https://www.youtube.com/watch?v=f786ak3GKQo}
+
+\subsubsection{Fit More Space in Less Space}
+
+\subsubsection{Space Division}
+Rooms are split by portals. For each portal only the objects in its room need to be drawn.
+\cite{ lowe:2005:technique}
+
 \subsection{Graphics Programming}
 
 
@@ -67,8 +99,13 @@ Validation layers
 Problem, value to set stencil must be also be used to compare
 
 use prefixing and compare masks, lessens number of values
-start at 1 to avoid ambiguities -> needs more bits, especially problematic for 2 and 4 Portals, which require one more bit than normal
+start at 1 to avoid ambiguities -> needs more bits, especially problematic for 2 and 4 Portals, which require one more bit than normal.
 
+
+\subsection{Portal Definition}
+Portals are defined as 2 Objects/Endpoints which share a mesh. The both endpoint may have any transformation. From those two endpoints, two teleportation matrices are generated, which when applyied move an object from one end point to the other.
+
+Instead of an mesh representation, other representations, could have been used. E.g. A spehre which is defined by a mathematical equation.
 
 \subsection{Initial Portal Rendering}
 In subsequent draws, perform stencil test as well as test against "rendered depth" (similar to clip plane used in Portal 2).
@@ -125,25 +162,54 @@ We render objects for each rendered portal of previous pass. Only difference is 
 Camera Index can be calculated with InstanceIndex
 Can't change stencil during instance drawing -> Drop Stencil Test. Use extra texture an perform it manually in shader, similar to rendered depth test. 
 
-\subsection{Properties}
+\subsubsection{Properties}
 No early test for Scene.
 Recursion and Portal count is only limited by performance, as we can use any number of bits for our test.
 Number of draw calls now scales linearly with recursion count (although actuall draw count remains the same).
 Huge Performance Improvement!!! Was 6 times fast in my case. 
 (should I measure this and create diagram?)
 
-\subsection{Opportunity: Draw Indirect}
+\subsubsection{Opportunity: Draw Indirect}
 Using draw Indirect allows us to only use one draw call per pass, instead of one per object!
 Additionally we can manipulate the draw indirect buffer, while calculating the portal id, so that the instance count matches the amount of actually drawn portals.
 This way instead of producing degenerate triangles, we don't even draw meshes.
 However, could be problematic as we would need to set each value in the shader, having a loop for each scene element, and many writes.
 
-The conditional execution extension could be used, but only to disable drawin entirely, if no portal is rended. probably not useful
+The conditional execution extension could be used (VK\_EXT\_conditional\_rendering) but only to disable drawing entirely, if no portal is rended -> probably not useful.
+
+\subsection{Portal Collision}
+On portal collision we apply the same operation on the camera, that would be applied to an object rendered through that portal.
+It is implemented by storing a matrix of cumulative portal teleport matrices.
+However, it is also possible to apply only a part of it for some interesting effects, but it will result in non seamless translation.
+
+\subsection{Player Rendering}
+When looking through a portal, players might see themselves. Care must be taken when rendering. Standing directly in fron of the portal and touching it slightly could make the player see their only model at their own location. (see valve talk \url{https://www.youtube.com/watch?v=riijspB9DIQ})
+
+\subsection{Watertight Portals}
+Objects behind watertight portals, will look as though that portal did not exist. Portals inside on endpoint of an watertight portals, will be visible when looking at the other endpoint, with the teleportation matrix applied. If watertight portals are static, they are essentially useless. The same scene could have been created without them.
+However if they change or are created during runtime they can have interesting effects. Such as Scaling objects, or swapping two areas.
+
+\subsection{Face Culling}
+Appying face culling only works if no portal changes the scale of an object. Otherwise the triangle order gets changed too and wrong side will be rendered.
 
 
-\subsection{Renderpass Setup}
-\subsubsection{Current Solution}
-\subsubsection{Previous Solution}
+\section{Further Work}
+\subsection{More than just transforms}
+\label{more than transforms}
+The current approach uses camera indices, to decide which camera matrix gets applied. However, this approach is not limited to only changing matrices. Inspired by \cite{borst:2009:real} indices could be used to change other paramteres. We could add objects that only render if specific parameters are set, mark pixels for a later post process. Or take as specific branch in any shader.
+
+\subsection{Non-Translating Portals}
+The implemented portals have two endpoints. Objects Touch on endpoint, get move to the other. However, it is also possible that the portals don't move the object. In this case there are no two end points. It is just one portal.
+
+Entering the portal would apply one operation (e.g. multiplying by matrix), leaving it applies the inverse operation. Back and Frontface detection needs to be used to decide which operation to apply.
+
+
+This only works for operations which don't move the possition of an object, unless it is just an rotation and the portal shape looks the same after applying the rotation to it. E.g. a sphere could allow for any rotation. A cube only for rotation in intervals of 90 degrees.
+Changing the scale of an objects would also work, but it is important, the the origin remains a the same position. However, this would result in non seamless portal transitions.
+
+Furthermore, more than just transform can be applied. Operations described in the section \ref{more than transforms} would also work.
+
+
 
 
 
