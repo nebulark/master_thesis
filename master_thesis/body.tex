@@ -2,6 +2,11 @@
 
 \section{Literatur}
 
+\subsection{Portals as Occlusion Culling}
+potentially visible set
+\cite{luebke:1995:portals}
+\cite{yang:2014:walkthrough}
+
 \subsection{Portals Algorithms History}
 
 
@@ -9,6 +14,8 @@ Portal Rendering in SEAMS (\cite{schmalstieg:1999:sewing})
 
 Complex Portal rendering. (I use the same near Buffer technique) \cite{ lowe:2005:technique}
 
+
+\url{https://th0mas.nl/2013/05/19/rendering-recursive-portals-with-opengl/}
 \subsection{Portal Applications}
 
 
@@ -22,7 +29,7 @@ Portal Rendering in SEAMS (\cite{schmalstieg:1999:sewing})
 
 
 \subsubsection{Game Mechanik}
-Portal, Antichamber
+Portal, Antichamber, Splitgate Warfare Arena
 
 \subsubsection{VR Movement}
 
@@ -94,6 +101,13 @@ Validation layers
 \subsection{Rendertargets vs Stencil}
 
 \subsection{Generating Camera Matrices}
+Explain with images
+\subsubsection{Initial Approach}
+\subsubsection{Current Approach}
+
+\subsubsection{Further work}
+Could be improved. The work to calculate the matrices scales super linear. X^{N}, where X is the portal count and N is the number of iterations. With the use of potentially visible sets, we could dicard combinations which won't be used, reducing the time to calculate the matrices. However, this finding the correct matrix more difficult.
+
 
 \subsection{Stencil Values}
 Problem, value to set stencil must be also be used to compare
@@ -102,10 +116,32 @@ use prefixing and compare masks, lessens number of values
 start at 1 to avoid ambiguities -> needs more bits, especially problematic for 2 and 4 Portals, which require one more bit than normal.
 
 
+
+
 \subsection{Portal Definition}
 Portals are defined as 2 Objects/Endpoints which share a mesh. The both endpoint may have any transformation. From those two endpoints, two teleportation matrices are generated, which when applyied move an object from one end point to the other.
 
 Instead of an mesh representation, other representations, could have been used. E.g. A spehre which is defined by a mathematical equation.
+
+\subsection{Near Buffer}
+For only one planar portals a clip plane could work. However we are rendering multiple portals, which are not neccesarily planes.
+
+
+\subsection{portal z fighting}
+when rendering a portal, it is easily z fights with its partner portal, as it would render directly in it. To avoid this we store the winding order as the sign in our rendered depth.  depth is nearly equal and winding order is the same, we have exactly the previously mentionend case and need to discard the fragment. This is easily done by incrasing the comparisions value by some small amout or percentage.
+
+\subsection{Portal Rendering Naive Approach}
+One pass per per portal
+
+\subsubsection{Portal drawing orderer Depth first vs breadth first}
+
+breadth first seems better as we only need to clear depth buffer after each layer, because
+each draw in a layer will never rendert to the same pixel as another draw in that layer
+breadth first allows us to reduce pipelinecount if we use dynamic stencil ref and stencil compare mask
+
+breadth first is easier to stop at a layer
+
+depth first might b
 
 \subsection{Initial Portal Rendering}
 In subsequent draws, perform stencil test as well as test against "rendered depth" (similar to clip plane used in Portal 2).
@@ -166,6 +202,8 @@ Can't change stencil during instance drawing -> Drop Stencil Test. Use extra tex
 No early test for Scene.
 Recursion and Portal count is only limited by performance, as we can use any number of bits for our test.
 Number of draw calls now scales linearly with recursion count (although actuall draw count remains the same).
+No Need for Stencil prefixes -> simplifies code, saves bits
+
 Huge Performance Improvement!!! Was 6 times fast in my case. 
 (should I measure this and create diagram?)
 
@@ -177,10 +215,22 @@ However, could be problematic as we would need to set each value in the shader, 
 
 The conditional execution extension could be used (VK\_EXT\_conditional\_rendering) but only to disable drawing entirely, if no portal is rended -> probably not useful.
 
+\subsubsection{Skip instances}
+One downside is, that draw instanced draws the object for each portal. However sometimes would could know, that the object is not visible from a specific Portal, e.g. via Potentially visible set tests, or knowing by other means that the portal will never draw that object (e.g. diffrent world layers).
+To combat this problem, we could decrease the draw instances count and provide iformation which portals should be skipped.
+
+Instead of using instanceId directly, this skip information will be used to calculate the real id. The rest would behave the same, just using this genreated id instead of instanceId directly.
+
+
 \subsection{Portal Collision}
 On portal collision we apply the same operation on the camera, that would be applied to an object rendered through that portal.
 It is implemented by storing a matrix of cumulative portal teleport matrices.
 However, it is also possible to apply only a part of it for some interesting effects, but it will result in non seamless translation.
+
+\subsection{Collision Detection (??)}
+Raytrace with triangles (could be improved)
+KD trees
+Surface area heuristic
 
 \subsection{Player Rendering}
 When looking through a portal, players might see themselves. Care must be taken when rendering. Standing directly in fron of the portal and touching it slightly could make the player see their only model at their own location. (see valve talk \url{https://www.youtube.com/watch?v=riijspB9DIQ})
@@ -191,6 +241,11 @@ However if they change or are created during runtime they can have interesting e
 
 \subsection{Face Culling}
 Appying face culling only works if no portal changes the scale of an object. Otherwise the triangle order gets changed too and wrong side will be rendered.
+
+\subsection{Level Editor}
+Ideally a custom level editor should be built, so the effect of the portals can be seen immediately. However, there was not enough time. After looking for various solution, using the unreal engine seemed best, as the author has some experience with it.
+
+The UE4 Level editor is very convenient and can be customized. The level is exported with a Editor Script. However, some care must be taken as UE4 has a different coordinate system. For Vectors Y and Z must be swapped. For Quaternions, y and z must be swapped and the imaginary part inverted, as we are changing handedness.
 
 
 \section{Further Work}
@@ -208,6 +263,16 @@ This only works for operations which don't move the possition of an object, unle
 Changing the scale of an objects would also work, but it is important, the the origin remains a the same position. However, this would result in non seamless portal transitions.
 
 Furthermore, more than just transform can be applied. Operations described in the section \ref{more than transforms} would also work.
+
+\subsection{Transparent Objects}
+\subsection{Shadows}
+Without currect handling, we can see portal locations, as shadows would be cut of.
+\subsection{lighting}
+Without correct lighting seams would be visible. Proabably very difficult for spot/pointlights. Directional light already works.
+\subsection{Collision Detection}
+\subsection{Use the Instant Occlusion query in occlusion culling}
+we can set conditional rendering paramters during this occlusion culling.
+Needs some  recursive portal passes and then one big scene pass, which makes use of conditional rendering, eitehr with the extension or draw indirect and instance counts. Inspired by \cite{yang:2014:walkthrough}
 
 
 
