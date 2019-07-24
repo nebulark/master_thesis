@@ -1,4 +1,6 @@
-\subsection{Search Terms}
+% !TeX spellcheck = en_GB
+
+\subsection*{Search Terms}
 portal
 3D lense
 magic lense
@@ -113,11 +115,17 @@ Validation layers
 
 \subsection{Generating Camera Matrices}
 Explain with images
+
+
 \subsubsection{Initial Approach}
 \subsubsection{Current Approach}
 
 \subsubsection{Further work}
-Could be improved. The work to calculate the matrices scales super linear. X^{N}, where X is the portal count and N is the number of iterations. With the use of potentially visible sets, we could dicard combinations which won't be used, reducing the time to calculate the matrices. However, this finding the correct matrix more difficult.
+Could be improved. The work to calculate the matrices scales super linear. $X^{N}$, where X is the portal count and N is the number of iterations. With the use of potentially visible sets, we could dicard combinations which won't be used, reducing the time to calculate the matrices. However, this finding the correct matrix more difficult.
+
+\subsubsection{Improvement opportunities}
+Instead of precomputing all combinations, it is probably better to calculate the matrices on demand in the fragment shader, as we have much more information there. This saves unnessary computes, removes an indirection and puts the work on the gput. Only downside is that the computation is executed multiple, once per shader fragment. Finally save on bandwith, as they don't need to be transfered!
+
 
 
 \subsection{Stencil Values}
