@@ -161,7 +161,7 @@ For both approaches care must be taken to discard fragments that are between the
 
 This implementation uses the latter approach, as it does not need extra textures. Especially considering recursions, the first approach might need many textures and do not need the stencil buffer for anything else.
 
-\subsection{Generating Camera Matrices 2.5}
+\subsection{Generating Camera Matrices 1.6}
 As describe in section \ref{section:textursVsStencil} the camera needs to be move to the portals view point. However, this is no fixed location and depends on the current camera position.
 
 \begin{figure}[h]
@@ -171,7 +171,7 @@ As describe in section \ref{section:textursVsStencil} the camera needs to be mov
 \end{figure}
 
 Figure \ref{fig:cameramatrices} shows two portal endpoints. The blue triangle represents the camera and the orange circle represents an objects. The dotted blue triangle represents the portal view camera.
-When looking through the portal, it must look as if the camera looks directly a the object.
+When looking through the portal, it must look as if the camera looks directly a the object. After a camera matrix is calculated, the view matrix can be obtained by inverting it.
 
 \subsubsection{Initial Approach 0.2}
 The initial approach first calculates the vector from the visible Portal Endpoint location to the camera. Then rotates that vector by the rotation difference of the two endpoints. Finally that vector gets added to the other Endpoint location. This is new camera origin.
@@ -185,10 +185,34 @@ The Application of the two matrices can be combined into one. The implementation
 
 %TODO other analogy? Relative attachments in scenegraphs? 
 
-\subsubsection{Recursive Portal Matrices 0.3}
+\subsubsection{Recursive Portal Matrices 0.75}
 The previous sections explained how to calculate the camera matrices for each portal. However, for recursion we need to calculate the camera transforms for any combination of portals. This can be achieved by using the same approach multiple times, applying it on the result of the previous iteration. This is needed for each combination of portals. For each iteration we need an addition M matrices, where M equals the number of portals to the power of the current iteration. If there are 4 portals, the initial scene rendering would need 1 matrix, the camera matrix. Iteration 1 would need 4 additional, one for each portal. Iteration 2 would need 16 portals, 1 for each possible portal pair. With two iterations a total of 21 matrices are needed.
 
-\subsubsection{Portal drawing orderer Depth first vs breadth first 1.25}
+The view matrices are stored in one continuous array, but has a tree-like inner structure. The root is the current view matrix. Each child contains to the corresponding portal's view matrix, relative to its parent matrix. The indices can be found the following way:
+
+\begin{itemize}
+	\item $ nth child = current index * portalcount + 1 + n$
+	\item $ parent = \lfloor(current index-1)/portal count\rfloor $
+\end{itemize}
+
+%%$c_n .. nth child index$
+%%$p .. parent index$
+%%$i ... curent index$
+%%$t ... portal count$
+
+
+
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/cameraindices.png}
+	\caption{Camera Indices}
+	\label{fig:cameraindices}
+\end{figure}
+
+Figure \ref{fig:cameraindices} shows the indices for 4 portals, with 2 iterations. For example to find the view matrix of Portal 0, seen through Portal 1, we would access the array at index 9.
+
+
+\subsection{Portal drawing orderer Depth first vs breadth first 1.25}
 
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{images/rendertree.png}
