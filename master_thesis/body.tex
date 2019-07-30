@@ -107,7 +107,7 @@ combined depth / stencil
 \section{Implementation 5/30}
 
 \subsection{Technologies / Libraries}
-SDL, glm, vulkan, rapid xml, c++
+SDL, glm, vulkan, rapid xml, c++, vulkan memory allocator
 
 \subsection{Software Raytracing 0.5}
 The first implementation was based on software raytracing. Compared to rasterization based methods, raytracing allows for more complex operations on individual rays. A response to an instersection can spawn a new ray, which replaces the old ray. The new ray can have many different properties. The new ray can have an completely different origin and direction, which would simulate a portal. Additionally a non conventional ray definition could be used, allowing for bent rays. Rays could travel slower, resulting in scaled space.
@@ -226,7 +226,7 @@ There are two approaches on the drawing order: depth first or breadth first. In 
 
 Breath first draws a recursion completely before drawing the next recursion. The amount of different values needed to mark a pixel, scales exponentially. It needs one value of each portal in a recursion. For a scene with two portals, to mark all portals from recusion 1 it at least needs 4 different values, excluding 0. For recursion 2 it needs 8 values. With the stencil buffer usually being limited to 8 bits this can be quickly be a hard limit. However, the advantage is that the depth buffer needs to be cleared less often, only when transitioning between recursions. Additionally, within a recursion there are not dependencies between the multiple scene draws, as well as the portal draws.
 
-Previous transformative portal implementations used depth first \cite{lowe:2005:technique,lecture:portalProblems}. The implementation presented in this thesis uses breadth first. Fewer dependencies between the draws could be exploited. While the amount of stencil values needed scales exponentially, the amount of draws scaled exponentially too. The author believes it is more likely that amount of draws will be the limiting factor than running out of values in the stencil buffer.
+Previous transformative portal implementations used depth first \cite{lowe:2005:technique,lecture:portalProblems}. The implementation presented in this thesis uses breadth first. Fewer dependencies between the draws could be exploited. Additionally similar draws can be grouped, which reduces the amount of renderpasses. While the amount of stencil values needed scales exponentially, the amount of draws scaled exponentially too. The author believes it is more likely that amount of draws will be the limiting factor than running out of values in the stencil buffer.
 
 \subsection{Dual Depth Buffer 1}
 
@@ -250,7 +250,9 @@ When rendering the contents of one endpoint of a portal pair, the other endpoint
 
 As the implementation has a depth range of 0 to 1, the value will always be positive. This allows the implementation to store the winding order is store as the sign of the near buffer. Positive values indicating front facing and negative values indicating back facing. Near Depth comparison is done with the absolute value of the buffer.
 
-\subsection{Stencil Values 0.66}
+\subsection{Stencil Values and compare masks 0.66}
+\label{section:stencilcomparemasks}
+
 As the implementation uses the breadth first approach, it can not use the stencil increment and decrement technique described by other implementors \cite{schmalstieg:1999:sewing, lowe:2003:fragment, lecture:portalProblems}. Different values need to be stored and compared against. Directly setting the stencil value can be achieve, by setting a reference value and use the replace stencil operation. However, the stencil reference is also used for the comparison. This means that the implementation must be use the same value for comparison as well as writing. This can be achieved by the use of stencil compare mask and generating stencil values with postfixing.
 
 \begin{figure}[h]
@@ -263,13 +265,45 @@ Figure \ref{fig:stencilvalues} shows is process with two portals and 6 bits. The
 
 This also means that the range of values is one less than representable by the number of bits. This is very significant, as the portals come in pairs. The number of bits needed for two and four portals is one more than normally needed. As the stencil buffer usually only has eight bits, this limits the amount of recursions considerably.
 
-
-
-
-
-
+\subsection{Storing Mesh Data for Rendering}
 
 \subsection{Initial Portal Rendering}
+
+The implementation uses just one renderpass, with multiple subpasses. This allows for the use of input attachments and potentially enables the \gls{gpu} driver to optimize. For example many textured are only needed within the renderpass and do not need to be transferred anywhere else.
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/renderpasses.png}
+	\caption{Subpasses and work done}
+	\label{fig:renderpasses}
+\end{figure}
+
+\subsubsection{Renderpass Setup}
+
+Figure \ref{fig:renderpasses} shows the subpasses, which recursion they belong to and what work is done. Notice that compared to figure \ref{fig:rendertree} scene and portal draws are each batched together. Every even subpass is responsible for drawing a scene, while in every odd subpass the portals are drawn. The subpass index divided by two equals the recursion index. 
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/attachmentsetup.png}
+	\caption{Attachment Setup}
+	\label{fig:attachments}
+\end{figure}
+
+Figure \ref{fig:attachments} illustrates the attachments of the individual subpasses for two recursion. Odd subpasses write into the near buffer, which is used as input for the following two subpasses. For a real application portals do not need to write color so output 1 is not really needed. However, for this implementation it is kept for debugging purposes.
+The last subpass does not need to write to the near buffer, as there are not later subpasses which could use it. It is kept for debugging purposes too. The depth stencil attachment is never changed. The color and depthstencil attachment are cleared at the beginning of the renderpass with VK\_ATTACHMENT\_LOAD\_OP\_CLEAR. Both near buffers use VK\_ATTACHMENT\_LOAD\_OP\_DONT\_CARE. The stencil test ensures that they are only accessed at locations where portals have previously written a value. Each subpass has set a dependency in the fragment shader on the previous subpass' output.
+
+
+\subsubsection{Graphic Pipelines}
+When rendering the multiple scene one after each other, as well as when rendering the portals, the stencil reference needs to be changed. There are two options how to resolve this problem: either using multiple pipelines or using dynamic pipeline state. For the implementation dynamic pipeline state was used, as the number of graphic pipelines needed would scale exponentially with the amount of portals and recursions. Dynamic state seemed much easier to manage in comparison.
+
+However, the subpass index cannot be dynamic state. Thus even with dynamic stencil references, there must be at least the same amount of graphic pipelines as there are subpasses. If more than one shader is used for rendering scene objects or portals, the amount of graphic pipelines is increased. Each additional shader increase the amount by half of the subpass amount, as it is either only used for portal rendering or only for scene rendering. As there already are different pipelines for the subpasses, each of them can have a different stencil compare mask (see section \ref{section:stencilcomparemasks}). There is no need for dynamic stencil compare masks.
+
+One important aspect is that pipelines for both scene and portal drawing, have face culling disabled. Portals do not have to be watertight and scene object might be transformed in a way that changes winding order. If it can be ensured that there are no teleportation matrices that change winding order, then face culling could be enabled for scene objects. For this implementation it was chosen to support such teleportation matrices.
+
+The individual  graphic pipelines for drawing the scene differ only by subpass index and stencil compare mask. Otherwise they are the same. This is also true for the graphic pipelines for portal drawing.
+
+\subsubsection{Shaders}
+
+\subsubsection{Draw Order}
+
 In subsequent draws, perform stencil test as well as test against "rendered depth" (similar to clip plane used in Portal 2).
 We can force early depth/stencil as we never draw a pixels if it failes the test. We only maybe discard it if the test succeds.
 
