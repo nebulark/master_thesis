@@ -104,7 +104,7 @@ combined depth / stencil
 
 \subsubsection{Instanced Drawing}
 
-\section{Implementation 11.5/30}
+\section{Implementation 18.85/30}
 
 \subsection{Technologies / Libraries}
 SDL, glm, vulkan, rapid xml, c++, vulkan memory allocator
@@ -152,6 +152,10 @@ The camera is defined by a camera matrix. It is similar to a modelmatrix. The in
 %%\subsubsection{Transform}
 %%A transform defines an objects attributes such as translation, rotation or scale. A transform can be applied to a point, as well as other transforms. 
 
+\subsubsection{Portal Group}
+
+\subsubsection{Portal Id}
+
 
 \subsection{Textures vs Stencil Buffer 0.5}
 \label{section:textursVsStencil}
@@ -189,6 +193,7 @@ The Application of the two matrices can be combined into one. The implementation
 %TODO other analogy? Relative attachments in scenegraphs? 
 
 \subsubsection{Recursive Portal Matrices 0.75}
+\label{section:recursivecameramatrices}
 The previous sections explained how to calculate the camera matrices for each portal. However, for recursion we need to calculate the camera transforms for any combination of portals. This can be achieved by using the same approach multiple times, applying it on the result of the previous iteration. This is needed for each combination of portals. For each iteration we need an addition M matrices, where M equals the number of portals to the power of the current iteration. If there are 4 portals, the initial scene rendering would need 1 matrix, the camera matrix. Iteration 1 would need 4 additional, one for each portal. Iteration 2 would need 16 portals, 1 for each possible portal pair. With two iterations a total of 21 matrices are needed.
 
 The view matrices are stored in one continuous array, but has a tree-like inner structure. The root is the current view matrix. Each child contains to the corresponding portal's view matrix, relative to its parent matrix. The indices can be found the following way:
@@ -309,6 +314,7 @@ Vulkan shader module requires the SPIR-V format. The shaders are written using G
 
 Vertex shaders need to transform the vertices for all the different views. The different view matrices are stored in an \gls{ubo}. The index to access the current view matrix received via push constant. The model matrix is received also via push constant, as it changes per model and it there was still enough space in the push constant. The perspective matrix is passed via \gls{ubo}, as it never changes. Even if it would change than likely at most once per frame. The vertex shaders are the same for all scene draws as well as for all portal draws. No conditional compilation is needed.
 
+
 The shaders are automatically recompiled after a change, using Visual Studio's Custom Build Tool feature. This enables fast iteration times, and avoids error due to forgetting to compile.
 
 \subsubsection{Pre draw steps 0.25}
@@ -329,72 +335,296 @@ Subsequent even subpasses are similar to subpass 0, but the scene drawn is drawn
 Subsequent odd subpasses are similar to subpass 1, but all portals are drawn multiple times. No portal has the same stencil value as any other portal.
 
 
-\subsection{Dynamic Portal Rendering 1}
+\subsection{Dynamic Portal Rendering 5.75}
 One downside of the initial portal rendering strategy was its hard limit of total portals in the scene. No matter visible or not the portal was drawn and used up values in the stencil buffer. For two recursions, only 15 or less portals were allowed to exits in the scene. For three recursion only 7 or less, for four recursions only 3 portals were possible.For this reason a new method was derived which is limited by the visible portal count instead of the total portal count. 
 
 When drawing a portal, it uses a stencil value depending on the number of visible portals drawn before it, instead of using a fixed value. However, this also means that the right camera index cannot be known before submitting.
 
-\subsubsection{Visible Portal Number algorithm 0.75}
+\subsubsection{Visible Portal Number algorithm 1.25 - More explaination of data structure!!!}
+\label{section:visibleportalcount}
 A portal is visible if at least one fragment of it was drawn. One commonly way of finding out if fragments were drawn are occlusion queries. Reading back the result of a occlusion to the \gls{cpu}, was deemed too slow. Although Vulkan also supports copying the result to a buffer by calling \textit{copyQueryPoolResults} on a command buffer, this is only possible outside of a renderpass. For this reason a different way of finding out, how many different portals are visible was derived.
 
-A portal group are portals that are drawn from the same viewpoint. In subpass 1 there is only one portal group, which contains all portals. The algorithm uses an helper array with integer elements and each portal group exclusively owns a range within it. No other group may read from or write to that range. This range is called \textit{Helper Range} The first index of the range is called \textit{First Helper Index}. The size of the range is equal to the total portal count. Each portal in a group has an element within range, where it has exclusive write access. It is called \textit{Current Helper Element}. The index to that element is called \textit{Current Helper Index}.
+A portal group are portals that are drawn from the same viewpoint. In subpass 1 there is only one portal group, which contains all portals. The algorithm uses an helper array with integer elements and each portal group exclusively owns a range within it. No other group may read from or write to that range. This range is called \textit{Helper Range} The first index of the range is called \textit{First Helper Index}. The size of the range is equal to the total portal count. Each portal in a group has an element within range, where it has exclusive write access. It is called \textit{Current Helper Element}. The index to that element is called \textit{Current Helper Index}. Before starting to draw the each element of the helper array is set to 0.
 
-The visible portal counting algorithm works the following way:
-Before starting to draw the each element of the helper array is set to 0. Each portal's fragment shader counts how many the corresponding portal group's \textit{Helper Range} are not equal to 0. The \textit{Current Helper Element} is excluded from the count.  Then that count is written into the \textit{Current Helper Element}. This count is equal to the number of previous visible portals and can be used for future calculations. Before drawing the next portal, a pipeline barrier is inserted, so that the writes of current portal's fragment shader are visible to the next portal's fragment shader.
+\begin{lstlisting}[caption={Calculate Previous Visible Portals}, label=listing:previousvisibleportals]
+// portal.frag
+#version 450
+#extension GL_ARB_shader_stencil_export : enable
+
+...
+layout(push_constant) uniform PushConstant {	
+
+	int maxVisiblePortalCount;
+	int portalIndex;
+	...
+} pc;
+
+layout(set = 5, binding = 0) buffer PortalIndexHelper {
+	int indices[];
+} pih;
+
+void main()
+{
+	...
+	int previousVisiblePortalCount = 0;
+	int currentHelperIndex = pc.firstHelperIndex + pc.portalIndex;
+	
+	// stop at currentHelperIndex as we are not allowed to read it
+	// and the following elements were not written yet
+	for(int i = pc.firstHelperIndex; i < currentHelperIndex; ++i)
+	{
+		previousVisiblePortalCount += (pih.indices[i]) == 0 ? 0 : 1;
+	}
+	
+	if(childNum < pc.maxVisiblePortalCount)
+	{
+		pih.indices[i] = previousVisiblePortalCount;
+		...
+	}
+	...
+}
+\end{lstlisting}
+
+Listing \ref{listing:previousvisibleportals} illustrates the fragment shader algorithm. Each portal's fragment shader iterates from the \textit{First Helper Element} to the element before the \textit{Current Helper Element}. It increases a counter, each time the element is not zero.This count is equal to the number of previous visible portals and can be used for future calculations. Before drawing the next portal, a pipeline barrier is inserted, so that the writes of current portal's fragment shader are visible to the next portal's fragment shader.
 
 This algorithm makes use of the property that if the fragment shader is never invoked, it will never write a value to its \textit{Current Helper Element}. If multiple shader invocations write the same non-zero value to the \textit{Current Helper Element} there will be that value, no matter how many invokation have written to it.
-Thus if at least one fragment shader was invoke for the portal, there will be a non zero value at its position. As the element which is written to, is not read, the write does not influence the other shader invocations.
+Thus if at least one fragment shader was invoke for the portal, there will be a non zero value at its position. As the element which is written to, is not read, the write does not influence the other shader invocations. The iteration does not need to continue after \textit{Current Helper Element}, as these values will not have been written yet and will always be 0.
+
+ \textbf{ \huge TODO: Ask Advisor if multiple same value writes trigger undefined behaviour? }%TODO: check for data race
+
+The written value may can be any non-zero value, but writing the previous visible portal count allowed for easier debugging during the creation of the implementation.
 
 
- \textbf{ \huge TODO: Undefined behaviour? }%TODO: check for data race
+\subsubsection{View Matrix Selection 1.66}
+Except for subpass 0 and subpass 1, it is not known which camera index to access, as this depends on what portals were drawn previously. This problem is solved with an indirection.
 
-The written value may can be any non-zero value, but writting the previous visible portal count allowed for easier debugging during the creation of the implementation.
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/viewmatrixindirection.png}
+	\caption{View Matrix Indirection}
+	\label{fig:viewmatrixindirection}
+\end{figure}
 
+Figure \ref{fig:viewmatrixindirection} shows an example, how this works. Instead of receiving the index for the view matrix, an \textit{indices index} is received. The \textit{indices index} is used to access an element in an \textit{index array}. This element's value is the actual index, which is then used to find the correct view matrix in the \textit{matrix array}.
 
+Sometimes there are less visible portals than the maximum count. This can not be known before submitting the command buffer. The draw commands for elements with non existing portals are still recorded in the command buffer. This implementation uses a special value -1 in the \textit{index array} to indicate such a case. It is an invalid index. The value of the view matrix index is the same for every vertex shader invocation of a mesh, as it depends on a push constant value. When encountering and invalid index as view matrix index, the vertex shader sets \textit{gl\_Position} to a fixed position. Every vertex of each triangle of an object, will have the same position. This results in all triangles being degenerate and they are culled \cite{khronos:vulkan:spec1.1}.
 
+\begin{lstlisting}[caption={View Matrix Selection}, label=listing:stencilcalculation]
+// shader.vert
+#version 450
 
+...
 
-\subsubsection{Camera Indices Index}
+layout(push_constant) uniform PushConstant {	
+	mat4 model;
+	int viewMatrixIndicesIndex
+	...
+} pc;
 
-Camera matrices are not accessed directly. Instead an an array is accessed which stores the id. Allows to dynamically change camera matrices
-Invalid ids means we can skipp that draw -> Set all values in vertex shader to same value to create a degenerate triangle, to improve performance.
-Calculate portal Id, dicard if portal id is greater than visible portals
-Use portal Id to generate stencil value and the camera id.
+layout(set = 1, binding = 0) uniform Ubo_GlobalRenderData {
+	mat4 proj;
+} u_grd;
 
+layout(set = 2, binding = 0) uniform ubo_cameraMats
+{
+	mat4 mats[maxCameraMatCount];
+} u_cMats;
 
+layout(set = 4, binding = 0) buffer ViewMatIndices {
+	int vIndices[];
+} vi;
 
+layout(location = 0) in vec3 inPosition;
 
+const int invalid_matIndex = -1;
 
-\subsubsection{Occlusion query as alternative}
-probably slow
-needs to process portals and then again with the result
-probably needs some extra throwaway texture
+void main()
+{
+	int viewMatIndex = pc.viewMatrixIndicesIndex == 0 ? 
+		0 : vi.vIndices[pc.viewMatrixIndicesIndex];
+	
+	if(viewMatIndex != invalid_matIndex)
+	{
+		gl_Position = u_grd.proj * u_cMats.mats[viewMatIndex]
+		 * pc.model * vec4(inPosition, 1.0);
+	}
+	else
+	{
+		// invalid index, create degenerate triangles
+		// by setting every vertex to the same value
+		gl_Position = vec4(1);
+	}
+	...
+}
 
-\subsubsection{Properties}
-fixed number of visible portals in each portal, which can be dynamic for recursion. E.G inital 4 visible portals, but in each of those only 2 visible portals
-Number can be changed at runtime.
-Even if visible portal count is too high, we can at least only produce degenerate triangles to save performance.
+\end{lstlisting}
 
-Requires stencil export (!). Not supported on nvidia cards (source: \url{https://vulkan.gpuinfo.org/listdevices.php?platform=windows&extension=VK_EXT_shader_stencil_export})
-No early test for Portal rendering, as we are using stencil export.
+Listing \ref{listing:stencilcalculation} show the code of the vertex shader. Note that if the indices index is 0, it must be recursion 0. 0 can then be used as index for the camera matrices. This is convenient when filling the index buffer later.
 
+\subsubsection{Properties of the Index Array 1.33}
+\label{section:indexarrayproperties}
 
+The implementation allows the max visible portal count to differ for each recursion. This is useful, as in recursion 0 the draw area is the whole screen, resulting in more visible portals. The contents within portals cover much less screen space, so it is less likely that portals can been seen within them. For each recursion the screen space drawn will get even smaller. This means recursion 0 will likely need the most visible portals, while the next recursion will need less and less visible portals.
 
-\subsection{Dynamic Portal instance rendering}
-We render objects for each rendered portal of previous pass. Only difference is stencil value and camera index.
-Camera Index can be calculated with InstanceIndex
-Can't change stencil during instance drawing -> Drop Stencil Test. Use extra texture an perform it manually in shader, similar to rendered depth test. 
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/indexarray.png}
+	\caption{Index array as tree for 4-3-2 visible portals}
+	\label{fig:indexarray}
+\end{figure}
 
-\subsubsection{Properties}
-No early test for Scene.
-Recursion and Portal count is only limited by performance, as we can use any number of bits for our test.
-Number of draw calls now scales linearly with recursion count (although actuall draw count remains the same).
-No Need for Stencil prefixes -> simplifies code, saves bits
+Just as the view matrix array, the indices array is also a tree. However, due to the different amounts of visible portals for different recursions, it has a different amount of children in each level. Figure \ref{fig:indexarray} illustrates the connections between child and parent elements. The show tree supports 3 recursions. The visible portal count for the first recursion is four, for the second it is three and the third recursion it is two. The thee has one root. Each elements child count corresponds to its level in the tree.
 
-Huge Performance Improvement!!! Was 6 times fast in my case. 
-(should I measure this and create diagram?)
+The following terms are used for index calculation formulas
+\begin{itemize}
+	\item $L_n$ ... the nth level,
+	\item $LC_n$ ... the element count of the nth level
+	\item $LF_n$ ... the index of the first element of the nth level
+	\item $LDC_n$ ... the number of direct child nodes for each element in the nth level. 
+	\item $L_nE_i$ ... the index of the i-th element in the nth-level
+	\item $L_nE_iC_k$ ... the index of the k-th child of the i-th element in the n-th level 
+\end{itemize}
 
+The following formulas can be used to calculate indices
 
+\begin{itemize}
+	\item $LC_0 = 1$
+	\item $LC_n = LC_{n-1} * LDC_{n-1}$
+	\item $LF_0 = 0$
+	\item $LF_n = LC_{n-1} + LF_{n-1}$
+	\item $L_nE_iC_k = LF_{n+1} + LDC_{n} * i + k$
+\end{itemize}
+
+For every recursion the whole corresponding level of the Index Array Tree is traversed, drawing each object and portal a total of $LC_n$ times. Using \ref{fig:indexarray} as example, every object and portal in recursion 0 is drawn 1 time. For recursion 1 is is 4 times, for recursion 2 its is 12 times. And Finally for the last recursion, recursion 3, everything is drawn 24 times. In total 41 draws would be issued for every object and portal.
+
+\subsubsection{Filling the Index Array 1.33}
+For the indirection from the previous section to work, the index array must be filled with correct values. Before starting to record draw commands, the index array is filled with an invalid index value by calling \textit{fillBuffer}. Listing \ref{listing:indicesindexcalculation} shows the algorithm used by the fragment shader to calculate and set the individual index array elements.
+
+\begin{lstlisting}[caption={Calculating Indices Index}, label=listing:indicesindexcalculation]
+// shader.vert
+#version 450
+...
+layout(push_constant) uniform PushConstant {	
+	int viewMatrixIndicesIndex;
+	int maxVisiblePortalCount;
+	int portalIndex;
+	int maxPortalCount;
+	int nextLevelStartIndex;
+	int portalGroupIndex;
+	...
+
+} pc;
+
+layout(set = 4, binding = 0) buffer ViewMatIndices {
+	int vIndices[];
+} vi;
+
+void main()
+{
+	...
+	int previousVisiblePortalCount = ...
+	
+	if(previousVisiblePortalCount < pc.maxVisiblePortalCount)
+	{
+		int currentViewMatIndex = pc.viewMatrixIndicesIndex == 0 ? 
+			0 : vi.vIndices[pc.viewMatrixIndicesIndex];
+		
+		int firstPortalViewIndex = 1 +
+			(currentViewMatIndex * pc.maxPortalCount);
+		
+		int currentPortalViewIndex = firstPortalViewIndex +
+			pc.portalIndex;
+		
+		int firstViewIndicesIndex = pc.nextLevelStartIndex +
+			(pc.portalGroupIndex * pc.maxVisiblePortalCount);
+			
+		int viewIndicesIndex = firstViewIndicesIndex +
+			previousVisiblePortalCount;
+			
+		vi.vIndices[viewIndicesIndex] = currentPortalViewIndex;
+	}
+	...	
+}
+
+\end{lstlisting}
+
+In each portals fragment shader the previous visible portal count is calculated (see section \ref{section:visibleportalcount}). It is then compared with the maximum visible portal count. If it the previous visible portal count is higher or equal to the maximum visible portal count the index array is not touched, by the shader.
+
+If the previous visible portal count is less then the index for writing is calculated using $L_nE_iC_k = LF_{n+1} + LDC_{n} * i + k$ (see section \ref{section:indexarrayproperties}). $LF_{n+1}$ is provided by via push constant and is the same for the whole recursion.  $LDC_{n}$ is also the maximum visible portal count, which was used for the previous check. It is provided via push constant and also stays the same for the whole recursion. $i$ is equal to the number of previous portal groups for that recursion. It is provided via push constant and is increments for after each portal group. $k$ is equal to the number of previous visible portals, that was just calculated.
+
+Now that the index for the element in the index array we want to write to has been calculated, the shader needs to write the right value to it. The portal that is currently drawn may be seen portal. Using the formula  $ nth child = current index * portalcount + 1 + n$ from section \ref{section:recursivecameramatrices} the view index can be calculated.  $currentindex$ was the index used in the vertexshader to access the right view matrix. The $portalcount$ is passed via push constants. $n$ is equal to the number of privious drawn portals in the portal group. It is also passed via push constants.
+
+Every fragment shader invocation will either write the same value or write nothing at all. If no value was written to an index array element, its value will be the invalid index value. For the last portal iteration a visible portal count of 0 is passed, as indicator. That way the portals don't write outside the array.
+
+\subsubsection{Calculating the Stencil Reference 1}
+Before drawing it is not known how which and how many portals are actually visible. The stencil value cannot be set dynamically when recording the command buffer. Instead the stencil reference is calculated in the shader and set via the Vulkan extension VK\_EXT\_shader\_stencil\_export. As this is an extension this feature is not supported on every \gls{gpu}.
+
+\begin{lstlisting}[caption={Calculate Stencil Reference in Shader}, label=listing:stencilcalculation]
+// portal.frag
+#version 450
+#extension GL_ARB_shader_stencil_export : enable
+
+// ...
+layout(push_constant) uniform PushConstant {	
+	uint parentStencilReference;
+	int stencilReferenceBits;
+	int maxVisiblePortalCount;
+//...
+} pc;
+
+out int gl_FragStencilRefARB;
+
+void main()
+{
+	...
+	int previousVisiblePortalCount = ...
+	
+	if(previousVisiblePortalCount >= pc.maxVisiblePortalCount)
+	{
+		...
+		uint myStencilReference = previousVisiblePortalCount + 1;
+		uint stencilReference = pc.parentStencilReference 
+		| myStencilReference << pc.stencilReferenceBits;
+		gl_FragStencilRefARB = int(stencilReference);
+	}	
+	...
+}
+\end{lstlisting}
+
+Listing \ref{listing:stencilcalculation} illustrates the calculation. The current stencil reference is passed via push constants. This is the same reference for the whole portal group. The fragement shader calculates the current visible portals and adds 1 to it, as using 0 as stencil reference would lead to ambiguities (see section \ref{section:stencilcomparemasks}). That stencil reference needs to be shifted by the amount of bits used by parent stencil reference and then ORed together. Shifting is done using unsigned types to avoid potential undefined behavior.
+
+\subsection{Dynamic Portal instance rendering 1.25}
+Dynamic Portal Rendering moved the limit from maximum portals in a scene to maximum visible portals, while also improving performance a bit. However, the performance was still pretty bad. Occluded portals or portals failing the stencil test still counted as beeing visible. This is due to the late stencil depth test, which was needed for the stencil export.
+
+Additionally, every object and portal is drawn many times for all the visible portals and recursion. Trying to take advantage of that fact was not trivial. Although, it is possible to draw multiple instances of an object, it is not possible to change the stencil reference between each draw. Using stencil export for scene objects, would have gotten rid of the early fragment test. The only other way was to drop the stencil test, and perform a manual stencil test, similar as already done with the near buffer. After trying out that manual test and seeing not much performance penalty, the author decided to work try out instanced rendering.
+
+Most changes to the code were transforming transforming the loops. Listing \ref{listing:looptransform} shows the difference in pseudo code.
+
+\begin{lstlisting}[caption={Pseudocode Loop Transformation}, label=listing:looptransform]
+// old 
+for(int i = 0; i < previousPortalCount; ++i)
+{
+	commandBuffer.setStencilRefrence(stencilReferences[i]);
+	for(int k = 0; k < sceneObjectCount; ++k)
+	{
+		commandBuffer.pushConstants();
+		commandBuffer.drawIndexed(sceneObjects[k], 1);
+	}
+}
+
+// new
+for(int i = 0; i < sceneObjectCount; ++i)
+{
+	commandBuffer.pushConstants();
+	commandBuffer.drawIndexed(sceneObjects[i], previousPortalCount);
+}
+\end{lstlisting}
+
+Calculating the stencil references can be simplified. Using the same stencil reference to compare and set the stencil buffer is no longer needed. The stencil reference values nows increment by one for each instance. In fact the stencil reference value and indices index is the same. The indices index for the first instance is passed via push constants. The shaders can calculate their current \textit{indices index} and stencil reference by adding gl\_InstanceIndex to it.
+
+The portal shaders use the gl\_InstanceIndex instead of the portal group id. The multiple instances of the same portal, all use a different range in the helper index array. They don not interfere with each other. As there is no synchronisation needed between the instances they can all use instance drawing and have their draw loop transformed similar to the scene objects. However, Pipeline barriers between are still needed between drawing different portals.
+
+The \textit{First Helper Index} is equal to the stencil reference/\textit{indices index} times the total portal count. {\huge explain better!} %TODO explain better
+
+Changing the code to use instance drawing, resulted in a huge performance increase. Compared to the previous version, the code was 6 times fast on a particular configuration. Additionally, doing the manual stencil test, allows earlier fragment shader discards, reducing the amount of false visible portals. Furthermore, the stencil export extension is no longer required, so the application can run on more graphic cards. Finally, the texture used for the manual stencil test can be bigger than a real stencil buffer. This effectively removes a hard limit of the maximum visible portals count and recursion count. Those are now only limited by computation speed.
 
 
 \subsection{Portal Collision}
@@ -423,6 +653,9 @@ The UE4 Level editor is very convenient and can be customized. The level is expo
 
 \section{Analysis And Improvements 0/15}
 
+\subsection{Swap Near Buffer with far Buffer}
+
+
 \subsection{Visible Portal count}
 
 in fragmentshader: counter, traverse array, increase for non zeros, ignore at index corresponding to the current portal
@@ -437,6 +670,11 @@ Needs synchornisation so that value is visible for the next portal!
 \subsection{Camera Matrix Improvement opportunities}
 Could be improved. The work to calculate the matrices scales super linear. $X^{N}$, where X is the portal count and N is the number of iterations.
 Instead of precomputing all combinations, it is probably better to calculate the matrices on demand in the fragment shader, as we have much more information there. This saves unnessary computes, removes an indirection and puts the work on the gput. Only downside is that the computation is executed multiple, once per shader fragment. Finally save on bandwith, as they don't need to be transfered!
+
+
+Dont actually need to be computed every frame, if additional matrix multiplications are ok.
+Multiplying only the inverse matrices! but from the other side!
+
 
 \subsection{Scaling measurement}
 

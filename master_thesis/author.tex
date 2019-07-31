@@ -26,6 +26,25 @@
 \bibliography{bibliography}
 \input{Abkurzungen}
 
+\usepackage{listings,xcolor}
+\lstset{language=C++}
+\lstset{
+	basicstyle=\footnotesize\ttfamily,
+	keywordstyle=\bfseries\color{blue},
+	breaklines=true,
+	tabsize=2,
+	alsoother={\#},
+	deletekeywords ={\#pragma},
+	deletedelim=*[directive]\#,
+	morekeywords={mat4, vec3, vec4, in, out, discard, layout, push\_constant, uniform, uint}
+}
+
+%%\lstset{
+%%	emph={mat4, vec3, vec3, in, out},emphstyle={\color{blue}}%
+%%	emph={discard},emphstyle={\color{blue}}%
+%}%
+
+
 \begin{document}
 
 
