@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 5/69}
+\subsection*{Search Terms TOTAL PAGES 18.85/69}
 portal
 3D lense
 magic lense
@@ -104,7 +104,7 @@ combined depth / stencil
 
 \subsubsection{Instanced Drawing}
 
-\section{Implementation 18.85/30}
+\section{Implementation 19.5/30}
 
 \subsection{Technologies / Libraries}
 SDL, glm, vulkan, rapid xml, c++, vulkan memory allocator
@@ -112,10 +112,11 @@ SDL, glm, vulkan, rapid xml, c++, vulkan memory allocator
 \subsubsection{debugging}
 validation layers render doc
 
+
 \subsection{Software Raytracing 0.5}
 The first implementation was based on software raytracing. Compared to rasterization based methods, raytracing allows for more complex operations on individual rays. A response to an instersection can spawn a new ray, which replaces the old ray. The new ray can have many different properties. The new ray can have an completely different origin and direction, which would simulate a portal. Additionally a non conventional ray definition could be used, allowing for bent rays. Rays could travel slower, resulting in scaled space.
 
-The prototype was implemented in C++ using SDL \cite{SDL} and GLM \cite{GLM} as libraries. It performs an intersection test against sphere. The ray line intersection query uses the algorithm described by \textcite{eberly:2006:3d}. Additionally, the pixels of the SDL Surface were manipulated directly instead of using an SDL Renderer to improve performance.
+The prototype was implemented in C++ using SDL \cite{sdl} and GLM \cite{glm} as libraries. It performs an intersection test against sphere. The ray line intersection query uses the algorithm described by \textcite{eberly:2006:3d}. Additionally, the pixels of the SDL Surface were manipulated directly instead of using an SDL Renderer to improve performance.
 
 Even with this simple test, the prototype performed poorly. A scene with only one sphere took more than 40 milliseconds to render on a 1920x1080 resolution. When subtracting the time needed to render an empty scene, it still takes over 20 milliseconds. For realtime applications it is completely unviable.
 
@@ -135,98 +136,105 @@ As the implementation of the prototype is expected to take quite a while, and mi
 %TODO: subjective why vulkan
 (Subjective Reason: Want to learn vulkan?) 
 
-\subsection{Terminology}
-
-\subsubsection{Portal}
-Portals are defined as 2 Objects/Endpoints which share a mesh. The both endpoint may have any transformation. From those two endpoints, two teleportation matrices are generated, which when applyied move an object from one end point to the other.
-
-Instead of an mesh representation, other representations, could have been used. E.g. A spehre which is defined by a mathematical equation.
-
-\subsubsection{Portal Pairs and endpoints}
-A Portal pair are two portals, which are connected with each other. The induvidual portals of a pair are called endpoints. If an object moves through one endpoint, it is teleported to the other. The connection is two way, allowing back and forth movement teleportation. 
 
 
+\subsection{Objects}
+Objects are entities which can be drawn to screen. Objects can share the same model. An objects position, rotation and scale is represented by its \gls{modelmatix}. The set of all objects is called the \gls{objectset}.
 
-\subsubsection{Camera Matrix}
-The camera is defined by a camera matrix. It is similar to a modelmatrix. The inverse of the camera matrix is the view matrix which is used to render the scene.
-%%\subsubsection{Transform}
-%%A transform defines an objects attributes such as translation, rotation or scale. A transform can be applied to a point, as well as other transforms. 
-
-\subsubsection{Portal Group}
-
-\subsubsection{Portal Id}
+\subsection{Transform}
+A transform is the combination of position, scale and rotation. A transform can be added to another transform, which can changes its position, scale and rotation at once. Transforms can be subtracted from each other resulting in their difference in position, scale and rotation. Transforms are often expressed as matrices in this implementation. For Matrices Adding and subtracting transforms is expressed as multiplying a matrix with a matrix and multiplying a matrix with a matrix's inverse respectively.
 
 
-\subsection{Textures vs Stencil Buffer 0.5}
-\label{section:textursVsStencil}
-Two different approaches were considered to render the contents of a portal. The first approach is to render the scene from the portal's viewpoint to a texture in the first renderpass. In the next renderpass this texture is applied to the portal and the scene is then rendered as usual \cite{lecture:portalProblems}.  %TODO: find source
+A transform is an operation that moves, rotates and scales an object by some amount. An object can have a transform, which would represent its location, rotation and scale as an transform from the origin. One representation of a transform is a matrix.
 
-The other approach utilises the stencil test. The stencil test is initially set to always pass. First the scene is drawn without portals.
-The the portals are draw. For this renderpass, the stencil operation must be set in a way to mark the visible portal pixels. Now at least the depth values for visible portal pixels must be cleared. It is also possible to clear the whole buffer. Next step is to move the camera to the portal's viewpoint. Finally the scene is drawn again, but pixels that are not marked are discarded \cites{schmalstieg:1999:sewing, lowe:2005:technique, lecture:portalProblems}.
+If object A has a transform, and object B has a transform, the transform that needs to be applied to object A to match objects B's transform is called relative transform.
 
-For both approaches care must be taken to discard fragments that are between the portal's viewpoint and the portal exit. With multiple visible portals, the steps which use the portals viewpoint, must be executed at least per visible portal. Additionally it must be ensured, that each portal has the correct contents.
+\subsection{Portals}
+This implementation only uses transformative portals. Transformative portals act as wormholes, connecting two parts of the world. By travelling through a portal the an object is teleported to another portal. These two portals are connected and form a \gls{portalpair}. These connections are two-way, allowing back and forth teleportation. The individual portals of a \gls{portalpair} are called \glspl{endpoint}. Instead of referring to portals of a \gls{portalpair} as \enquote{the \gls{endpoint}} and \enquote{the other \gls{endpoint}}, they are sometimes called \enquote{\gls{endpoint} A} and \enquote{\gls{endpoint} B}.
 
-This implementation uses the latter approach, as it does not need extra textures. Especially considering recursions, the first approach might need many textures and do not need the stencil buffer for anything else.
-
-\subsection{Generating Camera Matrices 1.6}
-As describe in section \ref{section:textursVsStencil} the camera needs to be move to the portals view point. However, this is no fixed location and depends on the current camera position.
+Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, but have different \glspl{modelmatix}. The set of all portals is called \gls{portalset}. The number of portals within the \gls{portalset} is called \gls{portalcount}. Each portal within the \gls{portalset} has an unique integer as \gls{portalid}. The range of \glspl{portalid} starts with 0 and ends with the \gls{portalcount} minus 1. \enquote{Portal N} referes to the portal which has a \gls{portalid} equal to N.
 
 \begin{figure}[h]
-	\includegraphics[width=\linewidth]{images/camera_matrices.png}
-	\caption{Portal Camera}
-	\label{fig:cameramatrices}
+	\includegraphics[width=\linewidth]{images/portal.png}
+	\caption{A \gls{portalpair} connecting two parts of the world}
+	\label{fig:portal}
 \end{figure}
 
-Figure \ref{fig:cameramatrices} shows two portal endpoints. The blue triangle represents the camera and the orange circle represents an objects. The dotted blue triangle represents the portal view camera.
-When looking through the portal, it must look as if the camera looks directly a the object. After a camera matrix is calculated, the view matrix can be obtained by inverting it.
+The connections of two parts of the world can be seen when looking at a portal. Figure \ref{fig:portal} shows the camera looking at endpoint A of a portal pair. It appears as if the dotted circle is in front of the camera. However, the actual circle is somewhere else. Instead of seeing endpoint A, the contents other part of the world is from portal camera's view point are seen.
 
-\subsubsection{Initial Approach 0.2}
-The initial approach first calculates the vector from the visible Portal Endpoint location to the camera. Then rotates that vector by the rotation difference of the two endpoints. Finally that vector gets added to the other Endpoint location. This is new camera origin.
-To calculate the portal view camera rotation, the original camera's rotation is multiplied by the rotation difference between the two endpoints.
-The initial approach did only consider rotations and translations.
+\subsubsection{Teleportation Matrix }
+To teleport objects travelling through portals their position and rotation need to be changed. Initially this was done by adjusting the location and rotations the following way: First the vector from an \gls{endpoint}['s] location to the the object is calculated. Then that vector is rotated by the rotation difference between the two endpoints. Finally that vector gets added to the other endpoint location. This is new position of the object origin. To calculate the portal view camera rotation, the original camera's rotation is multiplied by the rotation difference between the two endpoints. 
 
-\subsubsection{Current Approach - Teleportation Matrix 0.3}
+However the initial approach did only consider rotations and translations and was not really generic. A better way was devised using a \gls{teleportationmatrix}. When this matrix is applied to an object's \gls{modelmatix}, it is moved and rotated correctly. Additionally, the object is scaled by the difference in scale between the two end points. To transform an object first the \gls{endpoint} A's inverse \gls{modelmatix} is applied, after which \gls{endpoint} B's \gls{modelmatix} is applied. The \gls{teleportationmatrix} is just the product of those two matrices, so that operation can be performed in one step. \Gls{endpoint} B's teleportation matrix is the inverse of \gls{endpoint} A's \gls{teleportationmatrix}.
+
+
+
+{\Huge Explainatin problems!!!}
+
+Imagine an objects travelling through \gls{endpoint} A. Before relative transform to \gls{endpoint} A before the teleport must be equal to the relative transform to \gls{endpoint} B after the teleport. An objects modelmatrix expresses its transform realtive to the world. By multiplying the inverse modelmatrix of \gls{endpoint} A, \gls{endpoint} A's transform is subtracted from it. The object's transform is now relative to \gls{endpoint} A. This is the same realtive transform the object needs to
+
+By applying the inverse of \gls{endpoint} A's \gls{modelmatix} to object's \gls{modelmatix}, the \gls{object}'s \gls{modelmatix} is now expressed relative to \gls{endpoint} A. If then \gls{endpoint} A's \gls{modelmatix} would be applied, the object would again be a the same position. However, by applying \gls{endpoint} B's \gls{modelmatix}, the \
+
+
+
 The current approach uses coordinate transforms to calculate the portal view camera. By applying the inverse modelmatrix of endpoint A to the camera matrix, we bring the camera in a coordinate system, where endpoint A is at the origin. The camera matrix is now expressed relative to endpoint A. Finally we can apply Endpoint B's which moves exactly at the right position relative to endpoint B.
 For example if the current camera's location where exactly at endpoint A, applying the inverse modelmatrix of endpoint A would move it to the origin.
 The Application of the two matrices can be combined into one. The implementation this is called the teleportation matrix. It is also used to move objects from one end point to the other.  
 
 %TODO other analogy? Relative attachments in scenegraphs? 
 
-\subsubsection{Recursive Portal Matrices 0.75}
-\label{section:recursivecameramatrices}
-The previous sections explained how to calculate the camera matrices for each portal. However, for recursion we need to calculate the camera transforms for any combination of portals. This can be achieved by using the same approach multiple times, applying it on the result of the previous iteration. This is needed for each combination of portals. For each iteration we need an addition M matrices, where M equals the number of portals to the power of the current iteration. If there are 4 portals, the initial scene rendering would need 1 matrix, the camera matrix. Iteration 1 would need 4 additional, one for each portal. Iteration 2 would need 16 portals, 1 for each possible portal pair. With two iterations a total of 21 matrices are needed.
-
-The view matrices are stored in one continuous array, but has a tree-like inner structure. The root is the current view matrix. Each child contains to the corresponding portal's view matrix, relative to its parent matrix. The indices can be found the following way:
-
-\begin{itemize}
-	\item $ nth child = current index * portalcount + 1 + n$
-	\item $ parent = \lfloor(current index-1)/portal count\rfloor $
-\end{itemize}
-
-%%$c_n .. nth child index$
-%%$p .. parent index$
-%%$i ... curent index$
-%%$t ... portal count$
 
 
 
 
-\begin{figure}[h]
-	\includegraphics[width=\linewidth]{images/cameraindices.png}
-	\caption{Camera Indices}
-	\label{fig:cameraindices}
-\end{figure}
-
-Figure \ref{fig:cameraindices} shows the indices for 4 portals, with 2 iterations. For example to find the view matrix of Portal 0, seen through Portal 1, we would access the array at index 9.
+\subsection{Level}
+A level represents the world and contains the \gls{portalset} and the \gls{objectset}.
 
 
-\subsection{Portal drawing orderer Depth first vs breadth first 1.25}
+
+\subsection{Camera 0.5}
+In the implementation the user is able to move the camera in 6 directions, with key presses and rotate the view rotation with mouse movements. Additionally, the shift key can be pressed to lock the view direction, to readjust the mouse. Inputs are received via the \gls{sdl}'s \cite{sdl} \textit{SDL\_PollEvent} function.
+
+The position is stored as a 3D point and the view rotation as quaternion. Position update take the camera's view rotations into account. Yaw rotations always rotate around the Y-Axis, while pitch rotation is relative to the current yaw rotation. Roll rotations are not supported.
+
+With the position and rotation the \gls{cameramatrix} can be calculated. The inverse of this matrix is the camera's \gls{viewmatrix}, which is used for drawing from the camera's viewpoint.
+
+\subsubsection{Perspective Matrix and Inverse Z-Buffer 0.25}
+This implementation uses a perspective matrix with an infinite far clipping plane. Care needs to be taken, as Vulkan uses depth values from 0 to 1 \cite{khronos:vulkan:spec1.1} compared to open OpenGL's -1 to 1 \cite{khronos:openGL:spec4.6}. Additionally the implementation uses an inverse z-Buffer. An inverse Z-Buffer performs no worse than a regular Z-Buffer, but has improved accuracy when used with floating point depth buffers. For far away objects the depth distributions, becomes increasingly smaller. However, this values are also closer to and can make use a floating points increased precision near 0 \cite{lapidous:1999:optimal, nvidia:inversez}.
+
+
+\subsection{Storing Mesh Data for Rendering}
+
+
+\subsection{Portal drawing}
+\label{section:portaldrawing}
+
+This section covers various techniques used for portal rendering. How those techniques are actually applied will be explained in section \ref{section:intialimplementation}
+
+\subsubsection{Recursions}
+When looking through a portal the other part of the world can be seen. In that other part there can be another portal in which yet another part of the world can be seen. This could continue indefinitely, but in this implementation there is a limit. This limit is called the \gls{recursioncount}. A recursion count of 0, means that no other worlds can be seen through portals. A recursion count of 1 allows looking through portals, but portals at the other part of the world can not be looked through.
+
+This implementation performs draws in multiple steps. Initially the initial world and the portals need to be drawn. This is referred as recursion 0. In within recursion 1 all the worlds for all visible portals from recursion 0 need to be drawn. Recursion 2 would draw the worlds for all portals drawn in recursion 1 and so forth. This continues until Recursion n, where n is equal to the \gls{recursioncount}.
+
+
+\subsubsection{Textures vs Stencil Buffer 0.5}
+\label{section:textursVsStencil}
+Two different approaches were considered to render the contents of a portal. The first approach is to render the scene from the portal's viewpoint to a texture in the first renderpass. In the next renderpass this texture is applied to the portal and the whole scene is then rendered as usual \cite{lecture:portalProblems}.  %TODO: find source
+
+The other approach utilises the stencil test. The stencil test is initially set to always pass. First only the \gls{objectset} is drawn. In the next renderpass the \gls{portalset} is drawn. For this renderpass, the stencil operation must be set in a way to mark the visible portal pixels. Now at least the depth values for visible portal pixels must be cleared. It is also possible to clear the whole buffer. Finally the scene is drawn again from the portal's view point. Fragments at pixel locations that are not marked are discarded. This ensures that it is only drawn to pixels where the portal was drawn \cites{schmalstieg:1999:sewing, lowe:2005:technique, lecture:portalProblems}.
+
+For both approaches care must be taken to discard fragments that are between the portal's viewpoint and the portal exit. With multiple visible portals, the steps which use the portal's viewpoint, must be executed at least per visible portal. Additionally it must be ensured, that each portal has the correct contents.
+
+This implementation uses the latter approach, as it does not need extra textures. Especially considering recursions, the first approach might need many textures and do not need the stencil buffer for anything else.
+
+\subsubsection{Portal drawing orderer Depth first vs breadth first 1.25}
 
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{images/rendertree.png}
 	\caption{Render Dependencies}
 	\label{fig:rendertree}
 \end{figure}
+
 
 When drawing multiple portals recursively the draw dependencies can be imagined as a tree. Figure \ref{fig:rendertree} shows the dependencies for two portals. In recursion 0 the two portals can only be drawn after the scene was drawn. Otherwise portals that are occluded by a scene object might wrongly mark the pixel in the stencil buffer. The two scenes in recusion 1 can only be drawn when their respective portal was already drawn. However, it is not necessary that all portals from recursion 0 were drawn, before a scene from recursion 1 is drawn.
 
@@ -236,7 +244,50 @@ Breath first draws a recursion completely before drawing the next recursion. The
 
 Previous transformative portal implementations used depth first \cite{lowe:2005:technique,lecture:portalProblems}. The implementation presented in this thesis uses breadth first. Fewer dependencies between the draws could be exploited. Additionally similar draws can be grouped, which reduces the amount of renderpasses. While the amount of stencil values needed scales exponentially, the amount of draws scaled exponentially too. The author believes it is more likely that amount of draws will be the limiting factor than running out of values in the stencil buffer.
 
-\subsection{Dual Depth Buffer 1}
+
+
+\subsubsection{Generating Camera Matrices}
+As describe in section \ref{section:textursVsStencil} the scene needs to be rendered from the correct view point. This view point corresponds to the camera's view point teleported by the specific portal's \gls{teleportationmatrix}. As the camera moves the matrices must be calculated every frame.
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/camera_matrices.png}
+	\caption{Portal Camera}
+	\label{fig:cameramatrices}
+\end{figure}
+
+Figure \ref{fig:cameramatrices} shows two portal endpoints. The blue triangle represents the camera and the orange circle represents an objects. The dotted blue triangle represents the portal view camera.
+When looking through the portal, it must look as if the camera looks directly a the object. To move the camera to the correct location the \gls{endpoint}['s] \gls{teleportationmatrix} is be applied to the camera matrix. Then the  \gls{viewmatrix} can be obtained by inverting it.
+
+
+\subsubsection{Recursive Portal Matrices 0.75}
+\label{section:recursivecameramatrices}
+The previous sections explained how to calculate the camera matrices for each portal for recursion 1. For recursion 2 a the camera's viewpoint must be transform twice, by two sequential applied \glspl{teleportationmatrix}. This needs to be done for every combination of two portals. For recursion 3 this is done for every combination of three portals and so forth. The implemtations stores the view matrices in a tree. The root is the current view matrix. An nth child node's matrix is equal to its parent matrix multiplied by the portal n's \gls{teleportationmatrix}. The tree is filled level by level.
+
+
+The tree is layed out as an array and the indices can be found the following way:
+
+\begin{itemize}
+	\item $ nth child = current index * portalcount + 1 + n$
+	\item $ parent = \lfloor(current index-1)/portal count\rfloor $
+\end{itemize}
+
+
+
+%%$c_n .. nth child index$
+%%$p .. parent index$
+%%$i ... curent index$
+%%$t ... portal count$
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/cameraindices.png}
+	\caption{Camera Indices}
+	\label{fig:cameraindices}
+\end{figure}
+
+Figure \ref{fig:cameraindices} shows the indices for 4 portals, with 2 iterations. For example to find the view matrix of Portal 0, seen through Portal 1, we would access the array at index 9. Note that the size of the three scales exponentially, with the \gls{portalcount} and \gls{recursioncount}, as every possible combination of portals needs to be covered. 
+
+
+\subsubsection{Dual Depth Buffer 1}
 
 When drawing the scene from the portals view, care must be taken to not draw objects, that are between the camera and other endpoint.
 \begin{figure}[h]
@@ -253,12 +304,12 @@ Dual buffering the near buffer avoids problems with edge case where one portal o
 
 The read near buffer is a input attachment and the write near buffer is a color attachment. In recursion 0, no read near buffer test is used.
 
-\subsection{Portal near Z fighting 0.33}
+\subsubsection{Portal near Z fighting 0.33}
 When rendering the contents of one endpoint of a portal pair, the other endpoint would be rendered directly at the same location. Due to precision errors in floating point calculations, the other endpoint would sometimes be discard by the near buffer and sometimes not. This leads to a special case of Z fighting. To avoid this we store the winding order of a fragment in the near buffer. When the fragments depth value and the near buffer value are nearly equal and winding order is the same, we have exactly the previously mentioned case and need to discard the fragment. This is done by increasing the comparison value by some small amount or percentage for same winding orders.
 
 As the implementation has a depth range of 0 to 1, the value will always be positive. This allows the implementation to store the winding order is store as the sign of the near buffer. Positive values indicating front facing and negative values indicating back facing. Near Depth comparison is done with the absolute value of the buffer.
 
-\subsection{Stencil Values and compare masks 0.66}
+\subsubsection{Stencil Values and compare masks 0.66}
 \label{section:stencilcomparemasks}
 
 As the implementation uses the breadth first approach, it can not use the stencil increment and decrement technique described by other implementors \cite{schmalstieg:1999:sewing, lowe:2003:fragment, lecture:portalProblems}. Different values need to be stored and compared against. Directly setting the stencil value can be achieve, by setting a reference value and use the replace stencil operation. However, the stencil reference is also used for the comparison. This means that the implementation must be use the same value for comparison as well as writing. This can be achieved by the use of stencil compare mask and generating stencil values with postfixing.
@@ -273,9 +324,15 @@ Figure \ref{fig:stencilvalues} shows is process with two portals and 6 bits. The
 
 This also means that the range of values is one less than representable by the number of bits. This is very significant, as the portals come in pairs. The number of bits needed for two and four portals is one more than normally needed. As the stencil buffer usually only has eight bits, this limits the amount of recursions considerably.
 
-\subsection{Storing Mesh Data for Rendering}
 
-\subsection{Initial Portal Rendering 4.2}
+
+\subsection{Initial Implementation 4.2}
+\label{section:intialimplementation}
+This section describes the first iteration of the implementation. It uses the specified techniques described in section \ref{section:portaldrawing} and focuses on how those are implemented.
+
+
+\subsubsection{Renderpass Setup 1}
+\label{section:renderpass}
 
 The implementation uses just one renderpass, with multiple subpasses. This allows for the use of input attachments and potentially enables the \gls{gpu} driver to optimize. For example many textured are only needed within the renderpass and do not need to be transferred anywhere else.
 
@@ -285,8 +342,6 @@ The implementation uses just one renderpass, with multiple subpasses. This allow
 	\label{fig:renderpasses}
 \end{figure}
 
-\subsubsection{Renderpass Setup 1}
-\label{section:renderpass}
 
 Figure \ref{fig:renderpasses} shows the subpasses, which recursion they belong to and what work is done. Notice that compared to figure \ref{fig:rendertree} scene and portal draws are each batched together. Every even subpass is responsible for drawing a scene, while in every odd subpass the portals are drawn. The subpass index divided by two equals the recursion index. 
 
@@ -334,65 +389,13 @@ Subsequent even subpasses are similar to subpass 0, but the scene drawn is drawn
 
 Subsequent odd subpasses are similar to subpass 1, but all portals are drawn multiple times. No portal has the same stencil value as any other portal.
 
+The \gls{objectset} and \gls{portalcount} are drawn for each possible combination of portals. The amount a draws for each of them is equal to the size of the camera matrices array.
+
 
 \subsection{Dynamic Portal Rendering 5.75}
-One downside of the initial portal rendering strategy was its hard limit of total portals in the scene. No matter visible or not the portal was drawn and used up values in the stencil buffer. For two recursions, only 15 or less portals were allowed to exits in the scene. For three recursion only 7 or less, for four recursions only 3 portals were possible.For this reason a new method was derived which is limited by the visible portal count instead of the total portal count. 
+One downside of the initial portal rendering strategy was its hard limit of total portals in the scene. No matter visible or not the portal was drawn and used up values in the stencil buffer. For two recursions, only 15 or less portals were allowed to exits in the scene. For three recursion only 7 or less, for four recursions only 3 portals were possible. For this reason a new method was derived which is limited by the visible portal count instead of the total portal count. 
 
 When drawing a portal, it uses a stencil value depending on the number of visible portals drawn before it, instead of using a fixed value. However, this also means that the right camera index cannot be known before submitting.
-
-\subsubsection{Visible Portal Number algorithm 1.25 - More explaination of data structure!!!}
-\label{section:visibleportalcount}
-A portal is visible if at least one fragment of it was drawn. One commonly way of finding out if fragments were drawn are occlusion queries. Reading back the result of a occlusion to the \gls{cpu}, was deemed too slow. Although Vulkan also supports copying the result to a buffer by calling \textit{copyQueryPoolResults} on a command buffer, this is only possible outside of a renderpass. For this reason a different way of finding out, how many different portals are visible was derived.
-
-A portal group are portals that are drawn from the same viewpoint. In subpass 1 there is only one portal group, which contains all portals. The algorithm uses an helper array with integer elements and each portal group exclusively owns a range within it. No other group may read from or write to that range. This range is called \textit{Helper Range} The first index of the range is called \textit{First Helper Index}. The size of the range is equal to the total portal count. Each portal in a group has an element within range, where it has exclusive write access. It is called \textit{Current Helper Element}. The index to that element is called \textit{Current Helper Index}. Before starting to draw the each element of the helper array is set to 0.
-
-\begin{lstlisting}[caption={Calculate Previous Visible Portals}, label=listing:previousvisibleportals]
-// portal.frag
-#version 450
-#extension GL_ARB_shader_stencil_export : enable
-
-...
-layout(push_constant) uniform PushConstant {	
-
-	int maxVisiblePortalCount;
-	int portalIndex;
-	...
-} pc;
-
-layout(set = 5, binding = 0) buffer PortalIndexHelper {
-	int indices[];
-} pih;
-
-void main()
-{
-	...
-	int previousVisiblePortalCount = 0;
-	int currentHelperIndex = pc.firstHelperIndex + pc.portalIndex;
-	
-	// stop at currentHelperIndex as we are not allowed to read it
-	// and the following elements were not written yet
-	for(int i = pc.firstHelperIndex; i < currentHelperIndex; ++i)
-	{
-		previousVisiblePortalCount += (pih.indices[i]) == 0 ? 0 : 1;
-	}
-	
-	if(childNum < pc.maxVisiblePortalCount)
-	{
-		pih.indices[i] = previousVisiblePortalCount;
-		...
-	}
-	...
-}
-\end{lstlisting}
-
-Listing \ref{listing:previousvisibleportals} illustrates the fragment shader algorithm. Each portal's fragment shader iterates from the \textit{First Helper Element} to the element before the \textit{Current Helper Element}. It increases a counter, each time the element is not zero.This count is equal to the number of previous visible portals and can be used for future calculations. Before drawing the next portal, a pipeline barrier is inserted, so that the writes of current portal's fragment shader are visible to the next portal's fragment shader.
-
-This algorithm makes use of the property that if the fragment shader is never invoked, it will never write a value to its \textit{Current Helper Element}. If multiple shader invocations write the same non-zero value to the \textit{Current Helper Element} there will be that value, no matter how many invokation have written to it.
-Thus if at least one fragment shader was invoke for the portal, there will be a non zero value at its position. As the element which is written to, is not read, the write does not influence the other shader invocations. The iteration does not need to continue after \textit{Current Helper Element}, as these values will not have been written yet and will always be 0.
-
- \textbf{ \huge TODO: Ask Advisor if multiple same value writes trigger undefined behaviour? }%TODO: check for data race
-
-The written value may can be any non-zero value, but writing the previous visible portal count allowed for easier debugging during the creation of the implementation.
 
 
 \subsubsection{View Matrix Selection 1.66}
@@ -408,7 +411,7 @@ Figure \ref{fig:viewmatrixindirection} shows an example, how this works. Instead
 
 Sometimes there are less visible portals than the maximum count. This can not be known before submitting the command buffer. The draw commands for elements with non existing portals are still recorded in the command buffer. This implementation uses a special value -1 in the \textit{index array} to indicate such a case. It is an invalid index. The value of the view matrix index is the same for every vertex shader invocation of a mesh, as it depends on a push constant value. When encountering and invalid index as view matrix index, the vertex shader sets \textit{gl\_Position} to a fixed position. Every vertex of each triangle of an object, will have the same position. This results in all triangles being degenerate and they are culled \cite{khronos:vulkan:spec1.1}.
 
-\begin{lstlisting}[caption={View Matrix Selection}, label=listing:stencilcalculation]
+\begin{lstlisting}[caption={View Matrix Selection}, label=listing:viewmatrixselection]
 // shader.vert
 #version 450
 
@@ -458,7 +461,7 @@ void main()
 
 \end{lstlisting}
 
-Listing \ref{listing:stencilcalculation} show the code of the vertex shader. Note that if the indices index is 0, it must be recursion 0. 0 can then be used as index for the camera matrices. This is convenient when filling the index buffer later.
+Listing \ref{listing:viewmatrixselection} shows the code of the vertex shader. Note that if the indices index is 0, it must be recursion 0. 0 can then be used as index for the camera matrices. This is convenient when filling the index buffer later.
 
 \subsubsection{Properties of the Index Array 1.33}
 \label{section:indexarrayproperties}
@@ -546,13 +549,79 @@ void main()
 
 \end{lstlisting}
 
-In each portals fragment shader the previous visible portal count is calculated (see section \ref{section:visibleportalcount}). It is then compared with the maximum visible portal count. If it the previous visible portal count is higher or equal to the maximum visible portal count the index array is not touched, by the shader.
+In each portals fragment shader the previous visible portal count is calculated. How this is done will be explained in the next section. It is then compared with the maximum visible portal count. If it the previous visible portal count is higher or equal to the maximum visible portal count the index array is not touched, by the shader.
 
 If the previous visible portal count is less then the index for writing is calculated using $L_nE_iC_k = LF_{n+1} + LDC_{n} * i + k$ (see section \ref{section:indexarrayproperties}). $LF_{n+1}$ is provided by via push constant and is the same for the whole recursion.  $LDC_{n}$ is also the maximum visible portal count, which was used for the previous check. It is provided via push constant and also stays the same for the whole recursion. $i$ is equal to the number of previous portal groups for that recursion. It is provided via push constant and is increments for after each portal group. $k$ is equal to the number of previous visible portals, that was just calculated.
 
 Now that the index for the element in the index array we want to write to has been calculated, the shader needs to write the right value to it. The portal that is currently drawn may be seen portal. Using the formula  $ nth child = current index * portalcount + 1 + n$ from section \ref{section:recursivecameramatrices} the view index can be calculated.  $currentindex$ was the index used in the vertexshader to access the right view matrix. The $portalcount$ is passed via push constants. $n$ is equal to the number of privious drawn portals in the portal group. It is also passed via push constants.
 
 Every fragment shader invocation will either write the same value or write nothing at all. If no value was written to an index array element, its value will be the invalid index value. For the last portal iteration a visible portal count of 0 is passed, as indicator. That way the portals don't write outside the array.
+
+\subsubsection{Visible Portal Number algorithm 1.25}
+\label{section:visibleportalcount}
+A portal is visible if at least one fragment of it was drawn. One commonly way of finding out if fragments were drawn are occlusion queries. Reading back the result of a occlusion to the \gls{cpu}, was deemed too slow. Although Vulkan also supports copying the result to a buffer by calling \textit{copyQueryPoolResults} on a command buffer, this is only possible outside of a renderpass. For this reason a different way of finding out, how many different portals are visible was derived.
+
+The algorithm uses an helper array with integer elements and each drawn \gls{portalset} exclusively owns a range within it. No other group may read from or write to that range. This range is called \textit{Helper Range} The first index of the range is called \textit{First Helper Index}. The size of the range is equal to the \gls{portalcount}. Each portal in a group has an element within range, where it has exclusive write access. It is called \textit{Current Helper Element}. The index to that element is called \textit{Current Helper Index}. Before starting to draw the each element of the helper array is set to 0.
+
+\begin{lstlisting}[caption={Calculate Previous Visible Portals}, label=listing:previousvisibleportals]
+// portal.frag
+#version 450
+#extension GL_ARB_shader_stencil_export : enable
+
+...
+layout(push_constant) uniform PushConstant {	
+
+int maxVisiblePortalCount;
+int portalIndex;
+...
+} pc;
+
+layout(set = 5, binding = 0) buffer PortalIndexHelper {
+int indices[];
+} pih;
+
+void main()
+{
+...
+int previousVisiblePortalCount = 0;
+int currentHelperIndex = pc.firstHelperIndex + pc.portalIndex;
+
+// stop at currentHelperIndex as we are not allowed to read it
+// and the following elements were not written yet
+for(int i = pc.firstHelperIndex; i < currentHelperIndex; ++i)
+{
+previousVisiblePortalCount += (pih.indices[i]) == 0 ? 0 : 1;
+}
+
+if(childNum < pc.maxVisiblePortalCount)
+{
+pih.indices[i] = previousVisiblePortalCount;
+...
+}
+...
+}
+\end{lstlisting}
+
+Listing \ref{listing:previousvisibleportals} illustrates the fragment shader algorithm. Each portal's fragment shader iterates from the \textit{First Helper Element} to the element before the \textit{Current Helper Element}. It increases a counter, each time the element is not zero.This count is equal to the number of previous visible portals and can be used for future calculations. Before drawing the next portal, a pipeline barrier is inserted, so that the writes of current portal's fragment shader are visible to the next portal's fragment shader.
+
+This algorithm makes use of the property that if the fragment shader is never invoked, it will never write a value to its \textit{Current Helper Element}. If multiple shader invocations write the same non-zero value to the \textit{Current Helper Element} there will be that value, no matter how many invokation have written to it.
+Thus if at least one fragment shader was invoke for the portal, there will be a non zero value at its position. As the element which is written to, is not read, the write does not influence the other shader invocations. The iteration does not need to continue after \textit{Current Helper Element}, as these values will not have been written yet and will always be 0.
+
+\textbf{ \huge TODO: Ask Advisor if multiple same value writes trigger undefined behaviour? }%TODO: check for data race
+
+The written value may can be any non-zero value, but writing the previous visible portal count allowed for easier debugging during the creation of the implementation.
+
+\subsubsection{Properties of the Helper array}
+The helper array and index array have a similar structure. For every element in the index array the \gls{portalset} is drawn. During the draw of one \gls{portalset} \gls{portalcount} elements in the index helper array are used. For the final last draw no indices need to be calculated, as nothing will be drawn after it. Thus the element count of the index helper array is equal to the element count of the index array, without its last level, times \gls{portalcount}.
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/helperarray.png}
+	\caption{Helper array as tree for 4-3-2 visible portals, with \gls{portalcount} of 2}
+	\label{fig:helperarray}
+\end{figure}
+
+Figure \ref{fig:helperarray} shows the helper array as tree, with a \gls{portalcount} of 2. It uses the same recursion count and visible portal count as the index array of figure \ref{fig:indexarray}. The top number in the bigger rectangle corresponds to the index helper tree for easier comparison. Notice that the first index of the actual elements in the bottom boxes is equal to are the top number times the \gls{portalcount}. This first index corresponds to the individual \textit{First Helper Indices}. The same formulas as described in section \ref{section:indexarrayproperties} can be used to calculate those indices. They first need to be divided by the \gls{portalcount}, then used in the formula and the result multiplied by \gls{portalcount}.
+
 
 \subsubsection{Calculating the Stencil Reference 1}
 Before drawing it is not known how which and how many portals are actually visible. The stencil value cannot be set dynamically when recording the command buffer. Instead the stencil reference is calculated in the shader and set via the Vulkan extension VK\_EXT\_shader\_stencil\_export. As this is an extension this feature is not supported on every \gls{gpu}.
@@ -627,28 +696,34 @@ The \textit{First Helper Index} is equal to the stencil reference/\textit{indice
 Changing the code to use instance drawing, resulted in a huge performance increase. Compared to the previous version, the code was 6 times fast on a particular configuration. Additionally, doing the manual stencil test, allows earlier fragment shader discards, reducing the amount of false visible portals. Furthermore, the stencil export extension is no longer required, so the application can run on more graphic cards. Finally, the texture used for the manual stencil test can be bigger than a real stencil buffer. This effectively removes a hard limit of the maximum visible portals count and recursion count. Those are now only limited by computation speed.
 
 
-\subsection{Portal Collision}
-On portal collision we apply the same operation on the camera, that would be applied to an object rendered through that portal.
-It is implemented by storing a matrix of cumulative portal teleport matrices.
-However, it is also possible to apply only a part of it for some interesting effects, but it will result in non seamless translation.
+\subsection{Portal Collision 0.75}
+One important aspect of portals is actually moving objects. Without further work, the portals on teleport the view. For this implementation teleporting was implemented only for the camera, as a proof of concept.
 
-\subsection{Collision Detection (??)}
-Raytrace with triangles (could be improved)
-KD trees
-Surface area heuristic
-
-\subsection{Player Rendering}
-When looking through a portal, players might see themselves. Care must be taken when rendering. Standing directly in fron of the portal and touching it slightly could make the player see their only model at their own location. (see valve talk \url{https://www.youtube.com/watch?v=riijspB9DIQ})
+\subsubsection{Collision Detection 0.25}
+The camera is imagined as an object without volume. Each time the camera is moved a ray cast is performed from the camera's old location to its new location. The ray intersection is first performed against the portals' \glspl{aabb}. For the test a the method described by \textcite{williams:2005:efficient} was used. If the test passes the ray is tested the portals mesh's triangles using the triangle intersection algorithm described by \textcite{moller:2005:fast}.
 
 
+The triangles and bounding box are store in the model space coordinates. This way only one triangle mesh and bounding boxed needs to be stored for portals using the same model. Before a the ray is tested against bounding box and triangles it needs to be transformed into model space. This is achieved by applying the portal's inverse model matrix to the ray.
 
-\subsection{Face Culling}
-Appying face culling only works if no portal changes the scale of an object. Otherwise the triangle order gets changed too and wrong side will be rendered.
+\subsubsection{Collision Response 0.25}
 
-\subsection{Level Editor}
-Ideally a custom level editor should be built, so the effect of the portals can be seen immediately. However, there was not enough time. After looking for various solution, using the unreal engine seemed best, as the author has some experience with it.
+After a collision the camera needs to be moved to the correct location. The process is the same as the one used to calculate the view point (see section \ref{section:recursivecameramatrices}). However, this matrix can not be directly applied, as the cameras position and rotation are not stored in matrix form.
+And additional matrix was added to the camera object, called \textit{additional transform}.
 
-The UE4 Level editor is very convenient and can be customized. The level is exported with a Editor Script. However, some care must be taken as UE4 has a different coordinate system. For Vectors Y and Z must be swapped. For Quaternions, y and z must be swapped and the imaginary part inverted, as we are changing handedness.
+Whenever the camera's position, rotation or camera matrix is needed, they are first modified by the \textit{additional transform}. \textit{Additional transform} is initially equal to the identity matrix. Whenever portal collision occurs, the portal's teleportation matrix is applied to the \textit{additional transform}.
+
+
+
+\subsection{Camera Object Rendering 0.2}
+When looking through a portal the camera should see itself. However, always rendering the camera results in seeing itself from inside. The implementation avoids this problem, by only conditionally drawing the camera mesh. In the first sub pass drawing the camera is skipped. It is only drawn for subsequent passes.
+
+
+\subsection{Level Editor 0.5}
+To build level some kind of level editor is needed. Imagining the level only in the mind and writing the objects transformation directly into a file, is very difficult and time consuming.
+
+Ideally a custom level editor should be built, so the effect of the portals can be seen immediately. However, there was not enough time and other parts of the implementation were prioritised. After looking for various solution, using the \gls{ue4} \cite{ue4} seemed best, as the author of this thesis has some experience with it.The \gls{ue4} Editor is very convenient to use and can be customized. Additionally, code can be executed within the editor, which can query level data.
+
+An additional object type was added to editor, which was used placing the portals in the level. A small script was written to export the levels. It queries for all objects and portals in the level and stores that information in an XML file using RapidXml \cite{rapidxml}. Additionally all meshes from objects in a level are exported as OBJ by the script. However, some care must be taken as UE4 has a different coordinate system. For Vectors Y and Z must be swapped. For Quaternions, y and z must be swapped and the imaginary part inverted, as the handedness was changed.
 
 
 \section{Analysis And Improvements 0/15}
@@ -718,7 +793,18 @@ Changing the scale of an objects would also work, but it is important, the the o
 
 Furthermore, more than just transform can be applied. Operations described in the section \ref{more than transforms} would also work.
 
+\subsection{Objects touching portals}
 
+ The camera object should be able to see itself
+
+
+When looking through a portal, players might see themselves. Care must be taken when rendering. Standing directly in fron of the portal and touching it slightly could make the player see their only model at their own location. (see valve talk \url{https://www.youtube.com/watch?v=riijspB9DIQ})
+\subsection{Part translation}
+
+
+On portal collision we apply the same operation on the camera, that would be applied to an object rendered through that portal.
+It is implemented by storing a matrix of cumulative portal teleport matrices.
+However, it is also possible to apply only a part of it for some interesting effects, but it will result in non seamless translation.
 
 \section{Further Work 0/5}
 \subsection{Transparent Objects}
