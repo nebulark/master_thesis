@@ -104,7 +104,7 @@ combined depth / stencil
 
 \subsubsection{Instanced Drawing}
 
-\section{Implementation 19.5/30}
+\section{Implementation 23.6/30}
 
 \subsection{Technologies / Libraries}
 SDL, glm, vulkan, rapid xml, c++, vulkan memory allocator
@@ -138,10 +138,10 @@ As the implementation of the prototype is expected to take quite a while, and mi
 
 
 
-\subsection{Objects}
+\subsection{Objects 0.15}
 Objects are entities which can be drawn to screen. Objects can share the same model. An objects position, rotation and scale is represented by its \gls{modelmatix}. The set of all objects is called the \gls{objectset}.
 
-\subsection{Transform}
+\subsection{Transform 0.33}
 A transform is the combination of position, scale and rotation. A transform can be added to another transform, which can changes its position, scale and rotation at once. Transforms can be subtracted from each other resulting in their difference in position, scale and rotation. Transforms are often expressed as matrices in this implementation. For Matrices Adding and subtracting transforms is expressed as multiplying a matrix with a matrix and multiplying a matrix with a matrix's inverse respectively.
 
 
@@ -149,7 +149,7 @@ A transform is an operation that moves, rotates and scales an object by some amo
 
 If object A has a transform, and object B has a transform, the transform that needs to be applied to object A to match objects B's transform is called relative transform.
 
-\subsection{Portals}
+\subsection{Portals 1.25}
 This implementation only uses transformative portals. Transformative portals act as wormholes, connecting two parts of the world. By travelling through a portal the an object is teleported to another portal. These two portals are connected and form a \gls{portalpair}. These connections are two-way, allowing back and forth teleportation. The individual portals of a \gls{portalpair} are called \glspl{endpoint}. Instead of referring to portals of a \gls{portalpair} as \enquote{the \gls{endpoint}} and \enquote{the other \gls{endpoint}}, they are sometimes called \enquote{\gls{endpoint} A} and \enquote{\gls{endpoint} B}.
 
 Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, but have different \glspl{modelmatix}. The set of all portals is called \gls{portalset}. The number of portals within the \gls{portalset} is called \gls{portalcount}. Each portal within the \gls{portalset} has an unique integer as \gls{portalid}. The range of \glspl{portalid} starts with 0 and ends with the \gls{portalcount} minus 1. \enquote{Portal N} referes to the portal which has a \gls{portalid} equal to N.
@@ -162,7 +162,7 @@ Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, b
 
 The connections of two parts of the world can be seen when looking at a portal. Figure \ref{fig:portal} shows the camera looking at endpoint A of a portal pair. It appears as if the dotted circle is in front of the camera. However, the actual circle is somewhere else. Instead of seeing endpoint A, the contents other part of the world is from portal camera's view point are seen.
 
-\subsubsection{Teleportation Matrix }
+\subsubsection{Teleportation Matrix 0.5}
 To teleport objects travelling through portals their position and rotation need to be changed. Initially this was done by adjusting the location and rotations the following way: First the vector from an \gls{endpoint}['s] location to the the object is calculated. Then that vector is rotated by the rotation difference between the two endpoints. Finally that vector gets added to the other endpoint location. This is new position of the object origin. To calculate the portal view camera rotation, the original camera's rotation is multiplied by the rotation difference between the two endpoints. 
 
 However the initial approach did only consider rotations and translations and was not really generic. A better way was devised using a \gls{teleportationmatrix}. When this matrix is applied to an object's \gls{modelmatix}, it is moved and rotated correctly. Additionally, the object is scaled by the difference in scale between the two end points. To transform an object first the \gls{endpoint} A's inverse \gls{modelmatix} is applied, after which \gls{endpoint} B's \gls{modelmatix} is applied. The \gls{teleportationmatrix} is just the product of those two matrices, so that operation can be performed in one step. \Gls{endpoint} B's teleportation matrix is the inverse of \gls{endpoint} A's \gls{teleportationmatrix}.
@@ -206,12 +206,12 @@ This implementation uses a perspective matrix with an infinite far clipping plan
 \subsection{Storing Mesh Data for Rendering}
 
 
-\subsection{Portal drawing}
+\subsection{Portal drawing 5.75}
 \label{section:portaldrawing}
 
 This section covers various techniques used for portal rendering. How those techniques are actually applied will be explained in section \ref{section:intialimplementation}
 
-\subsubsection{Recursions}
+\subsubsection{Recursions 0.33}
 When looking through a portal the other part of the world can be seen. In that other part there can be another portal in which yet another part of the world can be seen. This could continue indefinitely, but in this implementation there is a limit. This limit is called the \gls{recursioncount}. A recursion count of 0, means that no other worlds can be seen through portals. A recursion count of 1 allows looking through portals, but portals at the other part of the world can not be looked through.
 
 This implementation performs draws in multiple steps. Initially the initial world and the portals need to be drawn. This is referred as recursion 0. In within recursion 1 all the worlds for all visible portals from recursion 0 need to be drawn. Recursion 2 would draw the worlds for all portals drawn in recursion 1 and so forth. This continues until Recursion n, where n is equal to the \gls{recursioncount}.
@@ -246,7 +246,7 @@ Previous transformative portal implementations used depth first \cite{lowe:2005:
 
 
 
-\subsubsection{Generating Camera Matrices}
+\subsubsection{Generating Camera Matrices 0.75}
 As describe in section \ref{section:textursVsStencil} the scene needs to be rendered from the correct view point. This view point corresponds to the camera's view point teleported by the specific portal's \gls{teleportationmatrix}. As the camera moves the matrices must be calculated every frame.
 
 \begin{figure}[h]
@@ -392,7 +392,7 @@ Subsequent odd subpasses are similar to subpass 1, but all portals are drawn mul
 The \gls{objectset} and \gls{portalcount} are drawn for each possible combination of portals. The amount a draws for each of them is equal to the size of the camera matrices array.
 
 
-\subsection{Dynamic Portal Rendering 5.75}
+\subsection{Dynamic Portal Rendering 7.7}
 One downside of the initial portal rendering strategy was its hard limit of total portals in the scene. No matter visible or not the portal was drawn and used up values in the stencil buffer. For two recursions, only 15 or less portals were allowed to exits in the scene. For three recursion only 7 or less, for four recursions only 3 portals were possible. For this reason a new method was derived which is limited by the visible portal count instead of the total portal count. 
 
 When drawing a portal, it uses a stencil value depending on the number of visible portals drawn before it, instead of using a fixed value. However, this also means that the right camera index cannot be known before submitting.
@@ -557,7 +557,7 @@ Now that the index for the element in the index array we want to write to has be
 
 Every fragment shader invocation will either write the same value or write nothing at all. If no value was written to an index array element, its value will be the invalid index value. For the last portal iteration a visible portal count of 0 is passed, as indicator. That way the portals don't write outside the array.
 
-\subsubsection{Visible Portal Number algorithm 1.25}
+\subsubsection{Visible Portal Number algorithm 1.5}
 \label{section:visibleportalcount}
 A portal is visible if at least one fragment of it was drawn. One commonly way of finding out if fragments were drawn are occlusion queries. Reading back the result of a occlusion to the \gls{cpu}, was deemed too slow. Although Vulkan also supports copying the result to a buffer by calling \textit{copyQueryPoolResults} on a command buffer, this is only possible outside of a renderpass. For this reason a different way of finding out, how many different portals are visible was derived.
 
@@ -611,7 +611,7 @@ Thus if at least one fragment shader was invoke for the portal, there will be a 
 
 The written value may can be any non-zero value, but writing the previous visible portal count allowed for easier debugging during the creation of the implementation.
 
-\subsubsection{Properties of the Helper array}
+\subsubsection{Properties of the Helper array 0.7}
 The helper array and index array have a similar structure. For every element in the index array the \gls{portalset} is drawn. During the draw of one \gls{portalset} \gls{portalcount} elements in the index helper array are used. For the final last draw no indices need to be calculated, as nothing will be drawn after it. Thus the element count of the index helper array is equal to the element count of the index array, without its last level, times \gls{portalcount}.
 
 \begin{figure}[h]
@@ -623,7 +623,7 @@ The helper array and index array have a similar structure. For every element in 
 Figure \ref{fig:helperarray} shows the helper array as tree, with a \gls{portalcount} of 2. It uses the same recursion count and visible portal count as the index array of figure \ref{fig:indexarray}. The top number in the bigger rectangle corresponds to the index helper tree for easier comparison. Notice that the first index of the actual elements in the bottom boxes is equal to are the top number times the \gls{portalcount}. This first index corresponds to the individual \textit{First Helper Indices}. The same formulas as described in section \ref{section:indexarrayproperties} can be used to calculate those indices. They first need to be divided by the \gls{portalcount}, then used in the formula and the result multiplied by \gls{portalcount}.
 
 
-\subsubsection{Calculating the Stencil Reference 1}
+\subsubsection{Calculating the Stencil Reference 0.9}
 Before drawing it is not known how which and how many portals are actually visible. The stencil value cannot be set dynamically when recording the command buffer. Instead the stencil reference is calculated in the shader and set via the Vulkan extension VK\_EXT\_shader\_stencil\_export. As this is an extension this feature is not supported on every \gls{gpu}.
 
 \begin{lstlisting}[caption={Calculate Stencil Reference in Shader}, label=listing:stencilcalculation]
