@@ -104,13 +104,57 @@ combined depth / stencil
 
 \subsubsection{Instanced Drawing}
 
-\section{Implementation 23.6/30}
+\section{Implementation 24.6/30}
 
-\subsection{Technologies / Libraries}
-SDL, glm, vulkan, rapid xml, c++, vulkan memory allocator
+\subsection{Technologies, Tools and Libraries 2}
+This chapter discussed the various technologies, tools and libraries, which very used to create the implementation.
 
-\subsubsection{debugging}
-validation layers render doc
+\subsubsection{C++}
+To allow for more optimization as a systems language should be chosen. Additionally, the language should offer zero or low-cost abstractions, to improve development speed. Lastly the language should have a good ecosystem of libraries and good tooling. C++ seemed a good fit for and was chosen a implementation language. Rust \cite{rustlang} was almost chosen, with many advantages over C++ such as life time checking. However, Rust lacked mature libraries and tooling comparable to Microsoft's Visual Studio \cite{microsoft:visualstudio} for C++. For C++ the latest standard C++17 was chosen.
+
+\subsubsection{GSL}
+C++ is a powerful language, but allows for many mistakes. Although C++17 already has some types for safety and readability, but still lacks in some areas. This implementation includes Microsoft's \gls{gsl} \cite{microsoft:gsl} to cover most areas not covered by the standard library.
+
+
+\subsubsection{Vulkan as Graphic API}
+One important aspect of the prototpye was that it can run on as many plattforms as possible. %TODO: Should / Where Should it state the reason for supporting more plattforms
+For graphic \glspl{api} this restricts the set of options to OpenGL and Vulkan. Apple recently announced the end of its OpenGL support \cite{arstechnica:openGL}. Vulkan is not directly supported by Apple. However, it is possible to use still OpenGL and Vulkan on Apple products, using MoltenGL \cite{moltenGL} and MoltenVK \cite{moltenVK} respectively. Both \glspl{api} are safe to use for a foreseeable time.
+
+Vulkan is much more explicit and low level compared to OpenGL. This allows for more room to optimize. However, this also means that Vulkan is also more verbose and it takes longer to get started.
+
+OpenGL is a stateful \gls{api}. It has a global state which can be manipulated with function calls. Vulkan is stateless, all functions manipulate a given object. While it easier to get started with global state, it is more difficult to maintain the bigger the project gets.
+
+As the implementation of the prototype is expected to take quite a while, and might be further worked on after this thesis. With maintainability and optimization possibilities as important concern, Vulkan is more suitable for the project.
+
+%TODO: subjective why vulkan
+(Subjective Reason: Want to learn vulkan?)
+
+\subsubsection{Vulkan-Hpp}
+In additon to the Vulkan C-API, Khronos provides a header-only wrapper library called Vulkan-Hpp for C++. It adds features such as safety for enums and flags, RAII Types and STL container support. Even when mainly using Vulkan-Hpp, the the C-API can still be used when necessary. As there was not real downside, but many advantages, Vulkan-Hpp was used for the implementation.
+
+\subsubsection{Vulkan Memory Allocator}
+In Vulkan memory needs to be managed explicitly. For improved performance, memory should be allocated in chunks. Additionally, there are different kinds of memory, with different characteristics. Managing this requires a lot of additional code. To save time during the implementation \gls{amd}['s] the Vulkan Memory Allocator Library \cite{amd:vulkanmemoryallocator} was used.
+
+\subsubsection{Validation Layers}
+
+\subsubsection{Render Doc}
+
+\subsubsection{SDL}
+To create windows for displaying graphics it is necessary to communicate with the operating system. The increase development speed and allow for easier porting between operating System a library was used. The \gls{sdl} \cite{sdl} was chosen, as the author had familiarity with it.
+
+\subsubsection{GLM}
+For vector, matrix and other graphic related computations, the \gls{glm} library \cite{glm} was used. Additionally, the format of its data structures matches those specified by the graphics card. Vectors and Matrices can be directly sent to the \gls{gpu} without conversions.
+
+
+\subsubsection{Rapid XML}
+Instead of hardcoding the layout of a scene in code, files are used instead. This way levels can be switch or changed, without recompiling. A human readable format was chosen to save the levels, for easier debugging. The levels are stored as XML files and RapidXml \cite{rapidxml} was used as library parse them.
+
+\subsubsection{UE4 Level Editor 0.4}
+To build level some kind of level editor is needed. Imagining the level only in the mind and writing the objects transformation directly into a file, is very difficult and time consuming.
+
+Ideally a custom level editor should be built, so the effect of the portals can be seen immediately. However, there was not enough time and other parts of the implementation were prioritised. After looking for various solution, using the \gls{ue4} \cite{ue4} seemed best, as the author of this thesis has some experience with it.The \gls{ue4} Editor is very convenient to use and can be customized. Additionally, code can be executed within the editor, which can query level data.
+
+An additional object type was added to editor, which was used placing the portals in the level. A small script was written to export the levels. It queries for all objects and portals in the level and stores that information in an XML file using RapidXml \cite{rapidxml}. Additionally all meshes from objects in a level are exported as OBJ by the script. However, some care must be taken as UE4 has a different coordinate system. For Vectors Y and Z must be swapped. For Quaternions, y and z must be swapped and the imaginary part inverted, as the handedness was changed.
 
 
 \subsection{Software Raytracing 0.5}
@@ -124,17 +168,7 @@ There are still some improvement opportunities with multithreading, rendering to
 
 %TODO Include Measurements and PC Stats?
 
-\subsection{Why Vulkan 0.5}
-One important aspect of the prototpye was that it can run on as many plattforms as possible. %TODO: Should / Where Should it state the reason for supporting more plattforms
-For graphic \glspl{api} this restricts the set of options to OpenGL and Vulkan. Apple recently announced the end of its OpenGL support \cite{arstechnica:openGL}. Vulkan is not directly supported by Apple. However, it is possible to use still OpenGL and Vulkan on Apple products, using MoltenGL \cite{moltenGL} and MoltenVK \cite{moltenVK} respectively. Both \glspl{api} are safe to use for a foreseeable time.
 
-Vulkan is much more explicit and low level compared to OpenGL. This allows for more room to optimize. However, this also means that Vulkan is also more verbose and it takes longer to get started.
-
-OpenGL is a stateful \gls{api}. It has a global state which can be manipulated with function calls. Vulkan is stateless, all functions manipulate a given object. While it easier to get started with global state, it is more difficult to maintain the bigger the project gets.
-
-As the implementation of the prototype is expected to take quite a while, and might be further worked on after this thesis. With maintainability and optimization possibilities as important concern, Vulkan is more suitable for the project. 
-%TODO: subjective why vulkan
-(Subjective Reason: Want to learn vulkan?) 
 
 
 
@@ -163,6 +197,7 @@ Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, b
 The connections of two parts of the world can be seen when looking at a portal. Figure \ref{fig:portal} shows the camera looking at endpoint A of a portal pair. It appears as if the dotted circle is in front of the camera. However, the actual circle is somewhere else. Instead of seeing endpoint A, the contents other part of the world is from portal camera's view point are seen.
 
 \subsubsection{Teleportation Matrix 0.5}
+\label{section:teleportationmatrix}
 To teleport objects travelling through portals their position and rotation need to be changed. Initially this was done by adjusting the location and rotations the following way: First the vector from an \gls{endpoint}['s] location to the the object is calculated. Then that vector is rotated by the rotation difference between the two endpoints. Finally that vector gets added to the other endpoint location. This is new position of the object origin. To calculate the portal view camera rotation, the original camera's rotation is multiplied by the rotation difference between the two endpoints. 
 
 However the initial approach did only consider rotations and translations and was not really generic. A better way was devised using a \gls{teleportationmatrix}. When this matrix is applied to an object's \gls{modelmatix}, it is moved and rotated correctly. Additionally, the object is scaled by the difference in scale between the two end points. To transform an object first the \gls{endpoint} A's inverse \gls{modelmatix} is applied, after which \gls{endpoint} B's \gls{modelmatix} is applied. The \gls{teleportationmatrix} is just the product of those two matrices, so that operation can be performed in one step. \Gls{endpoint} B's teleportation matrix is the inverse of \gls{endpoint} A's \gls{teleportationmatrix}.
@@ -246,7 +281,8 @@ Previous transformative portal implementations used depth first \cite{lowe:2005:
 
 
 
-\subsubsection{Generating Camera Matrices 0.75}
+\subsubsection{Generating View Matrices 0.75}
+\label{section:generatingviewmatrices}
 As describe in section \ref{section:textursVsStencil} the scene needs to be rendered from the correct view point. This view point corresponds to the camera's view point teleported by the specific portal's \gls{teleportationmatrix}. As the camera moves the matrices must be calculated every frame.
 
 \begin{figure}[h]
@@ -399,6 +435,7 @@ When drawing a portal, it uses a stencil value depending on the number of visibl
 
 
 \subsubsection{View Matrix Selection 1.66}
+\label{section:viewmatrixselection}
 Except for subpass 0 and subpass 1, it is not known which camera index to access, as this depends on what portals were drawn previously. This problem is solved with an indirection.
 
 \begin{figure}[h]
@@ -612,6 +649,7 @@ Thus if at least one fragment shader was invoke for the portal, there will be a 
 The written value may can be any non-zero value, but writing the previous visible portal count allowed for easier debugging during the creation of the implementation.
 
 \subsubsection{Properties of the Helper array 0.7}
+\label{section:helperarrayproperties}
 The helper array and index array have a similar structure. For every element in the index array the \gls{portalset} is drawn. During the draw of one \gls{portalset} \gls{portalcount} elements in the index helper array are used. For the final last draw no indices need to be calculated, as nothing will be drawn after it. Thus the element count of the index helper array is equal to the element count of the index array, without its last level, times \gls{portalcount}.
 
 \begin{figure}[h]
@@ -661,6 +699,7 @@ void main()
 Listing \ref{listing:stencilcalculation} illustrates the calculation. The current stencil reference is passed via push constants. This is the same reference for the whole portal group. The fragement shader calculates the current visible portals and adds 1 to it, as using 0 as stencil reference would lead to ambiguities (see section \ref{section:stencilcomparemasks}). That stencil reference needs to be shifted by the amount of bits used by parent stencil reference and then ORed together. Shifting is done using unsigned types to avoid potential undefined behavior.
 
 \subsection{Dynamic Portal instance rendering 1.25}
+\label{section:dynamicportalinstancerendering}
 Dynamic Portal Rendering moved the limit from maximum portals in a scene to maximum visible portals, while also improving performance a bit. However, the performance was still pretty bad. Occluded portals or portals failing the stencil test still counted as beeing visible. This is due to the late stencil depth test, which was needed for the stencil export.
 
 Additionally, every object and portal is drawn many times for all the visible portals and recursion. Trying to take advantage of that fact was not trivial. Although, it is possible to draw multiple instances of an object, it is not possible to change the stencil reference between each draw. Using stencil export for scene objects, would have gotten rid of the early fragment test. The only other way was to drop the stencil test, and perform a manual stencil test, similar as already done with the near buffer. After trying out that manual test and seeing not much performance penalty, the author decided to work try out instanced rendering.
@@ -718,55 +757,71 @@ Whenever the camera's position, rotation or camera matrix is needed, they are fi
 When looking through a portal the camera should see itself. However, always rendering the camera results in seeing itself from inside. The implementation avoids this problem, by only conditionally drawing the camera mesh. In the first sub pass drawing the camera is skipped. It is only drawn for subsequent passes.
 
 
-\subsection{Level Editor 0.5}
-To build level some kind of level editor is needed. Imagining the level only in the mind and writing the objects transformation directly into a file, is very difficult and time consuming.
-
-Ideally a custom level editor should be built, so the effect of the portals can be seen immediately. However, there was not enough time and other parts of the implementation were prioritised. After looking for various solution, using the \gls{ue4} \cite{ue4} seemed best, as the author of this thesis has some experience with it.The \gls{ue4} Editor is very convenient to use and can be customized. Additionally, code can be executed within the editor, which can query level data.
-
-An additional object type was added to editor, which was used placing the portals in the level. A small script was written to export the levels. It queries for all objects and portals in the level and stores that information in an XML file using RapidXml \cite{rapidxml}. Additionally all meshes from objects in a level are exported as OBJ by the script. However, some care must be taken as UE4 has a different coordinate system. For Vectors Y and Z must be swapped. For Quaternions, y and z must be swapped and the imaginary part inverted, as the handedness was changed.
 
 
 \section{Analysis And Improvements 0/15}
 
-\subsection{Swap Near Buffer with far Buffer}
+\subsection{Swap Near Buffer with far Buffer 0.3}
+
+In section \ref{section:dynamicportalinstancerendering} a manual stencil buffer was introduced. This means the depthstencil attachment is now exclusively use for the far depth buffer. When rendering portals the depth values are written into the write near buffer as well as the far depth buffer for the depth test. After this the rendering of all \gls{portalset} the depth buffer's contents are no longer needed and must be cleared. The values in the far depth buffer and the write z buffer are nearly the same. The only difference is that the far depth buffer contains the depth values, from rendering the \gls{objectset}. However, for later sub passes there is no real difference, as the manual stencil test discards fragments that would read at locations, where not portal was drawn. This means that the far depth buffer can be used instead and no write near buffer is required. One less texture is needed.
 
 
-\subsection{Visible Portal count}
 
-in fragmentshader: counter, traverse array, increase for non zeros, ignore at index corresponding to the current portal
-write own number or 1 at the ignored location -> Multiple writes of same value should be save, accross "threads", when counting this is skipped so we have no reader at the moment
-Needs synchornisation so that value is visible for the next portal!
--> Pseudo occlusion query with immediate result.
--> very conservatic. Portals totaly occluded by later portals or discarded by stencil test still counts as "visible". We can't check for stencil failure, as we can't access the stencil buffer.
--> depth prepass could mitigate this
+\subsection{Visible Portal count 0.3}
+The manual stencil test introduced in section \ref{section:dynamicportalinstancerendering}, enabled testing portals early. Portals that fail the stencil test, no longer count as visible portals for the algorithm described in section \ref{section:visibleportalcount}. However, portals that would be occluded later, by other portals still count as visible. One way to prevent this is by running a depth pre pass for the portals. This pass renders all portals, but does nothing but to write stencil values. Thus the nearest depth values are known and only portals that are really visible qualify as visible for the visible portal count algorithm. However, as this needs an additional pass, it must be tested whether this depth pre pass actually improves performance.
 
-\subsection{GPU Raytracing}
+\subsection{Dynamic Visible Portals count 0.3}
+The visible portal count may not only be different for every recursion, it could even change during run time. The only change in the implementation would be to reserve enough space for the indices array and helper array, described in section \ref{section:indexarrayproperties} and \ref{section:helperarrayproperties} respectively. Everting else uses values that can change during run time.
 
-\subsection{Camera Matrix Improvement opportunities}
-Could be improved. The work to calculate the matrices scales super linear. $X^{N}$, where X is the portal count and N is the number of iterations.
-Instead of precomputing all combinations, it is probably better to calculate the matrices on demand in the fragment shader, as we have much more information there. This saves unnessary computes, removes an indirection and puts the work on the gput. Only downside is that the computation is executed multiple, once per shader fragment. Finally save on bandwith, as they don't need to be transfered!
+By adjusting the visible portal count dynamically, the bits in the (manual) stencil buffer can be used better. For example dynamically decreasing the visible portal count for recursion 0, while increasing it for recursion 1. This is useful for situations where only one portal is visible, because the camera is directly in front of it. More portals can be visible for recursion 1, while the amount of different stencil values used stays roughly the same.
 
 
-Dont actually need to be computed every frame, if additional matrix multiplications are ok.
-Multiplying only the inverse matrices! but from the other side!
+\subsection{Camera Matrix Improvement opportunities 1.5}
+The generation of the view matrices, described in section \ref{section:generatingviewmatrices} could be improved. Three areas were found, where the algorithm could be improved.
 
+\subsubsection{Using view matrices directly instead of camera matrices 0.5}
+Currently when calculating the view matrices, first all camera matrices are calculated, after which each of them is inverted to find the view matrices. $C_n$ is the nth camera matrix, $T_n$ is the nth teleport matrix and $V_n$ is the nth view matrix. $C_0$ is the initial camera matrix. This can be written as:
 
+$$C_n = T_{n} * C_{n-1}$$
+$$V_n = (C_{n})^{-1}$$
+
+The new approach would be calculating the view matrices directly and not using camera matrices.
+Combining the previous two equation yields:
+
+$$V_n = (T_n * C_n)^{-1} = C_n^{-1} * T_n^{-1}$$
+
+The inverse camera matrices can be substituted by their respective view matrices yielding.
+$$V_n = V_{n-1} * T_n^{-1}$$
+
+Results from previous calculation can be reused, the same way as previously. As the inverse of \gls{endpoint} A's teleportation matrix is equal to \gls{endpoint} B's teleportation matrix, no matrix but the initial camera matrix needs to be inverted. If time had permitted it, this optimization would definitely be included in the implementation.
+
+\subsubsection{Excluding the initial view matrix 0.4}
+Let $Vwv0_n$ be the view matrix for portal n, which misses the multiplication with the initial view matrix. Formally:
+
+$$V_n = V_0 * Vwv0_n$$
+
+$Vwv0_n$ can be defined recursively as:
+
+$$Vwv0_n = Vwv0_{n-1} * T_n^{-1}$$
+
+The advantage of leaving out $V_0$ from the multiplication is that, if all $T$ are constant all $VWV0$ will be constant as well. These matrices only need to be calculated once, instead of every frame. The final calculation to get the real view matrix can be done in the shader. This does not need to be a matrix matrix multiplication, as it the view matrix is used only once in the shader for calculation a vertex's position. The array of these matrices could reside in \gls{gpu} local memory, as they do not need to be changed. Even for levels with moving portals, this could be a useful optimization, as only the parts that depend on the moved portal need to be recalculated. However, if this really improves performance for a specific implementation needs to be tested.
+
+\subsubsection{Calculating on the GPU 0.4}
+Instead of calculating the view matrices on the \gls{cpu}, they could also be calculated on the \gls{gpu}.
+This saves the \gls{gpu} bandwidth, as only teleport matrices and the view need to be transferred, instead of an array of every possible combination of portals. Additionally, the indirection described in section \ref{section:viewmatrixselection} can be removed. After the previous visible portal calculation the view matrix can be calculated and written to the correct location. Lastly, access is faster as the matrices are in \gls{gpu} local memory.
+
+Potential downsides of this approach are, although only the needed matrices are calculated, the total count of matrix multiplications is likely higher, as it is calculated for every fragment. However, these are done in parallel so this might not as dramatic. Furthermore, the \gls{gpu} workload is increased, while reducing \gls{cpu} load. Depending on the current bottleneck, this can be an advantage or a downside. Just as the approach in the previous section, it is not clear whether this actually improves performance for a specific implementation.
 \subsection{Scaling measurement}
 
 \subsection{Watertight Portals}
 Objects behind watertight portals, will look as though that portal did not exist. Portals inside on endpoint of an watertight portals, will be visible when looking at the other endpoint, with the teleportation matrix applied. If watertight portals are static, they are essentially useless. The same scene could have been created without them.
 However if they change or are created during runtime they can have interesting effects. Such as Scaling objects, or swapping two areas.
 
-\subsection{Dynamic Portals Instance Rendering}
 
-\subsubsection{Opportunity: Dynamic Visible Portals count}
-If we can detect the initial pass only has few visible portals (e.g. via frustrum culling like techniques), we lower the amount for the initial rendering, and increase it for
-the subsequent pass.
 
-Handles case of directly standing in front of a portal!
-Have not implemented this
 
-\subsubsection{Opportunity: Draw Indirect}
+
+\subsection{Opportunity: Draw Indirect}
 Using draw Indirect allows us to only use one draw call per pass, instead of one per object!
 Additionally we can manipulate the draw indirect buffer, while calculating the portal id, so that the instance count matches the amount of actually drawn portals.
 This way instead of producing degenerate triangles, we don't even draw meshes.
@@ -774,7 +829,7 @@ However, could be problematic as we would need to set each value in the shader, 
 
 The conditional execution extension could be used (VK\_EXT\_conditional\_rendering) but only to disable drawing entirely, if no portal is rended -> probably not useful.
 
-\subsubsection{Skip instances}
+\subsection{Skip instances}
 One downside is, that draw instanced draws the object for each portal. However sometimes would could know, that the object is not visible from a specific Portal, e.g. via Potentially visible set tests, or knowing by other means that the portal will never draw that object (e.g. diffrent world layers).
 To combat this problem, we could decrease the draw instances count and provide iformation which portals should be skipped.
 
@@ -805,6 +860,8 @@ When looking through a portal, players might see themselves. Care must be taken 
 On portal collision we apply the same operation on the camera, that would be applied to an object rendered through that portal.
 It is implemented by storing a matrix of cumulative portal teleport matrices.
 However, it is also possible to apply only a part of it for some interesting effects, but it will result in non seamless translation.
+
+\subsection{GPU Raytracing}
 
 \section{Further Work 0/5}
 \subsection{Transparent Objects}
