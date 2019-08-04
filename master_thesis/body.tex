@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 18.85/69}
+\subsection*{Search Terms TOTAL PAGES 28.2/69}
 portal
 3D lense
 magic lense
@@ -759,7 +759,10 @@ When looking through a portal the camera should see itself. However, always rend
 
 
 
-\section{Analysis And Improvements 0/15}
+\section{Analysis And Improvements 3.6/15}
+
+\subsection{Demo Scene}
+
 
 \subsection{Swap Near Buffer with far Buffer 0.3}
 
@@ -813,27 +816,30 @@ This saves the \gls{gpu} bandwidth, as only teleport matrices and the view need 
 Potential downsides of this approach are, although only the needed matrices are calculated, the total count of matrix multiplications is likely higher, as it is calculated for every fragment. However, these are done in parallel so this might not as dramatic. Furthermore, the \gls{gpu} workload is increased, while reducing \gls{cpu} load. Depending on the current bottleneck, this can be an advantage or a downside. Just as the approach in the previous section, it is not clear whether this actually improves performance for a specific implementation.
 \subsection{Scaling measurement}
 
-\subsection{Watertight Portals}
-Objects behind watertight portals, will look as though that portal did not exist. Portals inside on endpoint of an watertight portals, will be visible when looking at the other endpoint, with the teleportation matrix applied. If watertight portals are static, they are essentially useless. The same scene could have been created without them.
-However if they change or are created during runtime they can have interesting effects. Such as Scaling objects, or swapping two areas.
+\subsection{Watertight Portals 1}
+Watertight portals are portals that use an watertight mesh. A watertight mesh, does not have any holes. When looking at a watertight portal, objects behind it will be visible a though it did not exist. Watertight portals, seem as though their did not exists. However, their contents are swapped.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/watertight.png}
+	\caption{A Watertight Portal Pair}
+	\label{fig:watertightportals}
+\end{figure}
+
+Figure \ref{fig:watertightportals} show an example of a watertight portal pair. The two big speres are the two endpoints of a watertight portal pair. There are two viewpoints A and B.
+There are two approaches to interpret the figure, which both are valid.
+The first is that A's view is indicated by full stroked arrows, while B's view is indicated by doted arrows.  Only objects with full strokes can be seen. This is how viewing behaves. The view teleports when passing through the portal, and teleports back when passing it again.
+The other is that A and B's view is a straight line. When the view is fully stroked only fully stroked objects are scene and when dotted only dotted objects are seen. This is how it actually looks for A and B.
+In this example A can only see the pentagon and the square, while B can only see the star. Only the fully stroked objects are the actual placements of the object. Notice that it looks, as if the are inside both places is swapped.
+
+Static watertight portals, do not really have a purpose. They can't be detected and only the contents are swapped. They might as well not exists and the level could be built accordingly for the same effect.
+
+When using Watertight portals, they need to be created or transformed during runtime, otherwise they just cost performance without any gain. After discovering this fact, the watertight portals were removed from the implementation's levels.
 
 
+\subsection{Draw Indirect 0.25}
+Instead of using \textit{drawIndexed} an implementation could use \textit{drawIndexedIndirect}. This allows only only using a single draw call to render the \gls{objectset} multiple times. Additionally, portal fragment shaders could manipulate the values in the draw indirect buffer. If less portals than the maximum visible \gls{portalcount} is visible, there can be fewer instances. The downside is that \textit{gl\_InstanceIndex} cannot be used directly anymore in the shaders, and the real value must be optained via buffer writes and reads. But when implemented correctly this could reduce the drawn instance count by a lot. The current Implementation produces degenerate triangle instead of skipping the whole instance. It needs to be measured if this approach actually improves performance enough compared to the current implementation, to be worth the extra work.
 
-
-
-\subsection{Opportunity: Draw Indirect}
-Using draw Indirect allows us to only use one draw call per pass, instead of one per object!
-Additionally we can manipulate the draw indirect buffer, while calculating the portal id, so that the instance count matches the amount of actually drawn portals.
-This way instead of producing degenerate triangles, we don't even draw meshes.
-However, could be problematic as we would need to set each value in the shader, having a loop for each scene element, and many writes.
-
-The conditional execution extension could be used (VK\_EXT\_conditional\_rendering) but only to disable drawing entirely, if no portal is rended -> probably not useful.
-
-\subsection{Skip instances}
-One downside is, that draw instanced draws the object for each portal. However sometimes would could know, that the object is not visible from a specific Portal, e.g. via Potentially visible set tests, or knowing by other means that the portal will never draw that object (e.g. diffrent world layers).
-To combat this problem, we could decrease the draw instances count and provide iformation which portals should be skipped.
-
-Instead of using instanceId directly, this skip information will be used to calculate the real id. The rest would behave the same, just using this genreated id instead of instanceId directly.
 
 
 
@@ -848,12 +854,7 @@ Changing the scale of an objects would also work, but it is important, the the o
 
 Furthermore, more than just transform can be applied. Operations described in the section \ref{more than transforms} would also work.
 
-\subsection{Objects touching portals}
 
- The camera object should be able to see itself
-
-
-When looking through a portal, players might see themselves. Care must be taken when rendering. Standing directly in fron of the portal and touching it slightly could make the player see their only model at their own location. (see valve talk \url{https://www.youtube.com/watch?v=riijspB9DIQ})
 \subsection{Part translation}
 
 
@@ -875,6 +876,12 @@ Without correct lighting seams would be visible. Proabably very difficult for sp
 \label{more than transforms}
 The current approach uses camera indices, to decide which camera matrix gets applied. However, this approach is not limited to only changing matrices. Inspired by \cite{borst:2009:real} indices could be used to change other paramteres. We could add objects that only render if specific parameters are set, mark pixels for a later post process. Or take as specific branch in any shader.
 
+\subsection{Objects intersecting portals}
+The current implementation does not handle objects that intersect portals. They just move through the portal, without teleporting. Objects that are intersecting a portal exits at two different places. They
+The camera object should be able to see itself
+
+
+When looking through a portal, players might see themselves. Care must be taken when rendering. Standing directly in fron of the portal and touching it slightly could make the player see their only model at their own location. (see valve talk \url{https://www.youtube.com/watch?v=riijspB9DIQ})
 
 \subsection{Use the Instant Occlusion query in occlusion culling}
 we can set conditional rendering paramters during this occlusion culling.
@@ -884,6 +891,7 @@ Needs some  recursive portal passes and then one big scene pass, which makes use
 
 summary
 instant pseudo query and other important topics
+breadth first portal rendering
 economic effekt
 
 \section*{stuff}
