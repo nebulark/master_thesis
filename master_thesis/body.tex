@@ -773,7 +773,9 @@ For testing the implementation a demo scene was build. It contains 6 portal pair
 \end{figure}
 
 
-Figure \ref{fig:demodisabled} shows two snapshots of the scene. The recursion count was set to 0,  so the portal positions can be seen better. When the max portal count is reached portals displayed with a grey color. Setting the \gls{recursioncount} to 0, essentially disabled the portals. Note that portals' transform and shape can be completely arbitrary.
+Figure \ref{fig:demodisabled} shows two snapshots of the scene. The recursion count was set to 0,  so the portal positions can be seen better. When the max portal count is reached portals are displayed with a grey color. Setting the \gls{recursioncount} to 0, essentially disabled the portals. Note that portals' transform and shape can be completely arbitrary.
+
+\subsubsection{Recursions}
 
 \begin{figure}[H]
 	\centering
@@ -794,6 +796,28 @@ Figure \ref{fig:roomlayout} shows a room within the scene from the top with disa
 
 Figure \ref{fig:room} shows the same room from figure \ref{fig:roomlayout}, but from a different view point. The top image has a \gls{recursioncount} of 0, while the bottom has a \gls{recursioncount} of 4. Note that the orange and light blue colored walls cannot be seen without the portals. On the right side multiple recursion can be seen. The green and orange wall are alternating. This indicates that more than one portal pair is involved in the recursion.
 
+\subsubsection{Non Planar Portals}
+
+This sections show cases portals, that are defined by half sphere. It shows the the implemenation works with non planar portals.
+
+\begin{figure}[H]
+	\includegraphics[width=\linewidth]{images/nonplanarlayout.png}
+	\caption{The two half sphere portals and their surroundings}
+	\label{fig:nonplanarlayout}
+\end{figure}
+
+Figure \ref{fig:nonplanarlayout} shows the the two half sphere portals and their surroundings. The half spheres front face are in light grey, while their back faces are in dark grey. Notice that the blue rock on the right side, is inside the half sphere and can be seen through its opening.
+
+\begin{figure}[H]
+	\includegraphics[width=\linewidth]{images/NonPlanarR0.png}
+	\includegraphics[width=\linewidth]{images/nonplanar.png}
+	\caption{The two half sphere portals. The top picture is with recursion count of 0, the bottom with a recursion count of 4}
+	\label{fig:nonplanar}
+\end{figure}
+
+Figure \ref{fig:nonplanar} shows the same two half sphere portals from another viewpoint. The top picture is with recursion count of 0, the bottom with a recursion count of 4. In this picture the light grey color not only indicates the portals front face. Additionally, for this case the light grey color indicates at which pixels two recursions take place. At the dark grey pixels there is only one recursion. The front half sphere portal will be referred as \gls{endpoint} A and the back half sphere portals as \gls{endpoint} B.
+
+Notice that in the bottom picture more parts of pink bank behind the \gls{endpoint} A are visible. The two recursions cancelled each other out, similar to what is described in section \ref{section:watertight}. Additionally the blue rock, which is inside \gls{endpoint} B can be seen. The contents of \gls{endpoint} A and B appear swapped. When looking through the hole in \gls{endpoint} A, the orange table next to \gls{endpoint} B can be seen. Inside \gls{endpoint} B a green color can be seen, which is the same color as the one from the wall next to \gls{endpoint} A
 
 
 
@@ -869,6 +893,7 @@ Combine with portals. Instanced instance drawing. Calculate the two ids from ver
 \subsection{Scaling measurement}
 
 \subsection{Watertight Portals 1}
+\label{section:watertight}
 Watertight portals are portals that use an watertight mesh. A watertight mesh, does not have any holes. When looking at a watertight portal, objects behind it will be visible a though it did not exist. Watertight portals, seem as though their did not exists. However, their contents are swapped.
 
 \begin{figure}[h]
