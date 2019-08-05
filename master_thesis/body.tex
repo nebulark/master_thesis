@@ -702,7 +702,7 @@ Listing \ref{listing:stencilcalculation} illustrates the calculation. The curren
 \label{section:dynamicportalinstancerendering}
 Dynamic Portal Rendering moved the limit from maximum portals in a scene to maximum visible portals, while also improving performance a bit. However, the performance was still pretty bad. Occluded portals or portals failing the stencil test still counted as beeing visible. This is due to the late stencil depth test, which was needed for the stencil export.
 
-Additionally, every object and portal is drawn many times for all the visible portals and recursion. Trying to take advantage of that fact was not trivial. Although, it is possible to draw multiple instances of an object, it is not possible to change the stencil reference between each draw. Using stencil export for scene objects, would have gotten rid of the early fragment test. The only other way was to drop the stencil test, and perform a manual stencil test, similar as already done with the near buffer. After trying out that manual test and seeing not much performance penalty, the author decided to work try out instanced rendering.
+Additionally, every object and portal is drawn many times for all the visible portals and recursion. Trying to take advantage of that fact was not trivial. Although, it is possible to draw multiple instances of an object, it is not possible to change the stencil reference between each draw. Using stencil export for scene objects, would have gotten rid of the early fragment test, for recursion 0. Other recursions still need to use the late test, as those discards fragments in the shader. The only other way was to drop the stencil test, and perform a manual stencil test, similar as already done with the near buffer. After trying out that manual test and seeing not much performance penalty, the author decided to work try out instanced rendering.
 
 Most changes to the code were transforming transforming the loops. Listing \ref{listing:looptransform} shows the difference in pseudo code.
 
@@ -759,9 +759,42 @@ When looking through a portal the camera should see itself. However, always rend
 
 
 
-\section{Analysis And Improvements 3.6/15}
+\section{Analysis And Improvements /15}
 
 \subsection{Demo Scene}
+
+For testing the implementation a demo scene was build. It contains 6 portal pairs, so 12 portals in total.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\linewidth]{images/portals.png}
+	\caption{Demo scene with zero recursion}
+	\label{fig:demodisabled}
+\end{figure}
+
+
+Figure \ref{fig:demodisabled} shows two snapshots of the scene. The recursion count was set to 0,  so the portal positions can be seen better. When the max portal count is reached portals displayed with a grey color. Setting the \gls{recursioncount} to 0, essentially disabled the portals. Note that portals' transform and shape can be completely arbitrary.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\linewidth]{images/room.png}
+	\caption{A room seen from the top, with recursion count 0}
+	\label{fig:roomlayout}
+\end{figure}
+
+Figure \ref{fig:roomlayout} shows a room within the scene from the top with disabled portals. The top and the left portals form one portal pair, while the bottom an the right portal form another portal pair.
+
+\begin{figure}[H]
+	\includegraphics[width=\linewidth]{images/roomportalsr0.png}
+	\includegraphics[width=\linewidth]{images/roomportals.png}
+	\caption{Another viewpoint of the room.  The top picture is with recursion count of 0, the bottom with a recursion count of 4}
+	\label{fig:room}
+\end{figure}
+
+
+Figure \ref{fig:room} shows the same room from figure \ref{fig:roomlayout}, but from a different view point. The top image has a \gls{recursioncount} of 0, while the bottom has a \gls{recursioncount} of 4. Note that the orange and light blue colored walls cannot be seen without the portals. On the right side multiple recursion can be seen. The green and orange wall are alternating. This indicates that more than one portal pair is involved in the recursion.
+
+
 
 
 \subsection{Swap Near Buffer with far Buffer 0.3}
@@ -770,8 +803,12 @@ In section \ref{section:dynamicportalinstancerendering} a manual stencil buffer 
 
 
 
-\subsection{Visible Portal count 0.3}
-The manual stencil test introduced in section \ref{section:dynamicportalinstancerendering}, enabled testing portals early. Portals that fail the stencil test, no longer count as visible portals for the algorithm described in section \ref{section:visibleportalcount}. However, portals that would be occluded later, by other portals still count as visible. One way to prevent this is by running a depth pre pass for the portals. This pass renders all portals, but does nothing but to write stencil values. Thus the nearest depth values are known and only portals that are really visible qualify as visible for the visible portal count algorithm. However, as this needs an additional pass, it must be tested whether this depth pre pass actually improves performance.
+\subsection{Visible Portal count}
+The manual stencil test introduced in section \ref{section:dynamicportalinstancerendering}, enabled testing portals early, for recursion 0. Portals that fail the stencil test, no longer count as visible portals for the algorithm described in section \ref{section:visibleportalcount}.
+However, subsequent recursion cannot use early tests, due to the manual stencil and near depth test, which discards fragments. Portals that are occluded by objects still count as visible. Additionally, even with an early test, portals that would be occluded later by other portals still count as visible. One way to prevent this is by running a depth pre pass for the portals. This pass renders all portals, but does nothing but to write stencil values. It still performs manual test, for stencil and near buffer. Thus the nearest depth values are known and only portals that are really visible qualify as visible for the visible portal count algorithm.
+
+There is also another possibility, which only needs an additional depth texture, but no pre pass. During the rendering of all \gls{objectset} a far depth buffer is use, just as always. However, during the portal rendering, this depth buffer is given as input for the portal shaders. They perform an additional manual test for the far depth. Portals still use a regular depth buffer also, so that portals occlude each other correctly. Although portals occluded by other portals still count as visible, portals occluded by objects do not. As the later case is far more likely, this could cut down the amount of false visible portals drastically.
+
 
 \subsection{Dynamic Visible Portals count 0.3}
 The visible portal count may not only be different for every recursion, it could even change during run time. The only change in the implementation would be to reserve enough space for the indices array and helper array, described in section \ref{section:indexarrayproperties} and \ref{section:helperarrayproperties} respectively. Everting else uses values that can change during run time.
@@ -814,6 +851,21 @@ Instead of calculating the view matrices on the \gls{cpu}, they could also be ca
 This saves the \gls{gpu} bandwidth, as only teleport matrices and the view need to be transferred, instead of an array of every possible combination of portals. Additionally, the indirection described in section \ref{section:viewmatrixselection} can be removed. After the previous visible portal calculation the view matrix can be calculated and written to the correct location. Lastly, access is faster as the matrices are in \gls{gpu} local memory.
 
 Potential downsides of this approach are, although only the needed matrices are calculated, the total count of matrix multiplications is likely higher, as it is calculated for every fragment. However, these are done in parallel so this might not as dramatic. Furthermore, the \gls{gpu} workload is increased, while reducing \gls{cpu} load. Depending on the current bottleneck, this can be an advantage or a downside. Just as the approach in the previous section, it is not clear whether this actually improves performance for a specific implementation.
+
+\subsection{Worthy Section? World Wrapping}
+
+World wrapping enables infinite world, by repeating itself. When something steps on one edge of a wrapped world it is teleported to the opposite edge. World wrapping can be seen as very specific portal that is defined as an pairs infinite plane. The World exists only inside those planes. No object is outside the subspace defined by the plane pairs. This property allows skipping a lot of tasks otherwise needed for drawing portals.
+
+The stencil test is not needed, as the only the repeated scene will be drawn at that location. The near buffer is also not needed, as the multiple scenes can not overlap each other. This means drawing the actual portals is not necessary. All world instance can be drawn at once, using instanced drawing, with each world instance using the corresponding view matrix.
+
+If portals are already present its probably be better to just define big portal planes. Otherwise, each of those multiple worlds needs to be drawn in each portal, so wrapped worlds can also be seen through portals. Or just do the heavy part just for one world, save the portals contents to texture and apply them a the instanced worlds? Are portals in instanced worlds even big enough to be really visible. Can get away with less exact portals?
+
+Going down the tree render only one world first. Then going down by drawing other instances, and reuse portal contents for the instances.
+
+Combine with portals. Instanced instance drawing. Calculate the two ids from vertexId, by taking modulo, qutotient of vertexId with wrapped world count. Use those to access right matrices
+
+	
+
 \subsection{Scaling measurement}
 
 \subsection{Watertight Portals 1}
@@ -836,6 +888,7 @@ Static watertight portals, do not really have a purpose. They can't be detected 
 
 When using Watertight portals, they need to be created or transformed during runtime, otherwise they just cost performance without any gain. After discovering this fact, the watertight portals were removed from the implementation's levels.
 
+\subsubsection{Holes}
 
 \subsection{Draw Indirect 0.25}
 Instead of using \textit{drawIndexed} an implementation could use \textit{drawIndexedIndirect}. This allows only only using a single draw call to render the \gls{objectset} multiple times. Additionally, portal fragment shaders could manipulate the values in the draw indirect buffer. If less portals than the maximum visible \gls{portalcount} is visible, there can be fewer instances. The downside is that \textit{gl\_InstanceIndex} cannot be used directly anymore in the shaders, and the real value must be optained via buffer writes and reads. But when implemented correctly this could reduce the drawn instance count by a lot. The current Implementation produces degenerate triangle instead of skipping the whole instance. It needs to be measured if this approach actually improves performance enough compared to the current implementation, to be worth the extra work.
@@ -868,8 +921,14 @@ However, it is also possible to apply only a part of it for some interesting eff
 \subsection{Transparent Objects}
 \subsection{Shadows}
 Without currect handling, we can see portal locations, as shadows would be cut of.
+
+Dynamic shadows? 
+
+Shadow mapping difficult. Fragment Wordpos to lightpos cannot be calculated, as it would need to take portals into account!
+However the light could store in the shadow map the stencil value used to write that pixel. With that value the transformation matrix can be found to transform the light pos, so that calculating the distance actually works.
+
 \subsection{lighting}
-Without correct lighting seams would be visible. Proabably very difficult for spot/pointlights. Directional light already works.
+Without correct lighting seams would be visible. Proabably very difficult for spot/pointlights. Directional light already works. Use shadownmap to store light normals?
 \subsection{Collision Detection}
 
 \subsection{More than just transforms}
@@ -885,7 +944,7 @@ When looking through a portal, players might see themselves. Care must be taken 
 
 \subsection{Use the Instant Occlusion query in occlusion culling}
 we can set conditional rendering paramters during this occlusion culling.
-Needs some  recursive portal passes and then one big scene pass, which makes use of conditional rendering, eitehr with the extension or draw indirect and instance counts. Inspired by \cite{yang:2014:walkthrough}
+Needs some  recursive portal passes and then one big scene pass, which makes use of conditional rendering, eithr with the extension or draw indirect and instance counts. Inspired by \cite{yang:2014:walkthrough}
 
 \section{Conclusion 0/3}
 
