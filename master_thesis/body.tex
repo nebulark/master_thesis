@@ -761,9 +761,9 @@ When looking through a portal the camera should see itself. However, always rend
 
 \section{Analysis And Improvements /15}
 
-\subsection{Demo Scene}
+\subsection{Implementation Showcase}
 
-For testing the implementation a demo scene was build. It contains 6 portal pairs, so 12 portals in total.
+For testing the implementation a demo scene was build. This section demostrate working multiple recursion, as well as using arbitrary portals.
 
 \begin{figure}[H]
 	\centering
@@ -773,7 +773,7 @@ For testing the implementation a demo scene was build. It contains 6 portal pair
 \end{figure}
 
 
-Figure \ref{fig:demodisabled} shows two snapshots of the scene. The recursion count was set to 0,  so the portal positions can be seen better. When the max portal count is reached portals are displayed with a grey color. Setting the \gls{recursioncount} to 0, essentially disabled the portals. Note that portals' transform and shape can be completely arbitrary.
+Figure \ref{fig:demodisabled} shows a snapshots of the scene. The recursion count was set to 0,  so the portal positions can be seen better. When the max portal count is reached portals are displayed with a grey color. Setting the \gls{recursioncount} to 0, essentially disabled the portals. Note that portals' transform and shape can be completely arbitrary.
 
 \subsubsection{Recursions}
 
@@ -818,6 +818,163 @@ Figure \ref{fig:nonplanarlayout} shows the the two half sphere portals and their
 Figure \ref{fig:nonplanar} shows the same two half sphere portals from another viewpoint. The top picture is with recursion count of 0, the bottom with a recursion count of 4. In this picture the light grey color not only indicates the portals front face. Additionally, for this case the light grey color indicates at which pixels two recursions take place. At the dark grey pixels there is only one recursion. The front half sphere portal will be referred as \gls{endpoint} A and the back half sphere portals as \gls{endpoint} B.
 
 Notice that in the bottom picture more parts of pink bank behind the \gls{endpoint} A are visible. The two recursions cancelled each other out, similar to what is described in section \ref{section:watertight}. Additionally the blue rock, which is inside \gls{endpoint} B can be seen. The contents of \gls{endpoint} A and B appear swapped. When looking through the hole in \gls{endpoint} A, the orange table next to \gls{endpoint} B can be seen. Inside \gls{endpoint} B a green color can be seen, which is the same color as the one from the wall next to \gls{endpoint} A
+
+\subsection{Implementation Performance}
+
+\subsubsection{Measuring method}
+All tests are run on the same machine. It runs on Microsoft Windows 10 Education (10.0.18362). It uses \gls{gpu} is AMD Ryzen 7 1700 as \gls{gpu} and the Radeon RX 570.
+
+In this test measures the time taken to render the seen. This includes the time the \gls{cpu} needs to prepare the data for the \gls{gpu} (e.g. calculating camera matrices) as well as recording the command buffer. The time is measure in milliseconds using C++ chrono .h. The time is measured for 128 consecutive frames. The avarage, median, min and max time of the measured times are printed to the console.
+
+
+The measured milliseconds differ depending on the current view point and looking direction. Multiple viewpoints were measured. Multiple recursion counts and maximum visible portals are measured. The recursion are notes as X-Y-Z, where X corresponds to the maximum visible portals in recursion 0, Y to maximum visible portals of recursion 1 and so forth. For example 8-6-4 means a Recursion count of 3, using 8 maximum visible portals for recursion 0, 6 for recursion 1, and 4 for recursion 2. The last recursion always has a count of 0, as nothing will be drawn inside the portals. The following configurations were tested. 
+
+\iffalse
+\begin{itemize}
+	\item No Recursions
+	\item 8-6-4-2
+	\item 8-6-4
+	\item 8-6
+	\item 8
+	\item 12-12-12-12
+	\item 12-12-12
+	\item 12-12
+	\item 4
+	\item 4-4-4-4
+	\item 4-4-4
+	\item 4-4
+	\item 4
+	
+\end{itemize}
+\fi
+
+\subsubsection{Demo Scene Total Performance Baseline}
+The tests of this section all use the same level. It contains 6 portal pairs, so 12 portals in total. This number is important, as it dictates how many view matrices need to be calculated.
+
+The first test renders the level from a viewpoint, were no geometry or portal is visible. The image will correspond to the clear color used. It forms a baseline of minimal work done.
+
+\begin{table}[H]
+	\label{tab:baseline}
+	\begin{tabular}{|l|l|l|l|l|l|l|}
+		\hline
+		Test Case    & Average & Median & min   & max   & Additional Median Time \\ \hline
+		No Recursion & 1.03    & 0.99   & 0.98  & 1.37  & 0.99                   \\ \hline
+		0            & 1.57    & 1.56   & 1.55  & 1.70  & 0.57                   \\ \hline
+		0-0          & 2.14    & 2.14   & 2.12  & 2.19  & 0.58                   \\ \hline
+		0-0-0        & 2.91    & 2.91   & 2.79  & 3.00  & 0.77                   \\ \hline
+		0-0-0-0      & 6.51    & 6.56   & 6.01  & 6.95  & 3.65                   \\ \hline
+		0-0-0-0-0    & 41.75   & 41.86  & 40.75 & 44.66 & 35.30                  \\ \hline        
+	\end{tabular}
+	\caption{Time to render a frame in milliseconds, without an object on screen and max visible portal count set to 0}
+\end{table}
+
+Table \ref{tab:baseline} shows the time to render in milliseconds, for different recursion counts with max visible portals always set to zero. This represents the time that is needed to calculate the view matrices and submitting the render commands. The number of render commands scales linearly with recursion count, while the number of camera matrices to generate scales exponentially. The time to render for 4 and 5 recursion is significantly higher than for the previous recursion. This probably indicates that the render time for these cases is dominated by the time to calculate the camera matrices and sending them to the \gls{gpu}.
+
+\subsubsection{Demo Scene View Matrix Calculation}
+
+\begin{table}[H]
+	\label{tab:cameramatricecalc}
+	\begin{tabular}{|l|l|l|l|l|}
+		\hline
+		Recursions & Average & Median  & Min     & Max     \\ \hline
+		1          & 0.36    & 0.36    & 0.34    & 0.37    \\ \hline
+		2          & 4.70    & 4.75    & 4.48    & 4.76    \\ \hline
+		3          & 56.47   & 56.72   & 55.00   & 57.13   \\ \hline
+		4          & 678.44  & 670.10  & 649.83  & 691.08  \\ \hline
+		5          & 8,204.14 & 8,209.05 & 7,997.10 & 8305.70\\ \hline
+	\end{tabular}
+	\caption{Time in micro seconds to calculate the camera matrices for 12 portals}
+\end{table}
+
+\begin{table}[H]
+	\label{tab:cameramatricecalcinverse}
+	\begin{tabular}{|l|l|l|l|l|}
+		\hline
+		Recursions & average   & median  	& min     	& max        \\ \hline
+		1          & 0.91      & 0.92		& 0.87    	& 0.93       \\ \hline
+		2          & 11.28     & 11.34		& 11.00    	& 11.40      \\ \hline
+		3          & 133.46    & 134.65		& 126.88   	& 136.69     \\ \hline
+		4          & 1,565.47  & 1,568.29	& 1,510.01  & 1,642.43   \\ \hline
+		5          & 18,752.38 & 18,717.63	& 1,8313.85 & 19,266.95 \\ \hline
+	\end{tabular}
+	\caption{Time in micro seconds to calculate the view matrices for 12 portals}
+\end{table}
+
+Table \ref{tab:cameramatricecalc} shows the time needed to calculate only the camera matrices. Note that microseconds was chosen as the unit. Table \ref{tab:cameramatricecalcinverse} shows calculates the total view matrix calculation, which is first calculating the camera matrices and then inverting them. It takes roughly 3 times longer for the full calculation, compared to the camera matrices alone. Inverting makes up for approximately two thirds of the total calculation time.
+
+However both tables show that calculating the view matrices takes a significant portion of the base rendertime. With 4 recursions it is approximately 23\% of the total time, for 5 recursions approximately 44\%.
+
+\subsubsection{Demo Scene Performance}
+
+
+\begin{table}[]
+	\label{tab:rendernothing}
+	\begin{tabular}{|l|l|l|l|l|l|}
+		\hline
+		TestCase    & Average & Median & Min    & Max    & Relative Median \\ \hline
+		8           & 1.56    & 1.53   & 1.51   & 1.95   & -0.03           \\ \hline
+		8-6         & 2.09    & 2.09   & 1.99   & 2.20   & -0.05           \\ \hline
+		8-6-4       & 6.80    & 6.81   & 5.90   & 7.65   & 3.9             \\ \hline
+		8-6-4-2     & 16.51   & 16.48  & 14.67  & 17.79  & 9.92            \\ \hline
+		12          & 1.62    & 1.59   & 1.50   & 2.14   & 0.03            \\ \hline
+		12-12       & 4.47    & 4.45   & 3.64   & 5.29   & 2.31            \\ \hline
+		12-12-12    & 47.63   & 47.58  & 46.35  & 49.11  & 44.67           \\ \hline
+		12-12-12-12 & 559.65  & 559.57 & 557.29 & 561.59 & 553.01          \\ \hline
+		4           & 1.57    & 1.53   & 1.50   & 2.23   & -0.03           \\ \hline
+		4-4         & 2.15    & 2.09   & 2.05   & 2.90   & -0.05           \\ \hline
+		4-4-4       & 2.76    & 2.76   & 2.59   & 2.92   & -0.15           \\ \hline
+		4-4-4-4     & 9.14    & 9.15   & 7.50   & 10.94  & 2.59            \\ \hline
+	\end{tabular}
+	\caption{Time in milliseconds to render a level with 12 portals without an object on screen, as well as the relative median time compared to table \ref{tab:baseline}}
+\end{table}
+
+
+Table \ref{tab:rendernothing} shows multiple measurements taken for render no visible geometry or portal. The time is measured in milliseconds. In addition it shows the relative median time compared to the median time of table \ref{tab:baseline}. The relative median time is sometimes negative values. This is due a very small difference together with rounding errors.
+
+This table indicates not only the recursion count, but also the number of maximum visible portals matter significantly. If the visible portal count is low enough, rendering with additional recursions can still be faster than with higher visible portals counts an less recursions. Rendering all portals, in this case 12 portals, every recursion is similar to the first approach to portal rendering described in section \ref{section:intialimplementation}. Only 2 recursions can be use or the time to render is too high for even 30 \gls{fps}. This means that the initial portal rendering approach was not only limited by the stencil buffer bits, but also by performance. Being able to configure visible portals counts is significant.
+
+Lastly the table indicates that for this implementation the maximum recursion count is 4 for real time applications. However, with 4 recursions the level needs to be designed well to keep the maximum visible portal count low.
+
+
+
+
+%% The value of table \ref{tab:renderrelative} plus the value of table \ref{tab:baseline} would 
+
+
+\subsubsection{Demo Scene Performance many portals}
+
+Rendertimes without any rendered object, may make for good baselines, but do not indicate how the implementation behaves for real cases.  
+
+\begin{figure}[H]
+	\includegraphics[width=\linewidth]{images/testsnapshot.png}
+	\caption{View point for measuring. Maximum visible portal and recusion count to produce the image was 8-6-4-2.}
+	\label{fig:perfviewpoint}
+\end{figure}
+
+Figure \ref{fig:perfviewpoint} show the view point of the following measurement. There are two visible portals and a high amount of recursion. While scenes with much more visible portals can be constructed, this serves as a reasonable case. Note that the displayed image does not look the same for all measurements. E.g. Testcase 8 will only show one recursion.
+
+\begin{table}[H]
+	\label{tab:perfviewpoint}
+	\begin{tabular}{|l|l|l|l|l|l|}
+		\hline
+		Test Case   & Average & Median & Min    & Max    & Relative Median \\ \hline
+		8           & 2.95    & 2.90   & 2.24   & 3.48   & 1.37            \\ \hline
+		8-6         & 8.29    & 8.28   & 7.36   & 8.96   & 6.19            \\ \hline
+		8-6-4       & 14.85   & 14.84  & 13.96  & 15.99  & 8.03            \\ \hline
+		8-6-4-2     & 24.97   & 24.91  & 23.09  & 27.05  & 8.43            \\ \hline
+		12          & 3.02    & 2.98   & 2.36   & 3.51   & 1.39            \\ \hline
+		12-12       & 10.76   & 10.75  & 9.99   & 11.56  & 6.30            \\ \hline
+		12-12-12    & 55.21   & 55.20  & 54.32  & 56.25  & 7.62            \\ \hline
+		12-12-12-12 & 568.21  & 568.20 & 566.05 & 569.51 & 8.63            \\ \hline
+		4           & 2.84    & 2.79   & 2.06   & 3.41   & 1.26            \\ \hline
+		4-4         & 6.08    & 6.07   & 5.17   & 6.79   & 3.98            \\ \hline
+		4-4-4       & 9.45    & 9.45   & 8.08   & 10.48  & 6.69            \\ \hline
+		4-4-4-4     & 16.97   & 16.99  & 15.04  & 19.33  & 7.84            \\ \hline
+	\end{tabular}
+	\caption{Time in milliseconds to render a level with 12 portals from Figure \ref{fig:perfviewpoint}'s viewpoint, as well as the relative median time compared to rendertimes without objects on the screen.}
+\end{table}
+
+Table \ref{tab:perfviewpoint} shows the rendertimes in milliseconds for the image shown in figure \ref{fig:perfviewpoint}. The last column is the difference to the rendertimes for without objects on the screen from table \ref{tab:rendernothing}. The median is significantly higher, compared to table \ref{tab:rendernothing}. This is especially true for the low recursion measurement. This makes sense, as the most objects are only rendered for the first recursion. For later recursions, it is less likely that an object needs to be drawn. This indicates that producing degenerate triangles for objects that do not need to be rendered (see section \ref{section:viewmatrixselection}), actually helps to improve performance. However, this also shows that the base render times from table \ref{tab:rendernothing} are not really reliable. The actual rendertimes depend heavily on the rendered scene. This table alone shows rendertimes up to 4 times more than the baseline (Test Case 8-6). Care needs to be taken when building levels. The numbers also suggest that the \gls{recursioncount} should be limited to 3.
 
 
 
