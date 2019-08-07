@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 28.2/69}
+\subsection*{Search Terms TOTAL PAGES 36.75/69}
 portal
 3D lense
 magic lense
@@ -104,7 +104,7 @@ combined depth / stencil
 
 \subsubsection{Instanced Drawing}
 
-\section{Implementation 24.6/30}
+\section{Implementation 24.8/30}
 
 \subsection{Technologies, Tools and Libraries 2}
 This chapter discussed the various technologies, tools and libraries, which very used to create the implementation.
@@ -275,7 +275,7 @@ When drawing multiple portals recursively the draw dependencies can be imagined 
 
 There are two approaches on the drawing order: depth first or breadth first. In depth first the contents of Portal 1 in recursion 0 would be fully complete, before it begins drawing the contents of Portal 2 in recursion 0. This has the advantage of needing just a small amount of different values to mark a pixel. Going down the tree a different value can be used for each recursion. When going up that value is not needed anymore and can be recyled. However, the implementation must make sure that no unneeded value remains in the stencil buffer. A downside is, that the draws are is fully dependent on each other.
 
-Breath first draws a recursion completely before drawing the next recursion. The amount of different values needed to mark a pixel, scales exponentially. It needs one value of each portal in a recursion. For a scene with two portals, to mark all portals from recusion 1 it at least needs 4 different values, excluding 0. For recursion 2 it needs 8 values. With the stencil buffer usually being limited to 8 bits this can be quickly be a hard limit. However, the advantage is that the depth buffer needs to be cleared less often, only when transitioning between recursions. Additionally, within a recursion there are not dependencies between the multiple scene draws, as well as the portal draws.
+Breath first draws a recursion completely before drawing the next recursion. The amount of different values needed to mark a pixel, scales super linear with the portal count. One value is needed of each portal in a recursion. For a scene with two portals, to mark all portals from recusion 1 it at least needs 4 different values, excluding 0. For recursion 2 it needs 8 values. With the stencil buffer usually being limited to 8 bits this can be quickly be a hard limit. However, the advantage is that the depth buffer needs to be cleared less often, only when transitioning between recursions. Additionally, within a recursion there are not dependencies between the multiple scene draws, as well as the portal draws.
 
 Previous transformative portal implementations used depth first \cite{lowe:2005:technique,lecture:portalProblems}. The implementation presented in this thesis uses breadth first. Fewer dependencies between the draws could be exploited. Additionally similar draws can be grouped, which reduces the amount of renderpasses. While the amount of stencil values needed scales exponentially, the amount of draws scaled exponentially too. The author believes it is more likely that amount of draws will be the limiting factor than running out of values in the stencil buffer.
 
@@ -428,7 +428,7 @@ Subsequent odd subpasses are similar to subpass 1, but all portals are drawn mul
 The \gls{objectset} and \gls{portalcount} are drawn for each possible combination of portals. The amount a draws for each of them is equal to the size of the camera matrices array.
 
 
-\subsection{Dynamic Portal Rendering 7.7}
+\subsection{Dynamic Portal Rendering 7.9}
 One downside of the initial portal rendering strategy was its hard limit of total portals in the scene. No matter visible or not the portal was drawn and used up values in the stencil buffer. For two recursions, only 15 or less portals were allowed to exits in the scene. For three recursion only 7 or less, for four recursions only 3 portals were possible. For this reason a new method was derived which is limited by the visible portal count instead of the total portal count. 
 
 When drawing a portal, it uses a stencil value depending on the number of visible portals drawn before it, instead of using a fixed value. However, this also means that the right camera index cannot be known before submitting.
@@ -579,7 +579,7 @@ void main()
 		int viewIndicesIndex = firstViewIndicesIndex +
 			previousVisiblePortalCount;
 			
-		vi.vIndices[viewIndicesIndex] = currentPortalViewIndex;
+		atomicCompSwap(vi.vIndices[viewIndicesIndex], -1, currentPortalViewIndex);
 	}
 	...	
 }
@@ -632,7 +632,7 @@ previousVisiblePortalCount += (pih.indices[i]) == 0 ? 0 : 1;
 
 if(childNum < pc.maxVisiblePortalCount)
 {
-pih.indices[i] = previousVisiblePortalCount;
+	atomicCompSwap(pih.indices[i], 0, previousVisiblePortalCount);
 ...
 }
 ...
@@ -698,6 +698,9 @@ void main()
 
 Listing \ref{listing:stencilcalculation} illustrates the calculation. The current stencil reference is passed via push constants. This is the same reference for the whole portal group. The fragement shader calculates the current visible portals and adds 1 to it, as using 0 as stencil reference would lead to ambiguities (see section \ref{section:stencilcomparemasks}). That stencil reference needs to be shifted by the amount of bits used by parent stencil reference and then ORed together. Shifting is done using unsigned types to avoid potential undefined behavior.
 
+\subsubsection{Atomic Writes to Storage Buffer Objects 0.2}
+In listing \ref{listing:previousvisibleportals} and \ref{listing:indicesindexcalculation} \textit{atomicCompSwap} was used to write to the storage buffer objects. This was to avoid potential race condition. However, it needs to be investigated if these are actually needed. The written values are never read during the shader invocations of one portal. Before they are read by another portal, there is always a memory and execution barrier. For the implementation the atomic operations were left in, as they did not affect performance.
+
 \subsection{Dynamic Portal instance rendering 1.25}
 \label{section:dynamicportalinstancerendering}
 Dynamic Portal Rendering moved the limit from maximum portals in a scene to maximum visible portals, while also improving performance a bit. However, the performance was still pretty bad. Occluded portals or portals failing the stencil test still counted as beeing visible. This is due to the late stencil depth test, which was needed for the stencil export.
@@ -759,9 +762,9 @@ When looking through a portal the camera should see itself. However, always rend
 
 
 
-\section{Analysis And Improvements /15}
+\section{Analysis And Improvements 11.95/15}
 
-\subsection{Implementation Showcase}
+\subsection{Implementation Showcase 3.25}
 
 For testing the implementation a demo scene was build. This section demostrate working multiple recursion, as well as using arbitrary portals.
 
@@ -775,7 +778,7 @@ For testing the implementation a demo scene was build. This section demostrate w
 
 Figure \ref{fig:demodisabled} shows a snapshots of the scene. The recursion count was set to 0,  so the portal positions can be seen better. When the max portal count is reached portals are displayed with a grey color. Setting the \gls{recursioncount} to 0, essentially disabled the portals. Note that portals' transform and shape can be completely arbitrary.
 
-\subsubsection{Recursions}
+\subsubsection{Recursions 1.25}
 
 \begin{figure}[H]
 	\centering
@@ -796,7 +799,8 @@ Figure \ref{fig:roomlayout} shows a room within the scene from the top with disa
 
 Figure \ref{fig:room} shows the same room from figure \ref{fig:roomlayout}, but from a different view point. The top image has a \gls{recursioncount} of 0, while the bottom has a \gls{recursioncount} of 4. Note that the orange and light blue colored walls cannot be seen without the portals. On the right side multiple recursion can be seen. The green and orange wall are alternating. This indicates that more than one portal pair is involved in the recursion.
 
-\subsubsection{Non Planar Portals}
+\subsubsection{Non Planar Portals 1.5}
+\label{section:nonplanar}
 
 This sections show cases portals, that are defined by half sphere. It shows the the implemenation works with non planar portals.
 
@@ -819,17 +823,21 @@ Figure \ref{fig:nonplanar} shows the same two half sphere portals from another v
 
 Notice that in the bottom picture more parts of pink bank behind the \gls{endpoint} A are visible. The two recursions cancelled each other out, similar to what is described in section \ref{section:watertight}. Additionally the blue rock, which is inside \gls{endpoint} B can be seen. The contents of \gls{endpoint} A and B appear swapped. When looking through the hole in \gls{endpoint} A, the orange table next to \gls{endpoint} B can be seen. Inside \gls{endpoint} B a green color can be seen, which is the same color as the one from the wall next to \gls{endpoint} A
 
-\subsection{Implementation Performance}
+\subsection{Implementation Performance 3.75}
 
-\subsubsection{Measuring method}
+This sections covers performance measurements. With these the suitability for real time applications can be concluded. Additionally bottlenecks can be discovered, which can be used to improve the implementation in the future.
+
+\subsubsection{Measuring method 0.5}
 All tests are run on the same machine. It runs on Microsoft Windows 10 Education (10.0.18362). It uses \gls{gpu} is AMD Ryzen 7 1700 as \gls{gpu} and the Radeon RX 570.
 
 In this test measures the time taken to render the seen. This includes the time the \gls{cpu} needs to prepare the data for the \gls{gpu} (e.g. calculating camera matrices) as well as recording the command buffer. The time is measure in milliseconds using C++ chrono .h. The time is measured for 128 consecutive frames. The avarage, median, min and max time of the measured times are printed to the console.
 
 
-The measured milliseconds differ depending on the current view point and looking direction. Multiple viewpoints were measured. Multiple recursion counts and maximum visible portals are measured. The recursion are notes as X-Y-Z, where X corresponds to the maximum visible portals in recursion 0, Y to maximum visible portals of recursion 1 and so forth. For example 8-6-4 means a Recursion count of 3, using 8 maximum visible portals for recursion 0, 6 for recursion 1, and 4 for recursion 2. The last recursion always has a count of 0, as nothing will be drawn inside the portals. The following configurations were tested. 
+The measured milliseconds differ depending on the current view point and looking direction. Multiple viewpoints were measured. Multiple recursion counts and maximum visible portals are measured. The recursion are notes as X-Y-Z, where X corresponds to the maximum visible portals in recursion 0, Y to maximum visible portals of recursion 1 and so forth. For example 8-6-4 means a Recursion count of 3, using 8 maximum visible portals for recursion 0, 6 for recursion 1, and 4 for recursion 2. The last recursion always has a count of 0, as nothing will be drawn inside the portals. 
 
 \iffalse
+
+The following configurations were tested. 
 \begin{itemize}
 	\item No Recursions
 	\item 8-6-4-2
@@ -848,7 +856,7 @@ The measured milliseconds differ depending on the current view point and looking
 \end{itemize}
 \fi
 
-\subsubsection{Demo Scene Total Performance Baseline}
+\subsubsection{Demo Scene Render Baseline 0.5}
 The tests of this section all use the same level. It contains 6 portal pairs, so 12 portals in total. This number is important, as it dictates how many view matrices need to be calculated.
 
 The first test renders the level from a viewpoint, were no geometry or portal is visible. The image will correspond to the clear color used. It forms a baseline of minimal work done.
@@ -857,20 +865,21 @@ The first test renders the level from a viewpoint, were no geometry or portal is
 	\label{tab:baseline}
 	\begin{tabular}{|l|l|l|l|l|l|l|}
 		\hline
-		Test Case    & Average & Median & min   & max   & Additional Median Time \\ \hline
-		No Recursion & 1.03    & 0.99   & 0.98  & 1.37  & 0.99                   \\ \hline
-		0            & 1.57    & 1.56   & 1.55  & 1.70  & 0.57                   \\ \hline
-		0-0          & 2.14    & 2.14   & 2.12  & 2.19  & 0.58                   \\ \hline
-		0-0-0        & 2.91    & 2.91   & 2.79  & 3.00  & 0.77                   \\ \hline
-		0-0-0-0      & 6.51    & 6.56   & 6.01  & 6.95  & 3.65                   \\ \hline
-		0-0-0-0-0    & 41.75   & 41.86  & 40.75 & 44.66 & 35.30                  \\ \hline        
+		Test Case    & Average & Median & Min   & Max   & Relative Median \\ \hline
+		No Recursion & 1.03    & 0.99   & 0.98  & 1.37  & 0.99            \\ \hline
+		0            & 1.57    & 1.56   & 1.55  & 1.70  & 0.57            \\ \hline
+		0-0          & 2.14    & 2.14   & 2.12  & 2.19  & 0.58            \\ \hline
+		0-0-0        & 2.91    & 2.91   & 2.79  & 3.00  & 0.77            \\ \hline
+		0-0-0-0      & 6.51    & 6.56   & 6.01  & 6.95  & 3.65            \\ \hline
+		0-0-0-0-0    & 41.75   & 41.86  & 40.75 & 44.66 & 35.30           \\ \hline        
 	\end{tabular}
 	\caption{Time to render a frame in milliseconds, without an object on screen and max visible portal count set to 0}
 \end{table}
 
-Table \ref{tab:baseline} shows the time to render in milliseconds, for different recursion counts with max visible portals always set to zero. This represents the time that is needed to calculate the view matrices and submitting the render commands. The number of render commands scales linearly with recursion count, while the number of camera matrices to generate scales exponentially. The time to render for 4 and 5 recursion is significantly higher than for the previous recursion. This probably indicates that the render time for these cases is dominated by the time to calculate the camera matrices and sending them to the \gls{gpu}.
+Table \ref{tab:baseline} shows the time to render in milliseconds, for different recursion counts with max visible portals always set to zero. This represents the time that is needed to calculate the view matrices and submitting the render commands. The number of render commands scales linearly with recursion count, while the number of camera matrices to generate scales super linearly. The time to render for 4 and 5 recursion is significantly higher than for the previous recursion. This probably indicates that the render time for these cases is dominated by the time to calculate the camera matrices and sending them to the \gls{gpu}.
 
-\subsubsection{Demo Scene View Matrix Calculation}
+\subsubsection{Demo Scene View Matrix Calculation 0.75}
+\label{section:perfmatrixcalc}
 
 \begin{table}[H]
 	\label{tab:cameramatricecalc}
@@ -890,7 +899,7 @@ Table \ref{tab:baseline} shows the time to render in milliseconds, for different
 	\label{tab:cameramatricecalcinverse}
 	\begin{tabular}{|l|l|l|l|l|}
 		\hline
-		Recursions & average   & median  	& min     	& max        \\ \hline
+		Recursions & Average   & Median  	& Min     	& Max        \\ \hline
 		1          & 0.91      & 0.92		& 0.87    	& 0.93       \\ \hline
 		2          & 11.28     & 11.34		& 11.00    	& 11.40      \\ \hline
 		3          & 133.46    & 134.65		& 126.88   	& 136.69     \\ \hline
@@ -904,14 +913,14 @@ Table \ref{tab:cameramatricecalc} shows the time needed to calculate only the ca
 
 However both tables show that calculating the view matrices takes a significant portion of the base rendertime. With 4 recursions it is approximately 23\% of the total time, for 5 recursions approximately 44\%.
 
-\subsubsection{Demo Scene Performance}
+\subsubsection{Demo Scene Render Performance Empty 0.75}
 
 
-\begin{table}[]
+\begin{table}[H]
 	\label{tab:rendernothing}
 	\begin{tabular}{|l|l|l|l|l|l|}
 		\hline
-		TestCase    & Average & Median & Min    & Max    & Relative Median \\ \hline
+		Test Case   & Average & Median & Min    & Max    & Relative Median \\ \hline
 		8           & 1.56    & 1.53   & 1.51   & 1.95   & -0.03           \\ \hline
 		8-6         & 2.09    & 2.09   & 1.99   & 2.20   & -0.05           \\ \hline
 		8-6-4       & 6.80    & 6.81   & 5.90   & 7.65   & 3.9             \\ \hline
@@ -941,7 +950,8 @@ Lastly the table indicates that for this implementation the maximum recursion co
 %% The value of table \ref{tab:renderrelative} plus the value of table \ref{tab:baseline} would 
 
 
-\subsubsection{Demo Scene Performance many portals}
+\subsubsection{Demo Scene Render Performance With Portals 1.25}
+\label{section:renderperformance}
 
 Rendertimes without any rendered object, may make for good baselines, but do not indicate how the implementation behaves for real cases.  
 
@@ -958,6 +968,7 @@ Figure \ref{fig:perfviewpoint} show the view point of the following measurement.
 	\begin{tabular}{|l|l|l|l|l|l|}
 		\hline
 		Test Case   & Average & Median & Min    & Max    & Relative Median \\ \hline
+	   %No Recursion& 1.17    & 1.16   & 1.15   & 1.33   & 0.17		   	   \\ \hline
 		8           & 2.95    & 2.90   & 2.24   & 3.48   & 1.37            \\ \hline
 		8-6         & 8.29    & 8.28   & 7.36   & 8.96   & 6.19            \\ \hline
 		8-6-4       & 14.85   & 14.84  & 13.96  & 15.99  & 8.03            \\ \hline
@@ -977,16 +988,20 @@ Figure \ref{fig:perfviewpoint} show the view point of the following measurement.
 Table \ref{tab:perfviewpoint} shows the rendertimes in milliseconds for the image shown in figure \ref{fig:perfviewpoint}. The last column is the difference to the rendertimes for without objects on the screen from table \ref{tab:rendernothing}. The median is significantly higher, compared to table \ref{tab:rendernothing}. This is especially true for the low recursion measurement. This makes sense, as the most objects are only rendered for the first recursion. For later recursions, it is less likely that an object needs to be drawn. This indicates that producing degenerate triangles for objects that do not need to be rendered (see section \ref{section:viewmatrixselection}), actually helps to improve performance. However, this also shows that the base render times from table \ref{tab:rendernothing} are not really reliable. The actual rendertimes depend heavily on the rendered scene. This table alone shows rendertimes up to 4 times more than the baseline (Test Case 8-6). Care needs to be taken when building levels. The numbers also suggest that the \gls{recursioncount} should be limited to 3.
 
 
-
-\subsection{Swap Near Buffer with far Buffer 0.3}
+\subsection{Swap Near Buffer with Far Buffer to reduce texture count 0.3}
 
 In section \ref{section:dynamicportalinstancerendering} a manual stencil buffer was introduced. This means the depthstencil attachment is now exclusively use for the far depth buffer. When rendering portals the depth values are written into the write near buffer as well as the far depth buffer for the depth test. After this the rendering of all \gls{portalset} the depth buffer's contents are no longer needed and must be cleared. The values in the far depth buffer and the write z buffer are nearly the same. The only difference is that the far depth buffer contains the depth values, from rendering the \gls{objectset}. However, for later sub passes there is no real difference, as the manual stencil test discards fragments that would read at locations, where not portal was drawn. This means that the far depth buffer can be used instead and no write near buffer is required. One less texture is needed.
 
 
 
-\subsection{Visible Portal count}
-The manual stencil test introduced in section \ref{section:dynamicportalinstancerendering}, enabled testing portals early, for recursion 0. Portals that fail the stencil test, no longer count as visible portals for the algorithm described in section \ref{section:visibleportalcount}.
-However, subsequent recursion cannot use early tests, due to the manual stencil and near depth test, which discards fragments. Portals that are occluded by objects still count as visible. Additionally, even with an early test, portals that would be occluded later by other portals still count as visible. One way to prevent this is by running a depth pre pass for the portals. This pass renders all portals, but does nothing but to write stencil values. It still performs manual test, for stencil and near buffer. Thus the nearest depth values are known and only portals that are really visible qualify as visible for the visible portal count algorithm.
+\subsection{Preventing false Visible Portals 0.6}
+\label{section:falsevisible}
+The manual stencil test introduced in section \ref{section:dynamicportalinstancerendering}, enabled testing portals early, for recursion 0. Portals that fail the stencil test, no longer count as visible portals for the algorithm described in section \ref{section:visibleportalcount}. However, subsequent recursion cannot use early tests, due to the manual stencil and near depth test, which discards fragments. Portals that are occluded by objects still count as visible. Additionally, even with an early test, portals that would be occluded later by other portals still count as visible.
+
+Table \ref{tab:perfviewpoint} from section \ref{section:renderperformance} has shown that there is quite a difference, between rendering nothing and rendering multiple portal recursions. The less visible portals there are, the better the performance.
+
+
+One way to prevent false visible portals is by running a depth pre pass for the portals. This pass renders all portals, but does nothing but to write depth values. It still performs the manual tests, for stencil and near buffer. Then the portals are drawn again, with an early depth test. For this pass writes to the depth buffer can be disabled. Thus the nearest depth values are already known and only portals that will not be occluded qualify as visible for the visible portal count algorithm.
 
 There is also another possibility, which only needs an additional depth texture, but no pre pass. During the rendering of all \gls{objectset} a far depth buffer is use, just as always. However, during the portal rendering, this depth buffer is given as input for the portal shaders. They perform an additional manual test for the far depth. Portals still use a regular depth buffer also, so that portals occlude each other correctly. Although portals occluded by other portals still count as visible, portals occluded by objects do not. As the later case is far more likely, this could cut down the amount of false visible portals drastically.
 
@@ -994,10 +1009,12 @@ There is also another possibility, which only needs an additional depth texture,
 \subsection{Dynamic Visible Portals count 0.3}
 The visible portal count may not only be different for every recursion, it could even change during run time. The only change in the implementation would be to reserve enough space for the indices array and helper array, described in section \ref{section:indexarrayproperties} and \ref{section:helperarrayproperties} respectively. Everting else uses values that can change during run time.
 
-By adjusting the visible portal count dynamically, the bits in the (manual) stencil buffer can be used better. For example dynamically decreasing the visible portal count for recursion 0, while increasing it for recursion 1. This is useful for situations where only one portal is visible, because the camera is directly in front of it. More portals can be visible for recursion 1, while the amount of different stencil values used stays roughly the same.
+For example dynamically decreasing the visible portal count for recursion 0, while increasing it for recursion 1. This is useful for situations where only one portal is visible, because the camera is directly in front of it.
+ 
+This this allows for more visible portals during recursion 1. The amount of stencil values used as well as the amount of times the level is rendered stays roughly the same.
 
 
-\subsection{Camera Matrix Improvement opportunities 1.5}
+\subsection{Camera Matrix Improvement opportunities 2.25}
 The generation of the view matrices, described in section \ref{section:generatingviewmatrices} could be improved. Three areas were found, where the algorithm could be improved.
 
 \subsubsection{Using view matrices directly instead of camera matrices 0.5}
@@ -1006,7 +1023,7 @@ Currently when calculating the view matrices, first all camera matrices are calc
 $$C_n = T_{n} * C_{n-1}$$
 $$V_n = (C_{n})^{-1}$$
 
-The new approach would be calculating the view matrices directly and not using camera matrices.
+Section \ref{section:perfmatrixcalc} has shown that taking the inverse of the matrices accounts for approximately 2/3 of the total calculation time. The new approach would not need to take the inverse of a matrix. Instead the view matrices can be used directly.
 Combining the previous two equation yields:
 
 $$V_n = (T_n * C_n)^{-1} = C_n^{-1} * T_n^{-1}$$
@@ -1016,7 +1033,8 @@ $$V_n = V_{n-1} * T_n^{-1}$$
 
 Results from previous calculation can be reused, the same way as previously. As the inverse of \gls{endpoint} A's teleportation matrix is equal to \gls{endpoint} B's teleportation matrix, no matrix but the initial camera matrix needs to be inverted. If time had permitted it, this optimization would definitely be included in the implementation.
 
-\subsubsection{Excluding the initial view matrix 0.4}
+\subsubsection{Excluding the initial view matrix 0.75}
+\label{section:noveiw}
 Let $Vwv0_n$ be the view matrix for portal n, which misses the multiplication with the initial view matrix. Formally:
 
 $$V_n = V_0 * Vwv0_n$$
@@ -1027,31 +1045,22 @@ $$Vwv0_n = Vwv0_{n-1} * T_n^{-1}$$
 
 The advantage of leaving out $V_0$ from the multiplication is that, if all $T$ are constant all $VWV0$ will be constant as well. These matrices only need to be calculated once, instead of every frame. The final calculation to get the real view matrix can be done in the shader. This does not need to be a matrix matrix multiplication, as it the view matrix is used only once in the shader for calculation a vertex's position. The array of these matrices could reside in \gls{gpu} local memory, as they do not need to be changed. Even for levels with moving portals, this could be a useful optimization, as only the parts that depend on the moved portal need to be recalculated. However, if this really improves performance for a specific implementation needs to be tested.
 
-\subsubsection{Calculating on the GPU 0.4}
+\subsubsection{Calculating on the GPU 0.8}
 Instead of calculating the view matrices on the \gls{cpu}, they could also be calculated on the \gls{gpu}.
 This saves the \gls{gpu} bandwidth, as only teleport matrices and the view need to be transferred, instead of an array of every possible combination of portals. Additionally, the indirection described in section \ref{section:viewmatrixselection} can be removed. After the previous visible portal calculation the view matrix can be calculated and written to the correct location. Lastly, access is faster as the matrices are in \gls{gpu} local memory.
 
-Potential downsides of this approach are, although only the needed matrices are calculated, the total count of matrix multiplications is likely higher, as it is calculated for every fragment. However, these are done in parallel so this might not as dramatic. Furthermore, the \gls{gpu} workload is increased, while reducing \gls{cpu} load. Depending on the current bottleneck, this can be an advantage or a downside. Just as the approach in the previous section, it is not clear whether this actually improves performance for a specific implementation.
+The total number of calculated matrices might be more or less on the the \gls{gpu} compared to calculating it on the \gls{cpu}. This  depending on the number of portals on the scene and the number recursion and visible portal counts. 
 
-\subsection{Worthy Section? World Wrapping}
+For example for a scene containing 12 portals 22,620 matrices are needed. This is the amount of matrix multiplications that would be done on the \gls{cpu}. When rendering with visible portal counts of 8-6-4-2, only 632 matrices are actually used at most. Most likely the number will be significantly lower. When only 4 of 8 portals are visible in recursion 0 at most half the previous state amount of matrices will be needed. When combined with the optimizations described in section \ref{section:falsevisible} there will be even less matrices needed. However, the \gls{gpu} would need to calculate the matrix for each fragment of a portal. But the \gls{gpu} does this in parallel so this might not as dramatic. 
 
-World wrapping enables infinite world, by repeating itself. When something steps on one edge of a wrapped world it is teleported to the opposite edge. World wrapping can be seen as very specific portal that is defined as an pairs infinite plane. The World exists only inside those planes. No object is outside the subspace defined by the plane pairs. This property allows skipping a lot of tasks otherwise needed for drawing portals.
+This approach increases the \gls{gpu} workload, while reducing \gls{cpu} load. Depending on the current bottleneck, this can be an advantage or a downside. The workload of the \gls{cpu} increase with number of portals in a level, while the \gls{gpu} workload increases with resolution and the maximum visible portal counts. If the visible portal counts stay the same, at a certain amount of portals in a level there will be a tipping point.
 
-The stencil test is not needed, as the only the repeated scene will be drawn at that location. The near buffer is also not needed, as the multiple scenes can not overlap each other. This means drawing the actual portals is not necessary. All world instance can be drawn at once, using instanced drawing, with each world instance using the corresponding view matrix.
+Lastly this approach can not be used together with the one described in the previous section. Which one to use depends on the nature of the scene. If the portal matrices stay (mostly) the same and there is enough buffer storage available, the previous approach is probably better suited. But for levels with many moving portals, the matrices must be recalculated anyway, so this approach might be a better fit. 
 
-If portals are already present its probably be better to just define big portal planes. Otherwise, each of those multiple worlds needs to be drawn in each portal, so wrapped worlds can also be seen through portals. Or just do the heavy part just for one world, save the portals contents to texture and apply them a the instanced worlds? Are portals in instanced worlds even big enough to be really visible. Can get away with less exact portals?
 
-Going down the tree render only one world first. Then going down by drawing other instances, and reuse portal contents for the instances.
-
-Combine with portals. Instanced instance drawing. Calculate the two ids from vertexId, by taking modulo, qutotient of vertexId with wrapped world count. Use those to access right matrices
-
-	
-
-\subsection{Scaling measurement}
-
-\subsection{Watertight Portals 1}
+\subsection{Properties of Watertight Portals 1.25}
 \label{section:watertight}
-Watertight portals are portals that use an watertight mesh. A watertight mesh, does not have any holes. When looking at a watertight portal, objects behind it will be visible a though it did not exist. Watertight portals, seem as though their did not exists. However, their contents are swapped.
+Special properties of of watertight portals were found during the testing of the implementation. Watertight portals are portals that use an watertight mesh. A watertight mesh, does not have any holes. When looking at a watertight portal, objects behind it will be visible a though it did not exist. Watertight portals, seem as though their did not exists. However, their contents are swapped.
 
 \begin{figure}[h]
 	\centering
@@ -1070,52 +1079,88 @@ Static watertight portals, do not really have a purpose. They can't be detected 
 
 When using Watertight portals, they need to be created or transformed during runtime, otherwise they just cost performance without any gain. After discovering this fact, the watertight portals were removed from the implementation's levels.
 
-\subsubsection{Holes}
-
 \subsection{Draw Indirect 0.25}
-Instead of using \textit{drawIndexed} an implementation could use \textit{drawIndexedIndirect}. This allows only only using a single draw call to render the \gls{objectset} multiple times. Additionally, portal fragment shaders could manipulate the values in the draw indirect buffer. If less portals than the maximum visible \gls{portalcount} is visible, there can be fewer instances. The downside is that \textit{gl\_InstanceIndex} cannot be used directly anymore in the shaders, and the real value must be optained via buffer writes and reads. But when implemented correctly this could reduce the drawn instance count by a lot. The current Implementation produces degenerate triangle instead of skipping the whole instance. It needs to be measured if this approach actually improves performance enough compared to the current implementation, to be worth the extra work.
+Instead of using \textit{drawIndexed} an implementation could use \textit{drawIndexedIndirect}. This allows only only using a single draw call to render the \gls{objectset} multiple times. Additionally, portal fragment shaders could manipulate the values in the draw indirect buffer. If less portals than the maximum visible \gls{portalcount} is visible, there can be fewer instances. The downside is that \textit{gl\_InstanceIndex} cannot be used directly anymore in the shaders, and the real value must be obtained via buffer writes and reads. But when implemented correctly this could reduce the drawn instance count by a lot. The current Implementation produces degenerate triangle instead of skipping the whole instance. It needs to be measured if this approach actually improves performance enough compared to the current implementation, to be worth the extra work.
 
+\subsubsection{Holes 0.25}
+Cutting holes inside an otherwise watertight portal has some interesting properties. As previously mentioned a watertight portal is not really detectable and only serves for switching spaces. However when a hole is cut, the hole would appear as a portal. The hole could be seen as an additional portal, which cancels out the watertight portal. But the watertight portal would not really be visible to the user, so they see only that additional portal, which does not actually exist. This property can be seen in the half sphere portals in the implementation as shown in \ref{fig:nonplanar} in section \ref{section:nonplanar}. The black area in the top image indicates the circular planar hole, which is the only part in the bottom picture which actually looks like a portal. The actual part of the half sphere portal only serves as a border for the swapped space.
+
+
+
+
+
+
+
+
+
+
+\section{Further Work 0/5}
 
 
 
 \subsection{Non-Translating Portals}
 The implemented portals have two endpoints. Objects Touch on endpoint, get move to the other. However, it is also possible that the portals don't move the object. In this case there are no two end points. It is just one portal.
 
-Entering the portal would apply one operation (e.g. multiplying by matrix), leaving it applies the inverse operation. Back and Frontface detection needs to be used to decide which operation to apply.
+Entering the portal would apply a operation (e.g. multiplying by matrix), leaving it applies the inverse operation. Instead of rendering two endpoints, only one portal is rendered. Back and Front face detection needs to be used to decide which operation to apply.
+
+This works mostly only for operations which don not move the position of an object. One exception would be a rotation, but portal shape looks the same after applying the rotation to it. E.g. a sphere could allow for any rotation. A cube only for rotation in intervals of 90 degrees. Inverting or the scale of an object would another case.
+
+\subsubsection{More than just transforms}
+\label{more than transforms}
+
+In the implementation the portals only apply transformative operations in using matrices. Non-Translating Portals would allow for portals that can apply such operations, without needing to also translate an object.
+
+A portals operation could change render parameters. These parameters are store similar to the view matrices. One example inspired by \cite{borst:2009:real} would be marking pixels if one parameter currently has a specific value. Later in a post process the marked pixels could be modified. Another example inspired by magic lenses, would be a parameter which decides which objects to render. Some objects will only be visible, while the parameter has a specific value.
 
 
-This only works for operations which don't move the possition of an object, unless it is just an rotation and the portal shape looks the same after applying the rotation to it. E.g. a sphere could allow for any rotation. A cube only for rotation in intervals of 90 degrees.
-Changing the scale of an objects would also work, but it is important, the the origin remains a the same position. However, this would result in non seamless portal transitions.
 
-Furthermore, more than just transform can be applied. Operations described in the section \ref{more than transforms} would also work.
+\subsection{Worthy Section? World Wrapping}
+World wrapping enables infinite world, by repeating itself. When something steps on one edge of a wrapped world it is teleported to the opposite edge. World wrapping can be seen as very specific portal that is defined as an pairs infinite plane. The World exists only inside those planes. No object is outside the subspace defined by the plane pairs. This property allows skipping a lot of tasks otherwise needed for drawing portals.
+
+The stencil test is not needed, as the only the repeated scene will be drawn at that location. The near buffer is also not needed, as the multiple scenes can not overlap each other. This means drawing the actual portals is not necessary. All world instance can be drawn at once, using instanced drawing, with each world instance using the corresponding view matrix.
+
+If portals are already present its probably be better to just define big portal planes. Otherwise, each of those multiple worlds needs to be drawn in each portal, so wrapped worlds can also be seen through portals. 
+
+Or just do the heavy part just for one world, save the portals contents to texture and apply them a the instanced worlds? Are portals in instanced worlds even big enough to be really visible. Can get away with less exact portals?
+
+Going down the tree render only one world first. Then going down by drawing other instances, and reuse portal contents for the instances.
+
+Combine with portals. Instanced instance drawing. Calculate the two ids from vertexId, by taking modulo, qutotient of vertexId with wrapped world count. Use those to access right matrices
 
 
-\subsection{Part translation}
-
-
-On portal collision we apply the same operation on the camera, that would be applied to an object rendered through that portal.
-It is implemented by storing a matrix of cumulative portal teleport matrices.
-However, it is also possible to apply only a part of it for some interesting effects, but it will result in non seamless translation.
-
-\subsection{GPU Raytracing}
-
-\section{Further Work 0/5}
-\subsection{Transparent Objects}
 \subsection{Shadows}
-Without currect handling, we can see portal locations, as shadows would be cut of.
+Due to time reasons the implementation has no shadows implemented. This section possible approach that would have been used, if time had allowed. For a portal to appear seamless care must be taken when rendering shadows. Portals must be taken into account, or otherwise shadows appear cut of or appear out of nowhere in the presence of a portal.
 
-Dynamic shadows? 
 
-Shadow mapping difficult. Fragment Wordpos to lightpos cannot be calculated, as it would need to take portals into account!
-However the light could store in the shadow map the stencil value used to write that pixel. With that value the transformation matrix can be found to transform the light pos, so that calculating the distance actually works.
+
+
+\subsubsection{Rethink again? Portal Shadow Mapping}
+One approach would be a modified version of shadow mapping. When rendering shadow maps the same approach can be taken that is used to render the scene with portals, i.e. multiple recursions, but from the lights view. However in addition to the depth values, the view matrix used for rendering a fragment must be saved as well. This can should be in form of an index to save space, but it must be possible to retrieve later. The shadow map has two contents, the depth value and the matrix index.
+Then when rendering the actual scene, the shadow test is performed. However, as it is not know whether the light travelled through a portal the position on the shadow map can not be calculated directly. The following needs to be done for each matrix and matrix combination the light could have used: 
+Apply the matrix to the light. Then calculate the position on the shadow map. Check if matrix in the shadow map is the same as the one just used. If not repeat this step, until the matrices match.
+After the right position on the shadow map has been found the shadow mapping algorithm continues as usual. This approach requires many texture lookups. The actual number depends on the possible view matrices. This value needs to be small to be a viable.
+Testing needs to be done in camera space.
+\subsubsection{Fake shadows}
+The shadow mapping approach seems very expensive. Instead of shadow mapping a fake shadow can be used. It will not look realistic, but can give a sense of depth. For each lightsource a ray is cast from the character a cone is defined. The peak is a the characters origin. Its circlular surface has the light direction as normal. Every objects that can be shadowed checks if its fragments is inside the cone, if yes then it is shadowed. If the cone instersects with a portals, there needs to be another cone.
+
+Instead of a cone something similar to shadow volumes can be used. some 2 shape infinitely far away. Calc distance, the see if inside the shape, the farther away the bigger the shape for testing.
+
+\subsubsection{Make Portals Glow}
+Make the portals glow. That way everything near them is lit. Shadows and lighting do not matter as they would not be visible anyways due to the portal glow dominating the lighting calculation. No seams can be seen near portals, and regular shadow mapping can be used.
+
 
 \subsection{lighting}
-Without correct lighting seams would be visible. Proabably very difficult for spot/pointlights. Directional light already works. Use shadownmap to store light normals?
+Similar to shadows, lighting was also no really implemented. Only one directional light, which does not handle portals. Without correct handling spot and point lights could create visible seams at portal locations, just as shadows. Directional light would not produce seams, as the light direction will be the same no matter where an object is located.
+Calculating the direction by subtracting the  Light also can travel through portals. Every light is used multiple times. Each of those has different teleport matrices applied and the usual light test is performed. Probably useful to do \ref{section:noveiw}, so this the same matrices as for the view can be used.
+
+
+\subsection{Transparent Objects}
+
+
+
 \subsection{Collision Detection}
 
-\subsection{More than just transforms}
-\label{more than transforms}
-The current approach uses camera indices, to decide which camera matrix gets applied. However, this approach is not limited to only changing matrices. Inspired by \cite{borst:2009:real} indices could be used to change other paramteres. We could add objects that only render if specific parameters are set, mark pixels for a later post process. Or take as specific branch in any shader.
+
 
 \subsection{Objects intersecting portals}
 The current implementation does not handle objects that intersect portals. They just move through the portal, without teleporting. Objects that are intersecting a portal exits at two different places. They
@@ -1123,6 +1168,8 @@ The camera object should be able to see itself
 
 
 When looking through a portal, players might see themselves. Care must be taken when rendering. Standing directly in fron of the portal and touching it slightly could make the player see their only model at their own location. (see valve talk \url{https://www.youtube.com/watch?v=riijspB9DIQ})
+
+\subsection{GPU Raytracing}
 
 \subsection{Use the Instant Occlusion query in occlusion culling}
 we can set conditional rendering paramters during this occlusion culling.
