@@ -11,14 +11,182 @@ Walkthrough applications
 Transformative Portal
 \section{Introduction 0/1}
 
-\subsection{Disambiguation}
-portal in a game
-vs
-portal as occlusion culling
+\subsection{Portal definition}
+Our world can be seen as one big space that is divided into multiple subspaces by large objects, such as walls, which spit up a house into multiple rooms. A portal connects two subspaces, similar as a door connects two rooms. Through a portal the subspace it connects to can be seen. To reach the other subspace one must traverse through a portal.
 
-\section{Literatur 0/15}
+\subsubsection{Transformative Portals}
+Regular portals can only connect subspaces that are adjacent to each other. If a place can be reached by going in a straight line, this is the fastest possible way. A travelling through a regular portal cannot be faster.
+
+For transformative portals however, there are no such limitations. Transformative portals can connect completely arbitrary subspaces and may even change where they connect to. They can even connect a subspace to itself. In the presence of transformative portals a straight path may not be the fastest. Travelling through a transformative portal could be faster. Transformative portals similar to wormholes described by \textcite{Visser:Wormholes} in his book.
+
+\subsubsection{Portal Recursion}
+When looking through a portal parts of subspace can be seen. In that subspace there can be another portal through which yet another subspace is visible. For this example to see the final subspace, two recursions are needed. In reality this could continue indefinitely, everything is visible. However, due to technical reasons, there is often a limit to the number of recursions. In this paper this limit is refered to as \gls{recursioncount}. A recursion count of 0, means that no other worlds can be seen through portals. A recursion count of 1 allows looking through portals, but portals at the other part of the world can not be looked through.
+
+\subsection{Reasons For Portals}
+Portals are applicable for many different topics. Portals can be used to accelerate rendering speed, by enabling the creation of \glspl{pvs} \cite{luebke:1995:portals}. Although they are not quite portals, magic lenses are very similar to portals and allow for useful visualisations \cite{viega:1996:3d}. In video games portals are especially useful. As previously mentionened they improve performance, but also serve as interesting gameplay mechanics. Furthermore they allow for intuitive transitions between worlds \cite{schmalstieg:1999:sewing} or intuitive locomotion for \gls{vr} games.
+
+
+enabler fit more into less space
+
+\subsection{Research Question}
+proof of concept
+evaluation
+
+
+
+\section{Graphics programming 0/9}
+
+
+Many alorithms describe in later sections use computer graphics techniques or special features of the graphics cards. This sections serves as a quick summary of some of these features and techniques, so the later parts of this thesis can be better understood. 
+
+
+\subsection{Raytracing}
+Ray tracing is a rendering technique, which creates an image by casting rays into the scene. These rays will be refered as \glspl{viewray}. For each pixel a ray is cast and checked for intersections with objects in the scene. The pixel's color is the color of that intersected object at the corresponding intersection point \cite{bungartz:2002:einfuhrung}. This technique can also be extended. For example from the intersection point additional rays can be casted, in the directions of all the lights in a scene, to test if an object lies in a shadow \cite{whitted:2005:improved}. Raytracing can also be used to implement portals in an intuitive way. When a \gls{viewray} intersects with one \gls{endpoint} the view ray is recast from the other \gls{endpoint}.
+
+Ray tracing is well know for being able to produce images with higher quality. However, is quite expensive and mostly used for offline rendering. \textcite{wald:2001:interactive} have shown that in some cases software raytracing can  outperform rasterization approaches for lower resolutions with a high triangle count \cite{wald:2001:interactive}.
+
+Raytracing is not limited to the \gls{cpu}, there exists many ray tracing applications for the \gls{gpu} as well such as the works of \textcite{foley:2005:kd} or \textcite{parker:2010:optix}. The introduction of Nvidia's RTX \glspl{gpu} raytracing can now be supported in hardware \cite{raytracinggems}.
+
+
+\subsection{!!Rasterization based rendering}
+
+
+
+
+In realtime applications rasterization based rendering is almost exclusive used. It consists of 4 main stages \cite{akine:2018:realtime}:
+
+\begin{itemize}
+	\item Application
+	\item Geometry Processing
+	\item Rasterization
+	\item Pixel Processing
+\end{itemize}
+
+The application stage happens on the \gls{cpu} which may perform arbitrary operations. It is responsible for sending geometry information to the \gls{gpu}. It can make use of acceleration algorithms, particularly culling, to improve the performance of the whole rasterization pipeline \cite{akine:2018:realtime}.
+
+The geometry processing stage performs operations on the received geometry. It is responsible for transforming and projecting vertices into clip space. Clipping is performed, so that no geometry is outside the view frustum. After clipping the perspective divide takes place. Finally the geometry is mapped to screen space. There are additional optional stages, such as tesselation and geometry shader, which were left out for brevity. The resulting geomerty is then passed to the rasterizer.
+
+It can perform tests to dete
+
+
+ It computes which objects need to be drawn. Although many objects may exits in the scene, the \gls{cpu} may detect that some of them will not be visible. In this case it can decide not to draw them to improve performance. Furthermore, the application decides how something should be drawn, by specifying render settings. Lastly it determines where something is drawn, for example by calculating and setting the view matrix \cite{akine:2018:realtime}.
+
+The next stage is the geometry stage, which is generally executed on the \gls{gpu}. It transforms geomerty using provided matrices
+
+ 
+
+
+, how and where something should be drawn.
+
+\cite{akine:2018:realtime}
+
+\subsection{GPU Features}
+
+
+
+
+
+\subsubsection{Depth Test}
+Without additional setups, objects must be drawn according to the painter's algorithm. Objects are sorted by their depth. Then they are drawn back to front storing their color a the coresponding pixels. The object farthest away is drawn first and the nearest object is drawn last. Otherwise objects that are behind other objects may be drawn over them, leading to wrong images. However, there are cases where the painter's algorithm does not work, for example when three objects overlap each other \cite{akine:2018:realtime}.
+
+The depth test offers a solution to this problem. Before the results of a fragment is written to a texture, the current fragment's depth value to the depth value of the fragment, which was last written to location. The depth value of the last written fragment is stored inside the depth buffer. If the current fragment depth value is not farther from the view point than the last fragment, the current fragment is discarded. Otherwise it writes its values as usual and stores its depth in the depth buffer. The depth buffer is sometimes also called z-buffer.\cite{akine:2018:realtime}.
+
+For Vulkan the depth values range from 0 to 1.  In many applications lower values are used to indicated near values. But this it does not need to be that way. In contrary using high depth values for near objects is better or at least no worse. For perspective view, the depth values however are not linearly distributed. The difference in depth value between two objects becomes smaller, the further both are away from the view. If values close to 0 are used for far away objects, the increased precision of floating point values near 0 increased the precision of the depth buffer. If normalized values are used to store the depth, then this approach will not perform any worse than the alternative\cite{lapidous:1999:optimal, nvidia:inversez}. The reverse depth range mitigates, but not completely removes, z-fighting. Z-fighting occurs the depth values of two objects are the same, even if one is further away from  the other. This cause the objects to randomly overlap each other \cite{akine:2018:realtime}.
+
+The depth test comparison operation must be configure. It should correspond to the depth buffer usage. The following comparisions are possible \cite{sellers:vulkanprogramming}:
+\begin{itemize}
+	\item The test always passes
+	\item The test never passes
+	\item Pass if new depth is less than the old value
+	\item Pass if new depth is less than or equal to  the old value
+	\item Pass if new depth is equal to the old value
+	\item Pass if new depth is not equal to the old value
+	\item Pass if new depth is greater than the old value
+	\item Pass if new depth is greater than or equal to  the old value	
+\end{itemize}
+
+The depth buffer can also be configured to not write the new value. Additionally the new depth value can be influenced before the test, with a depth bias \cite{sellers:vulkanprogramming}.
+
+\subsubsection{Stencil Test}
+
+The stencil test is less commonly used than the depth test, which is used almost everywhere. Similar to the depth test, it serves as another way to discard a fragment. It uses a stencil buffer to store stencil value, similar to the depth buffer. In fact both buffers are stored alongside each other and cannot be separated. The stencil test compares a reference value, with the value inside the stencil buffer at the fragments location. If the test fails the fragment is discarded. Different reference values and comparison operations can be configured. The same comparisons from the depth test can be used. Additionally the stencil test can change the contents of the stencil buffer. The following operations are possible \cite{sellers:vulkanprogramming}:
+\begin{itemize}
+	\item Keep the value of the stencil buffer
+	\item Set the value to 0
+	\item Replace the the stencil value with the reference value
+	\item Increment the stencil value and clamp it at the maximum value
+	\item Decrement the stencil value and clamp it at 0
+	\item Invert the bits of the stencil value
+	\item Increment the stencil value and wrap around
+	\item Decrement the stencil value and wrap around	
+\end{itemize}
+
+It is possible to use a different operation depending on the outcome of the depth and stencil test. A different operations can be configured for: depth failed, depth passed but stencil failed, both tests passed. The test and operations can be different for back and front faces \cite{sellers:vulkanprogramming}. Additionally, a compare and a write mask can be configured. Before the test the reference value and the stencil buffer value are bitwise AND-ed. The write mask selects the bits of the stencil values that are updated. In Vulkan 1.1 the stencil buffer can only have exactly 8 bits or not be present at all. Tjere is not texture format available that allows a different number of bits \cite{khronos:vulkan:spec1.1}.
+
+\subsubsection{Early Fragment Test}
+Although to depth and stencil test are defined to run after the fragment shader, they can actually happen before the fragment shader is executed. When possible this happens automatically, as early discarded fragments do not need to invoke the fragment shader. However, this is not possible if performing the test early has visible side effects. In the following cases the early test is not possible \cite{sellers:vulkanprogramming}:
+Firstly, when the fragment shader can update the depth value, the actual depth value can not be know before execting the shader. Secondly, when the shader has side effects, such as writing into a buffer. Discarding early would prevent the write from happening. Lastly if the shader can discard the fragment, as discarding prevents should prevent updating the depth buffer \cite{sellers:vulkanprogramming}. It is possible to force the fragment test to run early. In GLSL this is done via the following line in the fragment shader \cite{khronos:glsl4.60:spec}:
+\begin{lstlisting}
+layout(early_fragment_tests) in;
+\end{lstlisting}
+
+
+\subsubsection{Instanced Drawing}
+\subsubsection{Uniforms / Storage Buffer Objects}
+
+\subsubsection{Shaders / (Vulkan-) GLSL / SPIR-V}
+branching, fragment discard, early stencil / depth, force early test, Stencil Export
+
+\subsubsection{Occlusion Queries}
+
+
+
+\subsection{OpenGL}
+History
+
+
+\subsection{Vulkan Overview}
+input attachments, tile renderers,
+
+(Sub-)Renderpass, Push Constants, Validation Layers, Pipelines, Dynamic state,
+
+Molten VK-Framwork
+
+\subsubsection{GPU Synchronisation}
+
+
+
+\subsubsection{Push Constant}
+
+
+
+
+
+
+
+
+
+\subsection{VR Movement}
+
+Portal Locomotion in Budget Cuts\url{https://www.youtube.com/watch?v=f786ak3GKQo}
+
+
+
+
+
+
+\section{Previous Work 0/7}
+
+\subsection{Transitioning between worlds}
+
+\textcite{schmalstieg:1999:sewing} used portals to connect different virtual worlds together.
 
 \subsection{Portals as Occlusion Culling}
+
+similarities between portals and transformative portals.
+
+\subsection{Potentially Visible Set}
+
 potentially visible set
 \cite{luebke:1995:portals}
 \cite{yang:2014:walkthrough}
@@ -32,6 +200,11 @@ Complex Portal rendering. (I use the same near Buffer technique) \cite{ lowe:200
 
 
 \url{https://th0mas.nl/2013/05/19/rendering-recursive-portals-with-opengl/}
+
+\subsection{Space Division}
+Rooms are split by portals. For each portal only the objects in its room need to be drawn.
+\cite{ lowe:2005:technique}
+
 \subsection{Portal Applications}
 
 \subsubsection{Magic Lense}
@@ -47,64 +220,32 @@ Portal Rendering in SEAMS (\cite{schmalstieg:1999:sewing})
 \cite{pausch:1995:navigation} navigation with hand held minatures
 
 
-\subsubsection{Game Mechanik}
-Portal, Antichamber, Splitgate Warfare Arena
+\subsection{Transformative Portals in Gameplay 1.25}
+One area where portals, especially transformative ones, are interesting is in video games. However, many games do not render portals in a special way. The other world cannot be seen through the portal and when entering the users are often brought to a loading screen. 
 
-\subsubsection{VR Movement}
+However, there are also games that render portals in ways similar to as in the implementation describe in this thesis. While many more games with transformative portals exits, this section will only cover the following games:
+\begin{itemize}
+	\item Portal and Portal 2
+	\item Splitgate: Arena Warfare
+	\item Antichamber
+	\item Budget Cuts
+	\item Manifold Garden
+	
+	
+\end{itemize}
 
-Portal Locomotion in Budget Cuts\url{https://www.youtube.com/watch?v=f786ak3GKQo}
+\textit{Portal} and \textit{Portal 2}, from there on referred as \textit{Portal}, gives the player control of a portal gun. With this gun players may place one orange and one blue portal on a wall. When both portals are placed, they are active and the player can see and traverse between them. In \textit{Portal} only two portals per player can exits. In \textit{Portal} the portals are used for solving puzzles. \textit{Portal} uses an recursion count of 2. However, infinite recursions are visible. Parts of the previous rendered frame are used, as the texture for the final portal \cite{lecture:portalProblems}.
 
-\subsubsection{Fit More Space in Less Space}
+\textit{Splitgate: Arena Warfare}, from there on referred as just \textit{Splitgate}, uses a similar mechanic to \textit{Portal}. However, \textit{Splitgate} is a shooter game and the portals are used to outmanoeuvre opponents, instead of for puzzle solving. Portals can only be placed on special walls. Portals must be very near and facing each other for recursion to be visible. In \textit{Splitgate} this can be avoided carefully placing these special walls. Furthermore only players can only look through their own portal. Enemy portals cannot be seen through \cite{splitgate}.
 
-\subsubsection{Space Division}
-Rooms are split by portals. For each portal only the objects in its room need to be drawn.
-\cite{ lowe:2005:technique}
+\textit{Antichamber} is another puzzle. Although portals are not its main focus, it is noteworthy as they behave very differently. \textit{Antichamber}'s portals are called \textit{transporter windows}. Instead of moving through them, player teleport when the \textit{transporter window} fills their entire screen. However, the player will not notice the teleportation immediately, as their view is filled with the \textit{transporter window}. Only after turning or moving away the effects can be noticed \cite{antichamber}.
 
-\subsection{Graphics Programming 0/9}
+\textit{Budgetcuts} is a \gls{vr} stealth game. One important aspect of \gls{vr} games is their locomotion system. Moving with a stick feels unnatural and can introduce motion sickness. In \textit{Budgetcuts} the player moves around the world with a teleporter gun, but works differently compared to the previous games. First the player can create a portal at another place using their translocator device. That place can be seen through another portal, which at the translocator. If the player decides to move to the other portal, they can press a button. Then the portal at the translocator wraps around the player, when finished the player stands at the new location \cite{budgetcuts, gdc:budgetcuts}.
 
-
-\subsubsection{Raytracing}
-software,
-gpu,
-NVIDIA RTX cards, Ray shaders?
-
-\subsubsection{Rasterization}
-
-\subsubsection{GPU Synchronisation}
-
-\subsubsection{Uniforms / Storage Buffer Objects}
-
-\subsubsection{Shaders / (Vulkan-) GLSL / SPIR-V}
-branching, fragment discard, early stencil / depth, force early test, Stencil Export
-
-\subsubsection{Occlusion Queries}
-
-\subsubsection{OpenGL}
-History
+Lastly there is \textit{Manifold Garden}, which is, as the time of this writing not, an unreleased game. The game has no actual portals, but the edge of the world acts as one. When moving to the edge of the world, the player gets teleported to the other edge. There is no visible seam at the edge. It looks as if the world continues and repeats itself. The Willian Chyr, \textit{Manifold Garden}'s author, calls this effect \textit{3D World Wrapping}.
 
 
-\subsubsection{Vulkan Overview}
-input attachments, tile renderers,
-
-(Sub-)Renderpass, Push Constants, Validation Layers, Pipelines, Dynamic state,
-
-Molten VK-Framwork
-
-\subsubsection{Depth / Stencil Test}
-Limitations, common uses
-Early Z! Fragment discard
-Z Fighting,
-Depth Formtas
-inverse depth buffer with floating point is magic!
-
-combined depth / stencil
-\url{https://developer.nvidia.com/content/depth-precision-visualized}
-
-\subsubsection{Push Constant}
-
-\subsubsection{Instanced Drawing}
-
-\section{Implementation 24.8/30}
+\section{Implementation 24.65/30}
 
 \subsection{Technologies, Tools and Libraries 2}
 This chapter discussed the various technologies, tools and libraries, which very used to create the implementation.
@@ -183,8 +324,10 @@ A transform is an operation that moves, rotates and scales an object by some amo
 
 If object A has a transform, and object B has a transform, the transform that needs to be applied to object A to match objects B's transform is called relative transform.
 
-\subsection{Portals 1.25}
-This implementation only uses transformative portals. Transformative portals act as wormholes, connecting two parts of the world. By travelling through a portal the an object is teleported to another portal. These two portals are connected and form a \gls{portalpair}. These connections are two-way, allowing back and forth teleportation. The individual portals of a \gls{portalpair} are called \glspl{endpoint}. Instead of referring to portals of a \gls{portalpair} as \enquote{the \gls{endpoint}} and \enquote{the other \gls{endpoint}}, they are sometimes called \enquote{\gls{endpoint} A} and \enquote{\gls{endpoint} B}.
+
+
+\subsection{Transformative Portals 1.25}
+This implementation only uses transformative portals.  Two portals  that are connected form a \gls{portalpair}. These connections are two-way, allowing back and forth teleportation. The individual portals of a \gls{portalpair} are called \glspl{endpoint}. Instead of referring to portals of a \gls{portalpair} as \enquote{the \gls{endpoint}} and \enquote{the other \gls{endpoint}}, they are sometimes called \enquote{\gls{endpoint} A} and \enquote{\gls{endpoint} B}.
 
 Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, but have different \glspl{modelmatix}. The set of all portals is called \gls{portalset}. The number of portals within the \gls{portalset} is called \gls{portalcount}. Each portal within the \gls{portalset} has an unique integer as \gls{portalid}. The range of \glspl{portalid} starts with 0 and ends with the \gls{portalcount} minus 1. \enquote{Portal N} referes to the portal which has a \gls{portalid} equal to N.
 
@@ -234,22 +377,25 @@ The position is stored as a 3D point and the view rotation as quaternion. Positi
 
 With the position and rotation the \gls{cameramatrix} can be calculated. The inverse of this matrix is the camera's \gls{viewmatrix}, which is used for drawing from the camera's viewpoint.
 
-\subsubsection{Perspective Matrix and Inverse Z-Buffer 0.25}
-This implementation uses a perspective matrix with an infinite far clipping plane. Care needs to be taken, as Vulkan uses depth values from 0 to 1 \cite{khronos:vulkan:spec1.1} compared to open OpenGL's -1 to 1 \cite{khronos:openGL:spec4.6}. Additionally the implementation uses an inverse z-Buffer. An inverse Z-Buffer performs no worse than a regular Z-Buffer, but has improved accuracy when used with floating point depth buffers. For far away objects the depth distributions, becomes increasingly smaller. However, this values are also closer to and can make use a floating points increased precision near 0 \cite{lapidous:1999:optimal, nvidia:inversez}.
+\subsubsection{Perspective Matrix 0.25}
+This implementation uses a perspective matrix with an infinite far clipping plane. Care needs to be taken, as Vulkan uses depth values from 0 to 1 \cite{khronos:vulkan:spec1.1} compared to open OpenGL's -1 to 1 \cite{khronos:openGL:spec4.6}. The implementation uses an inverse depth buffer. The perspective matrix must take this into account, as well as the configuration of the depth test.
+
+
+
 
 
 \subsection{Storing Mesh Data for Rendering}
 
 
-\subsection{Portal drawing 5.75}
+\subsection{Portal drawing 5.6}
 \label{section:portaldrawing}
 
 This section covers various techniques used for portal rendering. How those techniques are actually applied will be explained in section \ref{section:intialimplementation}
 
-\subsubsection{Recursions 0.33}
-When looking through a portal the other part of the world can be seen. In that other part there can be another portal in which yet another part of the world can be seen. This could continue indefinitely, but in this implementation there is a limit. This limit is called the \gls{recursioncount}. A recursion count of 0, means that no other worlds can be seen through portals. A recursion count of 1 allows looking through portals, but portals at the other part of the world can not be looked through.
+\subsubsection{Recursions 0.15}
 
-This implementation performs draws in multiple steps. Initially the initial world and the portals need to be drawn. This is referred as recursion 0. In within recursion 1 all the worlds for all visible portals from recursion 0 need to be drawn. Recursion 2 would draw the worlds for all portals drawn in recursion 1 and so forth. This continues until Recursion n, where n is equal to the \gls{recursioncount}.
+
+This implementation performs draws in multiple steps. Initially all objects and portals are drawn. This is referred as recursion 0. Within recursion 1 all the worlds for all visible portals from recursion 0 need to be drawn. Recursion 2 would draw the worlds for all portals drawn in recursion 1 and so forth. This continues until Recursion n, where n is equal to the \gls{recursioncount}.
 
 
 \subsubsection{Textures vs Stencil Buffer 0.5}
@@ -341,6 +487,7 @@ Dual buffering the near buffer avoids problems with edge case where one portal o
 The read near buffer is a input attachment and the write near buffer is a color attachment. In recursion 0, no read near buffer test is used.
 
 \subsubsection{Portal near Z fighting 0.33}
+\label{section:portalzfighting}
 When rendering the contents of one endpoint of a portal pair, the other endpoint would be rendered directly at the same location. Due to precision errors in floating point calculations, the other endpoint would sometimes be discard by the near buffer and sometimes not. This leads to a special case of Z fighting. To avoid this we store the winding order of a fragment in the near buffer. When the fragments depth value and the near buffer value are nearly equal and winding order is the same, we have exactly the previously mentioned case and need to discard the fragment. This is done by increasing the comparison value by some small amount or percentage for same winding orders.
 
 As the implementation has a depth range of 0 to 1, the value will always be positive. This allows the implementation to store the winding order is store as the sign of the near buffer. Positive values indicating front facing and negative values indicating back facing. Near Depth comparison is done with the absolute value of the buffer.
@@ -990,7 +1137,7 @@ Table \ref{tab:perfviewpoint} shows the rendertimes in milliseconds for the imag
 
 \subsection{Swap Near Buffer with Far Buffer to reduce texture count 0.3}
 
-In section \ref{section:dynamicportalinstancerendering} a manual stencil buffer was introduced. This means the depthstencil attachment is now exclusively use for the far depth buffer. When rendering portals the depth values are written into the write near buffer as well as the far depth buffer for the depth test. After this the rendering of all \gls{portalset} the depth buffer's contents are no longer needed and must be cleared. The values in the far depth buffer and the write z buffer are nearly the same. The only difference is that the far depth buffer contains the depth values, from rendering the \gls{objectset}. However, for later sub passes there is no real difference, as the manual stencil test discards fragments that would read at locations, where not portal was drawn. This means that the far depth buffer can be used instead and no write near buffer is required. One less texture is needed.
+In section \ref{section:dynamicportalinstancerendering} a manual stencil buffer was introduced. This means the depthstencil attachment is now exclusively use for the far depth buffer. When rendering portals the depth values are written into the write near buffer as well as the far depth buffer for the depth test. After this the rendering of all \gls{portalset} the depth buffer's contents are no longer needed and must be cleared. The values in the far depth buffer and the write z buffer are nearly the same. The only difference is that the far depth buffer contains the depth values, from rendering the \gls{objectset}. However, for later sub passes there is no real difference, as the manual stencil test discards fragments that would read at locations, where not portal was drawn. This means that the far depth buffer can be used instead and no write near buffer is required. One less texture is needed. However, other means must then be found to detect portal front and back faces, as described in section \ref{section:portalzfighting}.
 
 
 
