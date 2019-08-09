@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 36.75/69}
+\subsection*{Search Terms TOTAL PAGES 36.45/69}
 portal
 3D lense
 magic lense
@@ -121,7 +121,7 @@ The stencil test is less commonly used than the depth test, which is used almost
 	\item Decrement the stencil value and wrap around	
 \end{itemize}
 
-It is possible to use a different operation depending on the outcome of the depth and stencil test. A different operations can be configured for: depth failed, depth passed but stencil failed, both tests passed. The test and operations can be different for back and front faces \cite{sellers:vulkanprogramming}. Additionally, a compare and a write mask can be configured. Before the test the reference value and the stencil buffer value are bitwise AND-ed. The write mask selects the bits of the stencil values that are updated. In Vulkan 1.1 the stencil buffer can only have exactly 8 bits or not be present at all. Tjere is not texture format available that allows a different number of bits \cite{khronos:vulkan:spec1.1}.
+It is possible to use a different operation depending on the outcome of the depth and stencil test. A different operations can be configured for: stencil failed, stencil passed but depth failed, both tests passed. The test and operations can be different for back and front faces \cite{sellers:vulkanprogramming}. Additionally, a compare and a write mask can be configured. Before the test the reference value and the stencil buffer value are bitwise AND-ed. The write mask selects the bits of the stencil values that are updated. In Vulkan 1.1 the stencil buffer can only have exactly 8 bits or not be present at all. Tjere is not texture format available that allows a different number of bits \cite{khronos:vulkan:spec1.1}.
 
 \subsubsection{Early Fragment Test}
 Although to depth and stencil test are defined to run after the fragment shader, they can actually happen before the fragment shader is executed. When possible this happens automatically, as early discarded fragments do not need to invoke the fragment shader. However, this is not possible if performing the test early has visible side effects. In the following cases the early test is not possible \cite{sellers:vulkanprogramming}:
@@ -177,19 +177,26 @@ Portal Locomotion in Budget Cuts\url{https://www.youtube.com/watch?v=f786ak3GKQo
 
 \section{Previous Work 0/7}
 
-\subsection{Transitioning between worlds}
-
-\textcite{schmalstieg:1999:sewing} used portals to connect different virtual worlds together.
-
-\subsection{Portals as Occlusion Culling}
-
-similarities between portals and transformative portals.
-
 \subsection{Potentially Visible Set}
 
-potentially visible set
-\cite{luebke:1995:portals}
-\cite{yang:2014:walkthrough}
+One area where portals are used is for the calculation of \gls{pvs}. A \gls{pvs} what geometry can be visible. This can either be defined from a specific point or from a whole region. While it is more difficult to calculate the \gls{pvs} for a region, this information can be used for many locations. The information contained in \glspl{pvs} is very useful for occlusion culling. Only object contribute to the final image need to drawn. Skipping invisible ojects reduces the \gls{gpu}['s] workload, leading to better performance.
+
+In \gls{pvs} algorithms the regions or subspaces are called \textit{cells}, which are connected by portals. A \gls{pvs} for a \textit{cell} describes which geometry is visible for that \textit{cell}. For a \textit{cell} geometry within itself and within adjacent \textit{cell} it is connected to are potentially visible. However, it is also possible to see geometry in \textit{cells} which are not directly connected to the original \textit{cell} . Note that a \gls{pvs} is not required to be exact and can be overestimated \cite{cohen:2003:survey}.
+
+For point base \gls{pvs} calculation, \textcite{luebke:1995:portals} proposed an on the fly algorithm. It is  a variation of \textcite{jones:1971:new}'s work. A portals vertices are projected into screen space. Then a axial 2D bounding box of those vertices is created. This box forms a conservative bound for the portal and is called  \textit{cullbox}. Whenever all screen space projected vertices of an object lie outside this \textit{cullbox} the object can safely be culled. A conservative estimate can be found by projecting an objects bounding box, instead of each vertex. For portal recursions the \textit{cullbox} is the intersection of all the portals' \textit{cullboxes} which are involved in the recursion. 
+
+
+%\cite{yang:2014:walkthrough}
+
+\subsection{Portals use in Sewing worlds together with SEAMs}
+
+\textcite{schmalstieg:1999:sewing} used portals, their paper refereed as SEAMs, to connect different virtual worlds together. Previously when one wanted to travel between virtual worlds this was done via teleportation, which can be very disorienting. They draw the SEAMs in depth first order.
+
+The primary world is rendered object after object. When a SEAM is encountered, for each pixel  the stencil value is increased, the color set to the clear color and  depth value is set to infinitely far away. The stencil buffer is initially at 0. Then the secondary the whole secondary world or recursion 1 is rendered, but only where the stencil value is equal to 1. After the secondary world is rendered, the seam that triggered it sealed. The SEAM is drawn, but only sets the depth values and decreases the stencil buffer. When a SEAM is encountered in the secondary world, it uses the same process, but using a stencil compare value of 2 to render the tertiary world. This process could potentially continues until a limit is reached. The rendering of a world is only finished, when all its SEAMs and their worlds have been drawn and the SEAMs were sealed again. To reduce the amount of worlds that potentially need to be drawn,  the \gls{pvs} algorithms of \textcite{luebke:1995:portals} were used. SEAMs were treated as portals and virtual worlds as regions \cite{schmalstieg:1999:sewing}.
+
+
+\subsection{Frustrum Culling}
+
 
 \subsection{Portals Algorithms History}
 
@@ -240,7 +247,7 @@ However, there are also games that render portals in ways similar to as in the i
 
 \textit{Antichamber} is another puzzle. Although portals are not its main focus, it is noteworthy as they behave very differently. \textit{Antichamber}'s portals are called \textit{transporter windows}. Instead of moving through them, player teleport when the \textit{transporter window} fills their entire screen. However, the player will not notice the teleportation immediately, as their view is filled with the \textit{transporter window}. Only after turning or moving away the effects can be noticed \cite{antichamber}.
 
-\textit{Budgetcuts} is a \gls{vr} stealth game. One important aspect of \gls{vr} games is their locomotion system. Moving with a stick feels unnatural and can introduce motion sickness. In \textit{Budgetcuts} the player moves around the world with a teleporter gun, but works differently compared to the previous games. First the player can create a portal at another place using their translocator device. That place can be seen through another portal, which at the translocator. If the player decides to move to the other portal, they can press a button. Then the portal at the translocator wraps around the player, when finished the player stands at the new location \cite{budgetcuts, gdc:budgetcuts}.
+\textit{Budgetcuts} is a \gls{vr} stealth game. One important aspect of \gls{vr} games is their locomotion system. Moving with a stick feels unnatural and can introduce motion sickness. In \textit{Budgetcuts} the player moves around the world with a teleporter gun, but works differently compared to the previous games. First the player can create a portal at another place using their translocator device. That place can be seen through another portal, which at the translocator. If the player decides to move to the other portal, they can press a button. Then the portal at the translocator wraps around the player, when finished the player stands at the new location. Portals in \textit{Budgetcuts} are visible only and can be physically interacted with \cite{budgetcuts, gdc:budgetcuts}.
 
 Lastly there is \textit{Manifold Garden}, which is, as the time of this writing not, an unreleased game. The game has no actual portals, but the edge of the world acts as one. When moving to the edge of the world, the player gets teleported to the other edge. There is no visible seam at the edge. It looks as if the world continues and repeats itself. The Willian Chyr, \textit{Manifold Garden}'s author, calls this effect \textit{3D World Wrapping}.
 
@@ -909,7 +916,7 @@ When looking through a portal the camera should see itself. However, always rend
 
 
 
-\section{Analysis And Improvements 11.95/15}
+\section{Analysis And Improvements 11.65/15}
 
 \subsection{Implementation Showcase 3.25}
 
@@ -1153,12 +1160,20 @@ One way to prevent false visible portals is by running a depth pre pass for the 
 There is also another possibility, which only needs an additional depth texture, but no pre pass. During the rendering of all \gls{objectset} a far depth buffer is use, just as always. However, during the portal rendering, this depth buffer is given as input for the portal shaders. They perform an additional manual test for the far depth. Portals still use a regular depth buffer also, so that portals occlude each other correctly. Although portals occluded by other portals still count as visible, portals occluded by objects do not. As the later case is far more likely, this could cut down the amount of false visible portals drastically.
 
 
-\subsection{Dynamic Visible Portals count 0.3}
+\subsection{Dynamic Visible Portals count}
 The visible portal count may not only be different for every recursion, it could even change during run time. The only change in the implementation would be to reserve enough space for the indices array and helper array, described in section \ref{section:indexarrayproperties} and \ref{section:helperarrayproperties} respectively. Everting else uses values that can change during run time.
 
 For example dynamically decreasing the visible portal count for recursion 0, while increasing it for recursion 1. This is useful for situations where only one portal is visible, because the camera is directly in front of it.
  
 This this allows for more visible portals during recursion 1. The amount of stencil values used as well as the amount of times the level is rendered stays roughly the same.
+
+\subsubsection{Culling Portals}
+Object culling algorithms are difficult to implement, as they would need to be performed for all portals  view including recursions. Table \ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. Keeping this value low could improve performance drastically. A similar approach to the one suggested by \cite{luebke:1995:portals} could be used. However, only portals need would to be considered. Then the visible portal count for a layer could be conservatively estimated. This will usually be a much lower number than the fixed one. Furthermore the visible portal count does not need to be fixed for a whole recursion. Each rendered \gls{portalset} could use a different max visible portal count, instead of all using the highest count. This could improve performance even further.
+
+One thing that must be note is that the way view indices and stencil values are calculated must fundamentally change when implementing this approach. This might also mean passing additional push constants.
+
+Culling portals does not make the dynamic calculation of actual visible portals obsolete. Portals may still be occluded by scene objects. Producing degenerate triangles for objects drawn inside occluded portals, can still improve performance as table \ref{tab:perfviewpoint} has shown.
+
 
 
 \subsection{Camera Matrix Improvement opportunities 2.25}
@@ -1275,50 +1290,70 @@ Going down the tree render only one world first. Then going down by drawing othe
 Combine with portals. Instanced instance drawing. Calculate the two ids from vertexId, by taking modulo, qutotient of vertexId with wrapped world count. Use those to access right matrices
 
 
-\subsection{Shadows}
-Due to time reasons the implementation has no shadows implemented. This section possible approach that would have been used, if time had allowed. For a portal to appear seamless care must be taken when rendering shadows. Portals must be taken into account, or otherwise shadows appear cut of or appear out of nowhere in the presence of a portal.
+\subsection{Shadows and Lighting}
+Due to time reasons the implementation has no shadows and only one directional light was implemented. This section covers a approach that would have been used, if time had allowed. For a portal to appear seamless care must be taken when lighting. Otherwise for instance shadows could appear cut of or appear out of nowhere in the presence of a portal.
 
-
-
-
-\subsubsection{Rethink again? Portal Shadow Mapping}
+\subsubsection{Portal Shadow Mapping}
 One approach would be a modified version of shadow mapping. When rendering shadow maps the same approach can be taken that is used to render the scene with portals, i.e. multiple recursions, but from the lights view. However in addition to the depth values, the view matrix used for rendering a fragment must be saved as well. This can should be in form of an index to save space, but it must be possible to retrieve later. The shadow map has two contents, the depth value and the matrix index.
-Then when rendering the actual scene, the shadow test is performed. However, as it is not know whether the light travelled through a portal the position on the shadow map can not be calculated directly. The following needs to be done for each matrix and matrix combination the light could have used: 
-Apply the matrix to the light. Then calculate the position on the shadow map. Check if matrix in the shadow map is the same as the one just used. If not repeat this step, until the matrices match.
-After the right position on the shadow map has been found the shadow mapping algorithm continues as usual. This approach requires many texture lookups. The actual number depends on the possible view matrices. This value needs to be small to be a viable.
-Testing needs to be done in camera space.
-\subsubsection{Fake shadows}
-The shadow mapping approach seems very expensive. Instead of shadow mapping a fake shadow can be used. It will not look realistic, but can give a sense of depth. For each lightsource a ray is cast from the character a cone is defined. The peak is a the characters origin. Its circlular surface has the light direction as normal. Every objects that can be shadowed checks if its fragments is inside the cone, if yes then it is shadowed. If the cone instersects with a portals, there needs to be another cone.
+Then when rendering the actual scene, the shadow test is performed. However, as it is not know whether the light travelled through a portal the position on the shadow map can not be calculated directly. It is possible that the same fragment can be lit by the same light multiple times, using different portals. They need to be regarded as separate dynamic lights which share their shadowmap.
 
-Instead of a cone something similar to shadow volumes can be used. some 2 shape infinitely far away. Calc distance, the see if inside the shape, the farther away the bigger the shape for testing.
+For each portal combination the light could have traveled through, the corresponding teleport matrices must be applied to the light position.  Then the position on the shadow map is calculated using that transformed light position. The shadow map's matrix is compared against the matrix used to transform the light position. If they do not match this is treated the same as if the depth does not match. Then the regular depth check is performed.
 
-\subsubsection{Make Portals Glow}
-Make the portals glow. That way everything near them is lit. Shadows and lighting do not matter as they would not be visible anyways due to the portal glow dominating the lighting calculation. No seams can be seen near portals, and regular shadow mapping can be used.
+Each light source needs its own shadow map as well as its own buffer to store the matrices.
+
+\subsubsection{Lighting}
+For lighting only a directional light was implemented. With directional light it is the least noticeable when it is not handled correctly. Especially when portals are placed that the direction light is almost parallel to them.
+Lighting is also difficult its possible that a fragment can be lit by the same light multiple times. For shadow casting lights, information from the shadow map can be used to detect from where a fragment is lit.
+
+However for other lights this is not possible. Lighting a fragment for possible portals the light could have travelled through would be expensive and create wrong results.
 
 
-\subsection{lighting}
-Similar to shadows, lighting was also no really implemented. Only one directional light, which does not handle portals. Without correct handling spot and point lights could create visible seams at portal locations, just as shadows. Directional light would not produce seams, as the light direction will be the same no matter where an object is located.
-Calculating the direction by subtracting the  Light also can travel through portals. Every light is used multiple times. Each of those has different teleport matrices applied and the usual light test is performed. Probably useful to do \ref{section:noveiw}, so this the same matrices as for the view can be used.
+\subsubsection{Portals as Lightsource}
+\label{section:portalsaslights}
+Performing doing correct lighting and shadows is expensive. Depending on the use case a potential solution would be to perform lighting and shadowing as though portals did not exist. To hide the seams at portal locations, the portals could behave as a very bright point light. Fragments would appear almost fully lit and shadows would fade out near portals. All fragments close to the portals would be lit the same and not seams would be visible.
+
+However, this has the downside that the location of portals is very visible. If this is not desired the level must be designed in a way that there are always lights near portals or only use one directional light without shadows and no other light sources.
 
 
 \subsection{Transparent Objects}
+Transparent object are not supported in the implementation, but there is nothing that would stop implementing them. They would be rendered very similar to regular approaches. First everything opaque is rendered, including all portal recursions. After everything is drawn the transperent objects are drawn back to front, starting from the last recursion and ending with the initial recursion \cite{lecture:portalProblems}.
+
+However, the far depth information of all recursions must be saved. Otherwise, the whole scene must be redrawn to get the depth information. This could be done by saving using different depth buffers and not clearing them. Or By using a depth prepass for portals and when rendering the again setting the depth value to infinite far away, instead of clearing the whole buffer. The near buffer can be recreated by drawing the portals again as drawing a few portals is likely far less expensive compared to drawing the whole scene and might not be a huge concern. Alternatively, the far buffers for each recursion could just be saved, but this requires more textures.
 
 
+\subsection{Portal Physics ?}
+The implementation currently only supports collision for the camera. Depending on the use case for portals, portal physics are need. There are several problems that must be solved to allow for realistic portal physics.
 
-\subsection{Collision Detection}
+\subsubsection{Portal Edges}
+Portals either must have collision on their edges or allow slicing objects into pieces.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\linewidth]{images/edgecollision.png}
+	\caption{A box represent an object, while the thick line represents a planar portal. It is not clear what should happen to the right object}
+	\label{fig:edgecollision}
+\end{figure}
+
+Figure~\ref{fig:edgecollision} illustrates the problem that can occur. The left box passes the portal, the middle box goes through the portal, with the dotted  part being present at another location. However, It is not clear what should happen to the right box. The right box case could be  be prevented via collision on the portal edge.  Or the box could be sliced by the portal edge so that one part goes through the portal, while the other passes it. Watertight portals do not have edges, so this problem cannot occur for them.
+
+\subsubsection{Halfway through Objects}
+As objects are not point it is possible that only part of an object has passed the portal. The two parts of the object must be exists two different locations. Just duplicating the object is not enough however. It must also be insured that an object piercing a portal from the front, cannot be seen or interacted with from the back. Additionally the physics state must the same for both parts. Furthermore similar care must be taken for the player's avatar. If the player is halfway through the portal, they should not see part of their avatar directly at their viewing location. Some of this problems can be seen in the presentation of \textcite{lecture:portalProblems}.
 
 
-
-\subsection{Objects intersecting portals}
-The current implementation does not handle objects that intersect portals. They just move through the portal, without teleporting. Objects that are intersecting a portal exits at two different places. They
-The camera object should be able to see itself
-
-
-When looking through a portal, players might see themselves. Care must be taken when rendering. Standing directly in fron of the portal and touching it slightly could make the player see their only model at their own location. (see valve talk \url{https://www.youtube.com/watch?v=riijspB9DIQ})
 
 \subsection{GPU Raytracing}
 
 \subsection{Use the Instant Occlusion query in occlusion culling}
+The technique use to calculate previous visible portals could be adapted and used together with \glspl{pvs} based occlusion culling. Objects within cells are rendered using draw indirect. This allows changing the instance count of the objects and can effectively disable them. All objects within are cell are only enabled, if at least a fragment of the corresponding portal is drawn. This can be achieved by initially setting the instance count to 0 for all object. Then in a portals fragment shader the instance count can be set to 1, which only happens if at least one fragment is drawn.
+
+\subsubsection{Extensions}
+Depending on  available \gls{gpu} extension this approach can be further improved. When using Vulkan the extension VK\_EXT\_conditional\_rendering can be used. This removes the need for an draw indirect buffer. This allows removes the need to loop over all elements of that buffer and setting the instance count individually \cite{khronos:vulkan:spec1.1}.
+Another useful extension is to use representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively .
+
+
+ Potential portals could be rendered. If no gra
+
+
 we can set conditional rendering paramters during this occlusion culling.
 Needs some  recursive portal passes and then one big scene pass, which makes use of conditional rendering, eithr with the extension or draw indirect and instance counts. Inspired by \cite{yang:2014:walkthrough}
 
