@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 36.45/69}
+\subsection*{Search Terms TOTAL PAGES 45.6/69}
 portal
 3D lense
 magic lense
@@ -9,20 +9,20 @@ Seams
 dual depth buffer
 Walkthrough applications
 Transformative Portal
-\section{Introduction 0/1}
+\section{Introduction 0.95/1}
 
-\subsection{Portal definition}
+\subsection{Portal definition 0.2}
 Our world can be seen as one big space that is divided into multiple subspaces by large objects, such as walls, which spit up a house into multiple rooms. A portal connects two subspaces, similar as a door connects two rooms. Through a portal the subspace it connects to can be seen. To reach the other subspace one must traverse through a portal.
 
-\subsubsection{Transformative Portals}
+\subsubsection{Transformative Portals 0.25}
 Regular portals can only connect subspaces that are adjacent to each other. If a place can be reached by going in a straight line, this is the fastest possible way. A travelling through a regular portal cannot be faster.
 
 For transformative portals however, there are no such limitations. Transformative portals can connect completely arbitrary subspaces and may even change where they connect to. They can even connect a subspace to itself. In the presence of transformative portals a straight path may not be the fastest. Travelling through a transformative portal could be faster. Transformative portals similar to wormholes described by \textcite{Visser:Wormholes} in his book.
 
-\subsubsection{Portal Recursion}
+\subsubsection{Portal Recursion 0.25}
 When looking through a portal parts of subspace can be seen. In that subspace there can be another portal through which yet another subspace is visible. For this example to see the final subspace, two recursions are needed. In reality this could continue indefinitely, everything is visible. However, due to technical reasons, there is often a limit to the number of recursions. In this paper this limit is refered to as \gls{recursioncount}. A recursion count of 0, means that no other worlds can be seen through portals. A recursion count of 1 allows looking through portals, but portals at the other part of the world can not be looked through.
 
-\subsection{Reasons For Portals}
+\subsection{Reasons For Portals 0.25}
 Portals are applicable for many different topics. Portals can be used to accelerate rendering speed, by enabling the creation of \glspl{pvs} \cite{luebke:1995:portals}. Although they are not quite portals, magic lenses are very similar to portals and allow for useful visualisations \cite{viega:1996:3d}. In video games portals are especially useful. As previously mentionened they improve performance, but also serve as interesting gameplay mechanics. Furthermore they allow for intuitive transitions between worlds \cite{schmalstieg:1999:sewing} or intuitive locomotion for \gls{vr} games.
 
 
@@ -34,13 +34,13 @@ evaluation
 
 
 
-\section{Graphics programming 0/9}
+\section{Graphics programming 2.7/9}
 
 
 Many alorithms describe in later sections use computer graphics techniques or special features of the graphics cards. This sections serves as a quick summary of some of these features and techniques, so the later parts of this thesis can be better understood. 
 
 
-\subsection{Raytracing}
+\subsection{Raytracing 0.5}
 Ray tracing is a rendering technique, which creates an image by casting rays into the scene. These rays will be refered as \glspl{viewray}. For each pixel a ray is cast and checked for intersections with objects in the scene. The pixel's color is the color of that intersected object at the corresponding intersection point \cite{bungartz:2002:einfuhrung}. This technique can also be extended. For example from the intersection point additional rays can be casted, in the directions of all the lights in a scene, to test if an object lies in a shadow \cite{whitted:2005:improved}. Raytracing can also be used to implement portals in an intuitive way. When a \gls{viewray} intersects with one \gls{endpoint} the view ray is recast from the other \gls{endpoint}.
 
 Ray tracing is well know for being able to produce images with higher quality. However, is quite expensive and mostly used for offline rendering. \textcite{wald:2001:interactive} have shown that in some cases software raytracing can  outperform rasterization approaches for lower resolutions with a high triangle count \cite{wald:2001:interactive}.
@@ -80,13 +80,13 @@ The next stage is the geometry stage, which is generally executed on the \gls{gp
 
 \cite{akine:2018:realtime}
 
-\subsection{GPU Features}
+\subsection{GPU Features 2.2}
 
 
 
 
 
-\subsubsection{Depth Test}
+\subsubsection{Depth Test 1.1}
 Without additional setups, objects must be drawn according to the painter's algorithm. Objects are sorted by their depth. Then they are drawn back to front storing their color a the coresponding pixels. The object farthest away is drawn first and the nearest object is drawn last. Otherwise objects that are behind other objects may be drawn over them, leading to wrong images. However, there are cases where the painter's algorithm does not work, for example when three objects overlap each other \cite{akine:2018:realtime}.
 
 The depth test offers a solution to this problem. Before the results of a fragment is written to a texture, the current fragment's depth value to the depth value of the fragment, which was last written to location. The depth value of the last written fragment is stored inside the depth buffer. If the current fragment depth value is not farther from the view point than the last fragment, the current fragment is discarded. Otherwise it writes its values as usual and stores its depth in the depth buffer. The depth buffer is sometimes also called z-buffer.\cite{akine:2018:realtime}.
@@ -107,7 +107,7 @@ The depth test comparison operation must be configure. It should correspond to t
 
 The depth buffer can also be configured to not write the new value. Additionally the new depth value can be influenced before the test, with a depth bias \cite{sellers:vulkanprogramming}.
 
-\subsubsection{Stencil Test}
+\subsubsection{Stencil Test 0.8}
 
 The stencil test is less commonly used than the depth test, which is used almost everywhere. Similar to the depth test, it serves as another way to discard a fragment. It uses a stencil buffer to store stencil value, similar to the depth buffer. In fact both buffers are stored alongside each other and cannot be separated. The stencil test compares a reference value, with the value inside the stencil buffer at the fragments location. If the test fails the fragment is discarded. Different reference values and comparison operations can be configured. The same comparisons from the depth test can be used. Additionally the stencil test can change the contents of the stencil buffer. The following operations are possible \cite{sellers:vulkanprogramming}:
 \begin{itemize}
@@ -123,7 +123,7 @@ The stencil test is less commonly used than the depth test, which is used almost
 
 It is possible to use a different operation depending on the outcome of the depth and stencil test. A different operations can be configured for: stencil failed, stencil passed but depth failed, both tests passed. The test and operations can be different for back and front faces \cite{sellers:vulkanprogramming}. Additionally, a compare and a write mask can be configured. Before the test the reference value and the stencil buffer value are bitwise AND-ed. The write mask selects the bits of the stencil values that are updated. In Vulkan 1.1 the stencil buffer can only have exactly 8 bits or not be present at all. Tjere is not texture format available that allows a different number of bits \cite{khronos:vulkan:spec1.1}.
 
-\subsubsection{Early Fragment Test}
+\subsubsection{Early Fragment Test 0.3}
 Although to depth and stencil test are defined to run after the fragment shader, they can actually happen before the fragment shader is executed. When possible this happens automatically, as early discarded fragments do not need to invoke the fragment shader. However, this is not possible if performing the test early has visible side effects. In the following cases the early test is not possible \cite{sellers:vulkanprogramming}:
 Firstly, when the fragment shader can update the depth value, the actual depth value can not be know before execting the shader. Secondly, when the shader has side effects, such as writing into a buffer. Discarding early would prevent the write from happening. Lastly if the shader can discard the fragment, as discarding prevents should prevent updating the depth buffer \cite{sellers:vulkanprogramming}. It is possible to force the fragment test to run early. In GLSL this is done via the following line in the fragment shader \cite{khronos:glsl4.60:spec}:
 \begin{lstlisting}
@@ -175,9 +175,9 @@ Portal Locomotion in Budget Cuts\url{https://www.youtube.com/watch?v=f786ak3GKQo
 
 
 
-\section{Previous Work 0/7}
+\section{Previous Work 2.25/7}
 
-\subsection{Potentially Visible Set}
+\subsection{Potentially Visible Set 0.5}
 
 One area where portals are used is for the calculation of \gls{pvs}. A \gls{pvs} what geometry can be visible. This can either be defined from a specific point or from a whole region. While it is more difficult to calculate the \gls{pvs} for a region, this information can be used for many locations. The information contained in \glspl{pvs} is very useful for occlusion culling. Only object contribute to the final image need to drawn. Skipping invisible ojects reduces the \gls{gpu}['s] workload, leading to better performance.
 
@@ -188,7 +188,7 @@ For point base \gls{pvs} calculation, \textcite{luebke:1995:portals} proposed an
 
 %\cite{yang:2014:walkthrough}
 
-\subsection{Portals use in Sewing worlds together with SEAMs}
+\subsection{Portals use in Sewing worlds together with SEAMs 0.5}
 
 \textcite{schmalstieg:1999:sewing} used portals, their paper refereed as SEAMs, to connect different virtual worlds together. Previously when one wanted to travel between virtual worlds this was done via teleportation, which can be very disorienting. They draw the SEAMs in depth first order.
 
@@ -272,10 +272,8 @@ Vulkan is much more explicit and low level compared to OpenGL. This allows for m
 
 OpenGL is a stateful \gls{api}. It has a global state which can be manipulated with function calls. Vulkan is stateless, all functions manipulate a given object. While it easier to get started with global state, it is more difficult to maintain the bigger the project gets.
 
-As the implementation of the prototype is expected to take quite a while, and might be further worked on after this thesis. With maintainability and optimization possibilities as important concern, Vulkan is more suitable for the project.
+As the implementation of the prototype is expected to take quite a while, and might be further worked on after this thesis. With maintainability and optimization possibilities as important concern, Vulkan is more suitable for the project. 
 
-%TODO: subjective why vulkan
-(Subjective Reason: Want to learn vulkan?)
 
 \subsubsection{Vulkan-Hpp}
 In additon to the Vulkan C-API, Khronos provides a header-only wrapper library called Vulkan-Hpp for C++. It adds features such as safety for enums and flags, RAII Types and STL container support. Even when mainly using Vulkan-Hpp, the the C-API can still be used when necessary. As there was not real downside, but many advantages, Vulkan-Hpp was used for the implementation.
@@ -407,7 +405,7 @@ This implementation performs draws in multiple steps. Initially all objects and 
 
 \subsubsection{Textures vs Stencil Buffer 0.5}
 \label{section:textursVsStencil}
-Two different approaches were considered to render the contents of a portal. The first approach is to render the scene from the portal's viewpoint to a texture in the first renderpass. In the next renderpass this texture is applied to the portal and the whole scene is then rendered as usual \cite{lecture:portalProblems}.  %TODO: find source
+Two different approaches were considered to render the contents of a portal. The first approach is to render the scene from the portal's viewpoint to a texture in the first renderpass. In the next renderpass this texture is applied to the portal and the whole scene is then rendered as usual \cite{schmalstieg:1999:sewing, lecture:portalProblems}.
 
 The other approach utilises the stencil test. The stencil test is initially set to always pass. First only the \gls{objectset} is drawn. In the next renderpass the \gls{portalset} is drawn. For this renderpass, the stencil operation must be set in a way to mark the visible portal pixels. Now at least the depth values for visible portal pixels must be cleared. It is also possible to clear the whole buffer. Finally the scene is drawn again from the portal's view point. Fragments at pixel locations that are not marked are discarded. This ensures that it is only drawn to pixels where the portal was drawn \cites{schmalstieg:1999:sewing, lowe:2005:technique, lecture:portalProblems}.
 
@@ -450,10 +448,12 @@ When looking through the portal, it must look as if the camera looks directly a 
 
 \subsubsection{Recursive Portal Matrices 0.75}
 \label{section:recursivecameramatrices}
-The previous sections explained how to calculate the camera matrices for each portal for recursion 1. For recursion 2 a the camera's viewpoint must be transform twice, by two sequential applied \glspl{teleportationmatrix}. This needs to be done for every combination of two portals. For recursion 3 this is done for every combination of three portals and so forth. The implemtations stores the view matrices in a tree. The root is the current view matrix. An nth child node's matrix is equal to its parent matrix multiplied by the portal n's \gls{teleportationmatrix}. The tree is filled level by level.
+The previous section explained how to calculate the camera matrices for each portal for recursion 1. For recursion 2 a the camera's viewpoint must be transform twice, by two sequential applied \glspl{teleportationmatrix}. This needs to be done for every combination of two portals. For recursion 3 this is done for every combination of three portals and so forth. This different combinations of matrices can be seen as a tree. The root is the current camera matrix. An nth child node's matrix is equal to its parent matrix multiplied by the portal n's \gls{teleportationmatrix}. The tree is filled level by level, each level reusing the calculations of the previous level.
 
 
-The tree is layed out as an array and the indices can be found the following way:
+
+
+The implementations stores this tree of camera matrices in an array. The indices can be found the following way:
 
 \begin{itemize}
 	\item $ nth child = current index * portalcount + 1 + n$
@@ -473,12 +473,12 @@ The tree is layed out as an array and the indices can be found the following way
 	\label{fig:cameraindices}
 \end{figure}
 
-Figure \ref{fig:cameraindices} shows the indices for 4 portals, with 2 iterations. For example to find the view matrix of Portal 0, seen through Portal 1, we would access the array at index 9. Note that the size of the three scales exponentially, with the \gls{portalcount} and \gls{recursioncount}, as every possible combination of portals needs to be covered. 
+Figure \ref{fig:cameraindices} shows the indices for 4 portals, with 2 iterations. For example to find the view matrix of Portal 0, seen through Portal 1, we would access the array at index 9. Note that the size of the three scales exponentially, with the \gls{portalcount} and \gls{recursioncount}, as every possible combination of portals needs to be covered. At the end of the calculation of the tree, every matrix of in the tree needs to be inverted.
 
 
 \subsubsection{Dual Depth Buffer 1}
 
-When drawing the scene from the portals view, care must be taken to not draw objects, that are between the camera and other endpoint.
+When drawing the scene from the portals view, care must be taken to not draw objects, that are between the camera and other endpoint. In previous works this is often refered to as clipping \cite{lowe:2005:technique}.
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{images/bananajuce.png}
 	\caption{Object between portal camera and portal endpoint}
@@ -489,7 +489,7 @@ Figure \ref{fig:bananajuce} shows such an example. Without additional techniques
 
 In this implementation the hardware supported depth buffer is used as the far buffer. For the near buffer dual buffering with two color texture are used, a read near buffer and a write near buffer. In the fragment shader, the fragments depth value is compared to the read near buffer. If it is lesser it is manually discarded, with a discard statement in the shader. Whenever the portals are drawn, they not only write the far depth buffer, but also the write near depth buffer. When the implementation transitions to the next recursion, the write near buffer and read near buffers are swapped.
 
-Dual buffering the near buffer avoids problems with edge case where one portal occludes another and the portal behind is drawn first. With only one near buffer, the portal behind would set the near buffer to its value. The fragments of the portal in front would be discarded, instead of occluding the portal behind.
+Dual buffering \cite{lowe:2005:technique} the near buffer avoids problems with edge case where one portal occludes another and the portal behind is drawn first. With only one near buffer, the portal behind would set the near buffer to its value. The fragments of the portal in front would be discarded, instead of occluding the portal behind.
 
 The read near buffer is a input attachment and the write near buffer is a color attachment. In recursion 0, no read near buffer test is used.
 
@@ -687,7 +687,7 @@ The following formulas can be used to calculate indices
 	\item $L_nE_iC_k = LF_{n+1} + LDC_{n} * i + k$
 \end{itemize}
 
-For every recursion the whole corresponding level of the Index Array Tree is traversed, drawing each object and portal a total of $LC_n$ times. Using \ref{fig:indexarray} as example, every object and portal in recursion 0 is drawn 1 time. For recursion 1 is is 4 times, for recursion 2 its is 12 times. And Finally for the last recursion, recursion 3, everything is drawn 24 times. In total 41 draws would be issued for every object and portal.
+For every recursion the whole corresponding level of the Index Array Tree is traversed, drawing each object and portal a total of $LC_n$ times. Using figure \ref{fig:indexarray} as example, every object and portal in recursion 0 is drawn 1 time. For recursion 1 is is 4 times, for recursion 2 its is 12 times. And Finally for the last recursion, recursion 3, everything is drawn 24 times. In total 41 draws would be issued for every object and portal.
 
 \subsubsection{Filling the Index Array 1.33}
 For the indirection from the previous section to work, the index array must be filled with correct values. Before starting to record draw commands, the index array is filled with an invalid index value by calling \textit{fillBuffer}. Listing \ref{listing:indicesindexcalculation} shows the algorithm used by the fragment shader to calculate and set the individual index array elements.
@@ -742,9 +742,9 @@ void main()
 
 In each portals fragment shader the previous visible portal count is calculated. How this is done will be explained in the next section. It is then compared with the maximum visible portal count. If it the previous visible portal count is higher or equal to the maximum visible portal count the index array is not touched, by the shader.
 
-If the previous visible portal count is less then the index for writing is calculated using $L_nE_iC_k = LF_{n+1} + LDC_{n} * i + k$ (see section \ref{section:indexarrayproperties}). $LF_{n+1}$ is provided by via push constant and is the same for the whole recursion.  $LDC_{n}$ is also the maximum visible portal count, which was used for the previous check. It is provided via push constant and also stays the same for the whole recursion. $i$ is equal to the number of previous portal groups for that recursion. It is provided via push constant and is increments for after each portal group. $k$ is equal to the number of previous visible portals, that was just calculated.
+If the previous visible portal count is less then the index for writing is calculated using $L_nE_iC_k = LF_{n+1} + LDC_{n} * i + k$ (see section \ref{section:indexarrayproperties}). $LF_{n+1}$ is provided by via push constant and is the same for the whole recursion.  $LDC_{n}$ is also the maximum visible portal count, which was used for the previous check. It is provided via push constant and also stays the same for the whole recursion. $i$ is equal to the number of previous \glspl{portalset} for that recursion. This value will be refered as the \gls{portalsetid}, and is unique within for each draw of a \gls{portalset} in a recursion. It is provided via push constant. $k$ is equal to the number of previous visible portals, that was just calculated.
 
-Now that the index for the element in the index array we want to write to has been calculated, the shader needs to write the right value to it. The portal that is currently drawn may be seen portal. Using the formula  $ nth child = current index * portalcount + 1 + n$ from section \ref{section:recursivecameramatrices} the view index can be calculated.  $currentindex$ was the index used in the vertexshader to access the right view matrix. The $portalcount$ is passed via push constants. $n$ is equal to the number of privious drawn portals in the portal group. It is also passed via push constants.
+Now that the index for the element in the index array we want to write to has been calculated, the shader needs to write the right value to it. The portal that is currently drawn may be seen portal. Using the formula  $ nth child = current index * portalcount + 1 + portalId$ from section \ref{section:recursivecameramatrices} the view index can be calculated.  $currentindex$ was the index used in the vertexshader to access the right view matrix. The $portalcount$ is passed via push constants. $n$ is equal to a portal's \gls{portalid} and passed via push constants.
 
 Every fragment shader invocation will either write the same value or write nothing at all. If no value was written to an index array element, its value will be the invalid index value. For the last portal iteration a visible portal count of 0 is passed, as indicator. That way the portals don't write outside the array.
 
@@ -798,8 +798,6 @@ Listing \ref{listing:previousvisibleportals} illustrates the fragment shader alg
 This algorithm makes use of the property that if the fragment shader is never invoked, it will never write a value to its \textit{Current Helper Element}. If multiple shader invocations write the same non-zero value to the \textit{Current Helper Element} there will be that value, no matter how many invokation have written to it.
 Thus if at least one fragment shader was invoke for the portal, there will be a non zero value at its position. As the element which is written to, is not read, the write does not influence the other shader invocations. The iteration does not need to continue after \textit{Current Helper Element}, as these values will not have been written yet and will always be 0.
 
-\textbf{ \huge TODO: Ask Advisor if multiple same value writes trigger undefined behaviour? }%TODO: check for data race
-
 The written value may can be any non-zero value, but writing the previous visible portal count allowed for easier debugging during the creation of the implementation.
 
 \subsubsection{Properties of the Helper array 0.7}
@@ -850,14 +848,14 @@ void main()
 }
 \end{lstlisting}
 
-Listing \ref{listing:stencilcalculation} illustrates the calculation. The current stencil reference is passed via push constants. This is the same reference for the whole portal group. The fragement shader calculates the current visible portals and adds 1 to it, as using 0 as stencil reference would lead to ambiguities (see section \ref{section:stencilcomparemasks}). That stencil reference needs to be shifted by the amount of bits used by parent stencil reference and then ORed together. Shifting is done using unsigned types to avoid potential undefined behavior.
+Listing \ref{listing:stencilcalculation} illustrates the calculation. The current stencil reference is passed via push constants. This value changes per drawn \gls{portalset} . It corresponds to the stencil reference produce, by all visible portals of the previous recursion. The fragement shader calculates the current visible portals and adds 1 to it, as using 0 as stencil reference would lead to ambiguities (see section \ref{section:stencilcomparemasks}). That stencil reference needs to be shifted by the amount of bits used by parent stencil reference and then ORed together. Shifting is done using unsigned types to avoid potential undefined behavior.
 
 \subsubsection{Atomic Writes to Storage Buffer Objects 0.2}
 In listing \ref{listing:previousvisibleportals} and \ref{listing:indicesindexcalculation} \textit{atomicCompSwap} was used to write to the storage buffer objects. This was to avoid potential race condition. However, it needs to be investigated if these are actually needed. The written values are never read during the shader invocations of one portal. Before they are read by another portal, there is always a memory and execution barrier. For the implementation the atomic operations were left in, as they did not affect performance.
 
 \subsection{Dynamic Portal instance rendering 1.25}
 \label{section:dynamicportalinstancerendering}
-Dynamic Portal Rendering moved the limit from maximum portals in a scene to maximum visible portals, while also improving performance a bit. However, the performance was still pretty bad. Occluded portals or portals failing the stencil test still counted as beeing visible. This is due to the late stencil depth test, which was needed for the stencil export.
+Dynamic Portal Rendering moved the limit from maximum portals in a scene to maximum visible portals, while also improving performance a bit. However, the performance was still pretty bad. Occluded portals or portals failing the stencil test still counted as being visible. This is due to late fragment testing, which was needed for the stencil export.
 
 Additionally, every object and portal is drawn many times for all the visible portals and recursion. Trying to take advantage of that fact was not trivial. Although, it is possible to draw multiple instances of an object, it is not possible to change the stencil reference between each draw. Using stencil export for scene objects, would have gotten rid of the early fragment test, for recursion 0. Other recursions still need to use the late test, as those discards fragments in the shader. The only other way was to drop the stencil test, and perform a manual stencil test, similar as already done with the near buffer. After trying out that manual test and seeing not much performance penalty, the author decided to work try out instanced rendering.
 
@@ -883,11 +881,12 @@ for(int i = 0; i < sceneObjectCount; ++i)
 }
 \end{lstlisting}
 
-Calculating the stencil references can be simplified. Using the same stencil reference to compare and set the stencil buffer is no longer needed. The stencil reference values nows increment by one for each instance. In fact the stencil reference value and indices index is the same. The indices index for the first instance is passed via push constants. The shaders can calculate their current \textit{indices index} and stencil reference by adding gl\_InstanceIndex to it.
+Calculating the stencil references can be simplified. Using the same stencil reference to compare and set the stencil buffer is no longer needed. The stencil reference values now increments by one for each instance. In fact the stencil reference value and indices index is the same. The indices index for the first instance is passed via push constants. The shaders can calculate their current \textit{indices index} and stencil reference by adding gl\_InstanceIndex to it.
 
-The portal shaders use the gl\_InstanceIndex instead of the portal group id. The multiple instances of the same portal, all use a different range in the helper index array. They don not interfere with each other. As there is no synchronisation needed between the instances they can all use instance drawing and have their draw loop transformed similar to the scene objects. However, Pipeline barriers between are still needed between drawing different portals.
+As pushconstants cannoct change for between drawing instances of drawing an objects, all uses of  \gls{portalsetid} are replaced with gl\_InstanceIndex.
 
-The \textit{First Helper Index} is equal to the stencil reference/\textit{indices index} times the total portal count. {\huge explain better!} %TODO explain better
+
+As the portal \gls{portalsetid} determines the \textit{first helper index}, all instance of the drawn portal will use a different range in the helper index array. They do not interfere with each other. As there is no synchronisation needed between the instances they can all use instance drawing and have their draw loop transformed similar to the scene objects. However, Pipeline barriers between are still needed between drawing different portals.
 
 Changing the code to use instance drawing, resulted in a huge performance increase. Compared to the previous version, the code was 6 times fast on a particular configuration. Additionally, doing the manual stencil test, allows earlier fragment shader discards, reducing the amount of false visible portals. Furthermore, the stencil export extension is no longer required, so the application can run on more graphic cards. Finally, the texture used for the manual stencil test can be bigger than a real stencil buffer. This effectively removes a hard limit of the maximum visible portals count and recursion count. Those are now only limited by computation speed.
 
@@ -1256,18 +1255,18 @@ Cutting holes inside an otherwise watertight portal has some interesting propert
 
 
 
-\section{Further Work 0/5}
+\section{Further Work 3.4/5}
 
 
 
-\subsection{Non-Translating Portals}
+\subsection{Non-Translating Portals 0.5}
 The implemented portals have two endpoints. Objects Touch on endpoint, get move to the other. However, it is also possible that the portals don't move the object. In this case there are no two end points. It is just one portal.
 
 Entering the portal would apply a operation (e.g. multiplying by matrix), leaving it applies the inverse operation. Instead of rendering two endpoints, only one portal is rendered. Back and Front face detection needs to be used to decide which operation to apply.
 
 This works mostly only for operations which don not move the position of an object. One exception would be a rotation, but portal shape looks the same after applying the rotation to it. E.g. a sphere could allow for any rotation. A cube only for rotation in intervals of 90 degrees. Inverting or the scale of an object would another case.
 
-\subsubsection{More than just transforms}
+\subsubsection{More than just transforms 0.2}
 \label{more than transforms}
 
 In the implementation the portals only apply transformative operations in using matrices. Non-Translating Portals would allow for portals that can apply such operations, without needing to also translate an object.
@@ -1275,6 +1274,69 @@ In the implementation the portals only apply transformative operations in using 
 A portals operation could change render parameters. These parameters are store similar to the view matrices. One example inspired by \cite{borst:2009:real} would be marking pixels if one parameter currently has a specific value. Later in a post process the marked pixels could be modified. Another example inspired by magic lenses, would be a parameter which decides which objects to render. Some objects will only be visible, while the parameter has a specific value.
 
 
+
+
+
+
+\subsection{Shadows and Lighting 1.1}
+Due to time reasons the implementation has no shadows and only one directional light was implemented. This section covers a approach that would have been used, if time had allowed. For a portal to appear seamless care must be taken when lighting. Otherwise for instance shadows could appear cut of or appear out of nowhere in the presence of a portal.
+
+\subsubsection{Portal Shadow Mapping 0.4}
+One approach would be a modified version of shadow mapping. When rendering shadow maps the same approach can be taken that is used to render the scene with portals, i.e. multiple recursions, but from the lights view. However in addition to the depth values, the view matrix used for rendering a fragment must be saved as well. This can should be in form of an index to save space, but it must be possible to retrieve later. The shadow map has two contents, the depth value and the matrix index.
+Then when rendering the actual scene, the shadow test is performed. However, as it is not know whether the light travelled through a portal the position on the shadow map can not be calculated directly. It is possible that the same fragment can be lit by the same light multiple times, using different portals. They need to be regarded as separate dynamic lights which share their shadowmap.
+
+For each portal combination the light could have traveled through, the corresponding teleport matrices must be applied to the light position.  Then the position on the shadow map is calculated using that transformed light position. The shadow map's matrix is compared against the matrix used to transform the light position. If they do not match this is treated the same as if the depth does not match. Then the regular depth check is performed.
+
+Each light source needs its own shadow map as well as its own buffer to store the matrices.
+
+\subsubsection{Lighting 0.25}
+For lighting only a directional light was implemented. With directional light it is the least noticeable when it is not handled correctly. Especially when portals are placed that the direction light is almost parallel to them.
+Lighting is also difficult its possible that a fragment can be lit by the same light multiple times. For shadow casting lights, information from the shadow map can be used to detect from where a fragment is lit.
+
+However for other lights this is not possible. Lighting a fragment for possible portals the light could have travelled through would be expensive and create wrong results.
+
+
+\subsubsection{Portals as Lightsource 0.25}
+\label{section:portalsaslights}
+Performing doing correct lighting and shadows is expensive. Depending on the use case a potential solution would be to perform lighting and shadowing as though portals did not exist. To hide the seams at portal locations, the portals could behave as a very bright point light. Fragments would appear almost fully lit and shadows would fade out near portals. All fragments close to the portals would be lit the same and not seams would be visible.
+
+However, this has the downside that the location of portals is very visible. If this is not desired the level must be designed in a way that there are always lights near portals or only use one directional light without shadows and no other light sources.
+
+
+\subsection{Transparent Objects 0.3}
+Transparent object are not supported in the implementation, but there is nothing that would stop implementing them. They would be rendered very similar to regular approaches. First everything opaque is rendered, including all portal recursions. After everything is drawn the transperent objects are drawn back to front, starting from the last recursion and ending with the initial recursion \cite{lecture:portalProblems}.
+
+However, the far depth information of all recursions must be saved. Otherwise, the whole scene must be redrawn to get the depth information. This could be done by saving using different depth buffers and not clearing them. Or By using a depth prepass for portals and when rendering the again setting the depth value to infinite far away, instead of clearing the whole buffer. The near buffer can be recreated by drawing the portals again as drawing a few portals is likely far less expensive compared to drawing the whole scene and might not be a huge concern. Alternatively, the far buffers for each recursion could just be saved, but this requires more textures.
+
+
+\subsection{Portal Physics 1}
+The implementation currently only supports collision for the camera. Depending on the use case for portals, portal physics are need. There are several problems that must be solved to allow for realistic portal physics.
+
+\subsubsection{Portal Edges 0.5}
+Portals either must have collision on their edges or allow slicing objects into pieces.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\linewidth]{images/edgecollision.png}
+	\caption{A box represent an object, while the thick line represents a planar portal. It is not clear what should happen to the right object}
+	\label{fig:edgecollision}
+\end{figure}
+
+Figure~\ref{fig:edgecollision} illustrates the problem that can occur. The left box passes the portal, the middle box goes through the portal, with the dotted  part being present at another location. However, It is not clear what should happen to the right box. The right box case could be  be prevented via collision on the portal edge.  Or the box could be sliced by the portal edge so that one part goes through the portal, while the other passes it. Watertight portals do not have edges, so this problem cannot occur for them.
+
+\subsubsection{Halfway through Objects 0.25}
+As objects are not point it is possible that only part of an object has passed the portal. The two parts of the object must be exists two different locations. Just duplicating the object is not enough however. It must also be insured that an object piercing a portal from the front, cannot be seen or interacted with from the back. Additionally the physics state must the same for both parts. Furthermore similar care must be taken for the player's avatar. If the player is halfway through the portal, they should not see part of their avatar directly at their viewing location. Some of this problems can be seen in the presentation of \textcite{lecture:portalProblems}.
+
+
+
+
+
+\subsection{Use the Instant Occlusion query in occlusion culling 0.5}
+The technique use to calculate previous visible portals could be adapted and used together with \glspl{pvs} based occlusion culling. Objects within cells are rendered using draw indirect. This allows changing the instance count of the objects and can effectively disable them. All objects within are cell are only enabled, if at least a fragment of the corresponding portal is drawn. This can be achieved by initially setting the instance count to 0 for all object. Then in a portals fragment shader the instance count can be set to 1, which only happens if at least one fragment is drawn.
+
+\subsubsection{Extensions 0.25}
+Depending on  available \gls{gpu} extension this approach can be further improved. When using Vulkan the extension VK\_EXT\_conditional\_rendering can be used. This removes the need for an draw indirect buffer. This allows removes the need to loop over all elements of that buffer and setting the instance count individually \cite{khronos:vulkan:spec1.1}.
+Another useful extension is to use representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively .
 
 \subsection{Worthy Section? World Wrapping}
 World wrapping enables infinite world, by repeating itself. When something steps on one edge of a wrapped world it is teleported to the opposite edge. World wrapping can be seen as very specific portal that is defined as an pairs infinite plane. The World exists only inside those planes. No object is outside the subspace defined by the plane pairs. This property allows skipping a lot of tasks otherwise needed for drawing portals.
@@ -1290,73 +1352,7 @@ Going down the tree render only one world first. Then going down by drawing othe
 Combine with portals. Instanced instance drawing. Calculate the two ids from vertexId, by taking modulo, qutotient of vertexId with wrapped world count. Use those to access right matrices
 
 
-\subsection{Shadows and Lighting}
-Due to time reasons the implementation has no shadows and only one directional light was implemented. This section covers a approach that would have been used, if time had allowed. For a portal to appear seamless care must be taken when lighting. Otherwise for instance shadows could appear cut of or appear out of nowhere in the presence of a portal.
-
-\subsubsection{Portal Shadow Mapping}
-One approach would be a modified version of shadow mapping. When rendering shadow maps the same approach can be taken that is used to render the scene with portals, i.e. multiple recursions, but from the lights view. However in addition to the depth values, the view matrix used for rendering a fragment must be saved as well. This can should be in form of an index to save space, but it must be possible to retrieve later. The shadow map has two contents, the depth value and the matrix index.
-Then when rendering the actual scene, the shadow test is performed. However, as it is not know whether the light travelled through a portal the position on the shadow map can not be calculated directly. It is possible that the same fragment can be lit by the same light multiple times, using different portals. They need to be regarded as separate dynamic lights which share their shadowmap.
-
-For each portal combination the light could have traveled through, the corresponding teleport matrices must be applied to the light position.  Then the position on the shadow map is calculated using that transformed light position. The shadow map's matrix is compared against the matrix used to transform the light position. If they do not match this is treated the same as if the depth does not match. Then the regular depth check is performed.
-
-Each light source needs its own shadow map as well as its own buffer to store the matrices.
-
-\subsubsection{Lighting}
-For lighting only a directional light was implemented. With directional light it is the least noticeable when it is not handled correctly. Especially when portals are placed that the direction light is almost parallel to them.
-Lighting is also difficult its possible that a fragment can be lit by the same light multiple times. For shadow casting lights, information from the shadow map can be used to detect from where a fragment is lit.
-
-However for other lights this is not possible. Lighting a fragment for possible portals the light could have travelled through would be expensive and create wrong results.
-
-
-\subsubsection{Portals as Lightsource}
-\label{section:portalsaslights}
-Performing doing correct lighting and shadows is expensive. Depending on the use case a potential solution would be to perform lighting and shadowing as though portals did not exist. To hide the seams at portal locations, the portals could behave as a very bright point light. Fragments would appear almost fully lit and shadows would fade out near portals. All fragments close to the portals would be lit the same and not seams would be visible.
-
-However, this has the downside that the location of portals is very visible. If this is not desired the level must be designed in a way that there are always lights near portals or only use one directional light without shadows and no other light sources.
-
-
-\subsection{Transparent Objects}
-Transparent object are not supported in the implementation, but there is nothing that would stop implementing them. They would be rendered very similar to regular approaches. First everything opaque is rendered, including all portal recursions. After everything is drawn the transperent objects are drawn back to front, starting from the last recursion and ending with the initial recursion \cite{lecture:portalProblems}.
-
-However, the far depth information of all recursions must be saved. Otherwise, the whole scene must be redrawn to get the depth information. This could be done by saving using different depth buffers and not clearing them. Or By using a depth prepass for portals and when rendering the again setting the depth value to infinite far away, instead of clearing the whole buffer. The near buffer can be recreated by drawing the portals again as drawing a few portals is likely far less expensive compared to drawing the whole scene and might not be a huge concern. Alternatively, the far buffers for each recursion could just be saved, but this requires more textures.
-
-
-\subsection{Portal Physics ?}
-The implementation currently only supports collision for the camera. Depending on the use case for portals, portal physics are need. There are several problems that must be solved to allow for realistic portal physics.
-
-\subsubsection{Portal Edges}
-Portals either must have collision on their edges or allow slicing objects into pieces.
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=\linewidth]{images/edgecollision.png}
-	\caption{A box represent an object, while the thick line represents a planar portal. It is not clear what should happen to the right object}
-	\label{fig:edgecollision}
-\end{figure}
-
-Figure~\ref{fig:edgecollision} illustrates the problem that can occur. The left box passes the portal, the middle box goes through the portal, with the dotted  part being present at another location. However, It is not clear what should happen to the right box. The right box case could be  be prevented via collision on the portal edge.  Or the box could be sliced by the portal edge so that one part goes through the portal, while the other passes it. Watertight portals do not have edges, so this problem cannot occur for them.
-
-\subsubsection{Halfway through Objects}
-As objects are not point it is possible that only part of an object has passed the portal. The two parts of the object must be exists two different locations. Just duplicating the object is not enough however. It must also be insured that an object piercing a portal from the front, cannot be seen or interacted with from the back. Additionally the physics state must the same for both parts. Furthermore similar care must be taken for the player's avatar. If the player is halfway through the portal, they should not see part of their avatar directly at their viewing location. Some of this problems can be seen in the presentation of \textcite{lecture:portalProblems}.
-
-
-
 \subsection{GPU Raytracing}
-
-\subsection{Use the Instant Occlusion query in occlusion culling}
-The technique use to calculate previous visible portals could be adapted and used together with \glspl{pvs} based occlusion culling. Objects within cells are rendered using draw indirect. This allows changing the instance count of the objects and can effectively disable them. All objects within are cell are only enabled, if at least a fragment of the corresponding portal is drawn. This can be achieved by initially setting the instance count to 0 for all object. Then in a portals fragment shader the instance count can be set to 1, which only happens if at least one fragment is drawn.
-
-\subsubsection{Extensions}
-Depending on  available \gls{gpu} extension this approach can be further improved. When using Vulkan the extension VK\_EXT\_conditional\_rendering can be used. This removes the need for an draw indirect buffer. This allows removes the need to loop over all elements of that buffer and setting the instance count individually \cite{khronos:vulkan:spec1.1}.
-Another useful extension is to use representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively .
-
-
- Potential portals could be rendered. If no gra
-
-
-we can set conditional rendering paramters during this occlusion culling.
-Needs some  recursive portal passes and then one big scene pass, which makes use of conditional rendering, eithr with the extension or draw indirect and instance counts. Inspired by \cite{yang:2014:walkthrough}
-
 \section{Conclusion 0/3}
 
 summary
