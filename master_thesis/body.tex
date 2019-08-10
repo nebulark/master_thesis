@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 45.6/69}
+\subsection*{Search Terms TOTAL PAGES 46.95/69}
 portal
 3D lense
 magic lense
@@ -20,7 +20,7 @@ Regular portals can only connect subspaces that are adjacent to each other. If a
 For transformative portals however, there are no such limitations. Transformative portals can connect completely arbitrary subspaces and may even change where they connect to. They can even connect a subspace to itself. In the presence of transformative portals a straight path may not be the fastest. Travelling through a transformative portal could be faster. Transformative portals similar to wormholes described by \textcite{Visser:Wormholes} in his book.
 
 \subsubsection{Portal Recursion 0.25}
-When looking through a portal parts of subspace can be seen. In that subspace there can be another portal through which yet another subspace is visible. For this example to see the final subspace, two recursions are needed. In reality this could continue indefinitely, everything is visible. However, due to technical reasons, there is often a limit to the number of recursions. In this paper this limit is refered to as \gls{recursioncount}. A recursion count of 0, means that no other worlds can be seen through portals. A recursion count of 1 allows looking through portals, but portals at the other part of the world can not be looked through.
+When looking through a portal parts of subspace can be seen. In that subspace there can be another portal through which yet another subspace is visible. For this example to see the final subspace, two recursions are needed. In reality this could continue indefinitely, everything is visible. However, due to technical reasons, there is often a limit to the number of recursions. In this paper this limit is refered to as \gls{recursioncount}. A recursion count of 0, means that no other worlds can be seen through portals. A recursion count of 1 allows looking through portals, but portals at the other part of the world can not be looked through. When a portal or object can be seen through portal, that portal is that portal is its \gls{parentportal}. A direct \gls{parentportal} is the portal drawn in the previous recursion, before drawing the object or portal.
 
 \subsection{Reasons For Portals 0.25}
 Portals are applicable for many different topics. Portals can be used to accelerate rendering speed, by enabling the creation of \glspl{pvs} \cite{luebke:1995:portals}. Although they are not quite portals, magic lenses are very similar to portals and allow for useful visualisations \cite{viega:1996:3d}. In video games portals are especially useful. As previously mentionened they improve performance, but also serve as interesting gameplay mechanics. Furthermore they allow for intuitive transitions between worlds \cite{schmalstieg:1999:sewing} or intuitive locomotion for \gls{vr} games.
@@ -194,8 +194,25 @@ For point base \gls{pvs} calculation, \textcite{luebke:1995:portals} proposed an
 
 The primary world is rendered object after object. When a SEAM is encountered, for each pixel  the stencil value is increased, the color set to the clear color and  depth value is set to infinitely far away. The stencil buffer is initially at 0. Then the secondary the whole secondary world or recursion 1 is rendered, but only where the stencil value is equal to 1. After the secondary world is rendered, the seam that triggered it sealed. The SEAM is drawn, but only sets the depth values and decreases the stencil buffer. When a SEAM is encountered in the secondary world, it uses the same process, but using a stencil compare value of 2 to render the tertiary world. This process could potentially continues until a limit is reached. The rendering of a world is only finished, when all its SEAMs and their worlds have been drawn and the SEAMs were sealed again. To reduce the amount of worlds that potentially need to be drawn,  the \gls{pvs} algorithms of \textcite{luebke:1995:portals} were used. SEAMs were treated as portals and virtual worlds as regions \cite{schmalstieg:1999:sewing}.
 
+\subsection{Magic Lense}
+Another topic that uses portal rendering techniques are magic lenses. A magic lense is a region, which has a special operation applied. For instance these operation could be magnification, rendering in wireframe, changing color, etc. . Magic lenses are a powerful tool for visualization  \cite{bier:1993:toolglass, tominski:2014:survey}.
+
+While early works  used 2D magic lenses \cite{bier:1993:toolglass} they are not restricted to 2D. \textcite{viega:1996:3d} extended the concept fo magic lenses to 3D. They  are rendered objects multiple times with a different clip plane active. This way only specific parts of an object would be rendered and different operation could be active while rendering.
+
+\textcite{ropinski:2004:real} extended the 3D magic lenses for arbitrary shape. To selectively render parts, they used two depth buffers, similar to depth peeling techniques \cite{everitt:2001:interactive}.
+
+\subsubsection{Magic Lense}
+\cite{viega:1996:3d}
+
+
+\subsubsection{VR Interaction 3D Lenses}
+\cite{borst:2009:real}
+3D lenses which change, the properties. E.g. other rendered objects (x ray lense), inverted colors, fish eye effect.
+
+\subsection{Bounding Boxes}
 
 \subsection{Frustrum Culling}
+\cite{assarsson:2000:optimized}
 
 
 \subsection{Portals Algorithms History}
@@ -214,15 +231,9 @@ Rooms are split by portals. For each portal only the objects in its room need to
 
 \subsection{Portal Applications}
 
-\subsubsection{Magic Lense}
-\cite{viega:1996:3d}
 
 
-\subsubsection{VR Interaction 3D Lenses}
-\cite{borst:2009:real}
-3D lenses which change, the properties. E.g. other rendered objects (x ray lense), inverted colors, fish eye effect.
-
-\subsubsection{Navigation}
+\subsection{Portal Navigation}
 Portal Rendering in SEAMS (\cite{schmalstieg:1999:sewing})
 \cite{pausch:1995:navigation} navigation with hand held minatures
 
@@ -485,7 +496,7 @@ When drawing the scene from the portals view, care must be taken to not draw obj
 	\label{fig:bananajuce}
 \end{figure}
 
-Figure \ref{fig:bananajuce} shows such an example. Without additional techniques the square would be drawn. To avoid this, the implementation uses two depth buffers or dual depth buffer: a near depth buffer and a far depth buffer. The far depth buffer is used to discards fragments with a greater depth value. It is just a regular depth buffer, which is used in almost any rendering system. The near depth buffer discards fragments with a lesser depth value. When rendering the portal we render its depth also to the near buffer. The box's depth values from figure \ref{fig:bananajuce} would be greater than the near buffer and its fragments are discarded \cite{lowe:2005:technique}.
+Figure \ref{fig:bananajuce} shows such an example. Without additional techniques the square would be drawn. To avoid this, the implementation uses two depth buffers or dual depth buffer: a near depth buffer and a far depth buffer. The far depth buffer is used to discards fragments with a greater depth value. It is just a regular depth buffer, which is used in almost any rendering system. The near depth buffer discards fragments with a lesser depth value. When rendering the portal we render its depth also to the near buffer. The box's depth values from figure \ref{fig:bananajuce} would be greater than the near buffer and its fragments are discarded \cite{lowe:2005:technique, ropinski:2004:real}.
 
 In this implementation the hardware supported depth buffer is used as the far buffer. For the near buffer dual buffering with two color texture are used, a read near buffer and a write near buffer. In the fragment shader, the fragments depth value is compared to the read near buffer. If it is lesser it is manually discarded, with a discard statement in the shader. Whenever the portals are drawn, they not only write the far depth buffer, but also the write near depth buffer. When the implementation transitions to the next recursion, the write near buffer and read near buffers are swapped.
 
@@ -915,7 +926,7 @@ When looking through a portal the camera should see itself. However, always rend
 
 
 
-\section{Analysis And Improvements 11.65/15}
+\section{Analysis And Improvements 13/15}
 
 \subsection{Implementation Showcase 3.25}
 
@@ -1159,20 +1170,6 @@ One way to prevent false visible portals is by running a depth pre pass for the 
 There is also another possibility, which only needs an additional depth texture, but no pre pass. During the rendering of all \gls{objectset} a far depth buffer is use, just as always. However, during the portal rendering, this depth buffer is given as input for the portal shaders. They perform an additional manual test for the far depth. Portals still use a regular depth buffer also, so that portals occlude each other correctly. Although portals occluded by other portals still count as visible, portals occluded by objects do not. As the later case is far more likely, this could cut down the amount of false visible portals drastically.
 
 
-\subsection{Dynamic Visible Portals count}
-The visible portal count may not only be different for every recursion, it could even change during run time. The only change in the implementation would be to reserve enough space for the indices array and helper array, described in section \ref{section:indexarrayproperties} and \ref{section:helperarrayproperties} respectively. Everting else uses values that can change during run time.
-
-For example dynamically decreasing the visible portal count for recursion 0, while increasing it for recursion 1. This is useful for situations where only one portal is visible, because the camera is directly in front of it.
- 
-This this allows for more visible portals during recursion 1. The amount of stencil values used as well as the amount of times the level is rendered stays roughly the same.
-
-\subsubsection{Culling Portals}
-Object culling algorithms are difficult to implement, as they would need to be performed for all portals  view including recursions. Table \ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. Keeping this value low could improve performance drastically. A similar approach to the one suggested by \cite{luebke:1995:portals} could be used. However, only portals need would to be considered. Then the visible portal count for a layer could be conservatively estimated. This will usually be a much lower number than the fixed one. Furthermore the visible portal count does not need to be fixed for a whole recursion. Each rendered \gls{portalset} could use a different max visible portal count, instead of all using the highest count. This could improve performance even further.
-
-One thing that must be note is that the way view indices and stencil values are calculated must fundamentally change when implementing this approach. This might also mean passing additional push constants.
-
-Culling portals does not make the dynamic calculation of actual visible portals obsolete. Portals may still be occluded by scene objects. Producing degenerate triangles for objects drawn inside occluded portals, can still improve performance as table \ref{tab:perfviewpoint} has shown.
-
 
 
 \subsection{Camera Matrix Improvement opportunities 2.25}
@@ -1248,13 +1245,42 @@ Cutting holes inside an otherwise watertight portal has some interesting propert
 
 
 
+\subsection{Dynamic Visible Portals count 0.25}
+The visible portal count may not only be different for every recursion, it could even change during run time. The only change in the implementation would be to reserve enough space for the indices array and helper array, described in section \ref{section:indexarrayproperties} and \ref{section:helperarrayproperties} respectively. Everting else uses values that can change during run time.
+
+For example dynamically decreasing the visible portal count for recursion 0, while increasing it for recursion 1. This is useful for situations where only one portal is visible, because the camera is directly in front of it.
+
+This this allows for more visible portals during recursion 1. The amount of stencil values used as well as the amount of times the level is rendered stays roughly the same.
+
+\subsection{CPU Portal Culling 0.5}
+\label{section:cullingportals}
+Table \ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. Keeping this value low could improve performance drastically. A similar approach to the one suggested by \cite{luebke:1995:portals} could be used.
+
+Each Portal's bounding box is projected into screen space. However, instead of using a perspective matrix, only the X and Y coordinates are just divided by Z. This leaves Z instact which is useful for further calculations. Around the projected points a \gls{aabb} is created, which will be called \gls{psb}.  However, for non watertight portals the max Z value must be set to infinite.The \glspl{psb} are calculated recursion by recursion. For recursion 1 and onward, the actual bounding box is the intersection with the  \gls{psb} of its direct \gls{parentportal}. For recursion 0 its an intersection with a box with x and y of -1 and 1 for min and max respectively. Min z is 0 and max z is infinite. Only portals are consider in this approach, objects are ignored. Portals with an \gls{psb} without volume are not visible.
+
+With this the visible portal count for a recursion could be conservatively estimated. This will usually be a much lower number than the fixed one. Furthermore the visible portal count does not need to be fixed for a whole recursion. Each rendered \gls{portalset} could use a different max visible portal count, instead of all using the highest count. This could improve performance even further.
+
+One thing that must be noted is that the way view indices and stencil values are calculated must fundamentally change when implementing this approach. This might also mean passing additional push constants.
+
+Culling portals does not make the dynamic calculation of actual visible portals obsolete. Portals may still be occluded by scene objects. Producing degenerate triangles for objects drawn inside occluded portals, can still improve performance as table \ref{tab:perfviewpoint} has shown.
+
+\subsection{Portal Frustum Primitive Clipping 0.3}
+\label{section:portalprimitiveclipping}
+
+When drawing recursion 1 and onward only a small part of the level will be drawn. Although the near buffer allows for correct drawing, unneeded fragments are still generated. One good way of reducing the produced fragments is by allowing fewer triangles to be passed to the rasterizer. 
+
+One way to achieve this is by decreasing the clip volume. Regularly the view frustum is used as clip volume for primitive clipping. However, as the portals is only at part of the screen primitives should be clipped to this much smaller volume. This volume is referred to as \gls{portalfrustrum}. The \glspl{psb} introduced in section \ref{section:cullingportals} can be used to calculated the frustum. The \gls{psb} must be available in the vertex shader. The individual clip distances can be calculated via subtractions. Note that while Z can be directly used, the  x and y coordinate must be in the same space as the ones of \gls{psb}. Multiplying the x and y of the \gls{psb} seems to be preferable to diving the vertex's x an y by its z. The only difference between those two possibilities is that the clip distances are scaled by z. This should not matter for the primitive clipping \cite{khronos:vulkan:spec1.1}.
+
+The regular clip planes for the view frustum can then also be disabled, as the \gls{portalfrustrum} is a subspace of it. The vertex shaders must be extended to calculated the distances to the \gls{portalfrustrum}['s] clip planes.
 
 
+\subsection{CPU Portal Frustum Culling 0.3}
+The results from section \ref{section:cullingportals} can be reused to perform a variant of frustum culling. The projected objects can be tested against the \glspl{psb}. One way to do this is by using the bounding spheres of the objects. The center point is first multiplied with the corresponding view matrix. Then a axis aligned cube is created by using the radius of the bounding sphere and tested against the corresponding portal box. The \gls{psb}['s] x and y coordinate are multiplied by the min z of the bounding cube before comparision, similar to described in section \ref{section:portalprimitiveclipping}.
 
 
+If the axis aligned cube lies outside of the \gls{psb} the object can be culled. A different bounding box and approach can be used, but it should be fast to test, while not being too conservative.
 
-
-
+The instance count of the object when rendered should correspond to the amount of times the  test succeeded. However, the gl\_InstanceIndex cannot be used directly anymore to find the correct view matrix and stencil value. Additional information must be passed to the vertex shader. For example an array of stencil values/view matrix accessed via gl\_InstanceIndex.
 \section{Further Work 3.4/5}
 
 
@@ -1336,7 +1362,8 @@ The technique use to calculate previous visible portals could be adapted and use
 
 \subsubsection{Extensions 0.25}
 Depending on  available \gls{gpu} extension this approach can be further improved. When using Vulkan the extension VK\_EXT\_conditional\_rendering can be used. This removes the need for an draw indirect buffer. This allows removes the need to loop over all elements of that buffer and setting the instance count individually \cite{khronos:vulkan:spec1.1}.
-Another useful extension is to use representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively .
+Another useful extension is to use representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively.
+
 
 \subsection{Worthy Section? World Wrapping}
 World wrapping enables infinite world, by repeating itself. When something steps on one edge of a wrapped world it is teleported to the opposite edge. World wrapping can be seen as very specific portal that is defined as an pairs infinite plane. The World exists only inside those planes. No object is outside the subspace defined by the plane pairs. This property allows skipping a lot of tasks otherwise needed for drawing portals.
