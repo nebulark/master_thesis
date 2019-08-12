@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 46.95/69}
+\subsection*{Search Terms TOTAL PAGES 47.65/69}
 portal
 3D lense
 magic lense
@@ -926,7 +926,7 @@ When looking through a portal the camera should see itself. However, always rend
 
 
 
-\section{Analysis And Improvements 13/15}
+\section{Analysis And Improvements 13.7/15}
 
 \subsection{Implementation Showcase 3.25}
 
@@ -1256,7 +1256,9 @@ This this allows for more visible portals during recursion 1. The amount of sten
 \label{section:cullingportals}
 Table \ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. Keeping this value low could improve performance drastically. A similar approach to the one suggested by \cite{luebke:1995:portals} could be used.
 
-Each Portal's bounding box is projected into screen space. However, instead of using a perspective matrix, only the X and Y coordinates are just divided by Z. This leaves Z instact which is useful for further calculations. Around the projected points a \gls{aabb} is created, which will be called \gls{psb}.  However, for non watertight portals the max Z value must be set to infinite.The \glspl{psb} are calculated recursion by recursion. For recursion 1 and onward, the actual bounding box is the intersection with the  \gls{psb} of its direct \gls{parentportal}. For recursion 0 its an intersection with a box with x and y of -1 and 1 for min and max respectively. Min z is 0 and max z is infinite. Only portals are consider in this approach, objects are ignored. Portals with an \gls{psb} without volume are not visible.
+Each Portal's bounding box is multiplied with the view matrix. Next the bounding box is projected into screen space, but the Z coordinate should be left intact, as it is useful for further calculations. Conceptionally the bounding box's points are multiplied with the perspective matrix, divided by their w component. Then the w gets discarded and the z coordinate is overridden with its original value. The w component can now be discarded.
+
+Around the projected points a \gls{aabb} is created, which will be called \gls{psb}.  However, for non watertight portals the max Z value must be set to infinite.The \glspl{psb} are calculated recursion by recursion. For recursion 1 and onward, the actual bounding box is the intersection with the  \gls{psb} of its direct \gls{parentportal}. For recursion 0 its an intersection with a box with x and y of -1 and 1 for min and max respectively. Min z is 0 and max z is infinite. Only portals are consider in this approach, objects are ignored. Portals with an \gls{psb} without volume are not visible.
 
 With this the visible portal count for a recursion could be conservatively estimated. This will usually be a much lower number than the fixed one. Furthermore the visible portal count does not need to be fixed for a whole recursion. Each rendered \gls{portalset} could use a different max visible portal count, instead of all using the highest count. This could improve performance even further.
 
@@ -1269,16 +1271,24 @@ Culling portals does not make the dynamic calculation of actual visible portals 
 
 When drawing recursion 1 and onward only a small part of the level will be drawn. Although the near buffer allows for correct drawing, unneeded fragments are still generated. One good way of reducing the produced fragments is by allowing fewer triangles to be passed to the rasterizer. 
 
-One way to achieve this is by decreasing the clip volume. Regularly the view frustum is used as clip volume for primitive clipping. However, as the portals is only at part of the screen primitives should be clipped to this much smaller volume. This volume is referred to as \gls{portalfrustrum}. The \glspl{psb} introduced in section \ref{section:cullingportals} can be used to calculated the frustum. The \gls{psb} must be available in the vertex shader. The individual clip distances can be calculated via subtractions. Note that while Z can be directly used, the  x and y coordinate must be in the same space as the ones of \gls{psb}. Multiplying the x and y of the \gls{psb} seems to be preferable to diving the vertex's x an y by its z. The only difference between those two possibilities is that the clip distances are scaled by z. This should not matter for the primitive clipping \cite{khronos:vulkan:spec1.1}.
+One way to achieve this is by decreasing the clip volume. Regularly the view frustum is used as clip volume for primitive clipping. However, as the portals is only at part of the screen primitives should be clipped to this much smaller volume. This volume is referred to as \gls{portalfrustrum}. The \glspl{psb} introduced in section \ref{section:cullingportals} can be used to calculated the frustum. The \gls{psb} must be available in the vertex shader. The individual clip distances are calculated via subtractions in the vertex shader. Note that while Z can be directly used, the  x and y coordinate must be in the same space as the ones of \gls{psb}. Either the \gls{psb} is transformed into view space, using the the vertex's z. Or the vertex's x and y coordinates are projected into screen space. The only difference between those two possibilities is that the clip distances are scaled by z. This should not matter for the primitive clipping \cite{khronos:vulkan:spec1.1}.  Which variant is faster would need to be investigated. The regular clip planes for the regular view frustum can then also be disabled, as the \gls{portalfrustrum} is a subspace of it.
 
-The regular clip planes for the view frustum can then also be disabled, as the \gls{portalfrustrum} is a subspace of it. The vertex shaders must be extended to calculated the distances to the \gls{portalfrustrum}['s] clip planes.
+\subsection{CPU Portal Frustum Culling 1}
+The results from section \ref{section:cullingportals} can be reused to perform a variant of frustum culling. There are multiple ways to do this. One would be to unproject and transform the \gls{psb} to create worlds space portal frusta. Then commonly used frustum culling can be performed.
+
+Frustum culling can also happen in view space  with its own advantages and disadvantages. The actual test is simpler, as \glspl{aabb} can be used. However, the the bounding box must first be transformed into the perspective coordinate system \cite{assarsson:2000:optimized}.
 
 
-\subsection{CPU Portal Frustum Culling 0.3}
-The results from section \ref{section:cullingportals} can be reused to perform a variant of frustum culling. The projected objects can be tested against the \glspl{psb}. One way to do this is by using the bounding spheres of the objects. The center point is first multiplied with the corresponding view matrix. Then a axis aligned cube is created by using the radius of the bounding sphere and tested against the corresponding portal box. The \gls{psb}['s] x and y coordinate are multiplied by the min z of the bounding cube before comparision, similar to described in section \ref{section:portalprimitiveclipping}.
+This test can be done against the \glspl{psb} directly. To reduce the amount of points that need to be transformed, a bounding sphere is used. However this works only if all scaling is uniform. The center of the bounding sphere is first transformed into camera space. Then a minimal \gls{aabb} can be build around the sphere. Initially only the \gls{aabb}['s] z axis is tested against the \gls{psb}. This is valid, as the z axis of the \gls{psb} is in camera space. If this test fails the object can be culled and not further test is needed. Otherwise the x and y need to be tested. To test x and y  the coordinate systems for \gls{aabb} and \gls{psb} must match, similar to described in section \ref{section:portalprimitiveclipping}. Which approach is better needs to be investigated. This sections will describe transforming \gls{psb} into camera space. 
 
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{images/frustumbox.png}
+	\caption{Top view of the culling processes. The trapeze represents the portal frustum. The square represent the bounding box of the object. The dotted rectangle can be used instead of the portal frustum for the culling. }
+	\label{fig:frustumbox}
+\end{figure}
 
-If the axis aligned cube lies outside of the \gls{psb} the object can be culled. A different bounding box and approach can be used, but it should be fast to test, while not being too conservative.
+Figure \ref{fig:frustumbox} shows the portal frustum in camera space as well as the \gls{aabb} of the object. Instead of testing against the frustum, the test is performed against the dotted rectangle, which is also an \gls{aabb}. It is constructed by unprojecting the \gls{psb}['s] x and y with the object's \gls{aabb}'s far z, as this is the point where the frustum is the biggest, while still being in the object's \gls{aabb}'s z range. Only x and y need to be tested against this box, as z was already done.
+
 
 The instance count of the object when rendered should correspond to the amount of times the  test succeeded. However, the gl\_InstanceIndex cannot be used directly anymore to find the correct view matrix and stencil value. Additional information must be passed to the vertex shader. For example an array of stencil values/view matrix accessed via gl\_InstanceIndex.
 \section{Further Work 3.4/5}
