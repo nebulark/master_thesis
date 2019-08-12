@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 47.65/69}
+\subsection*{Search Terms TOTAL PAGES 48.85/69}
 portal
 3D lense
 magic lense
@@ -34,7 +34,7 @@ evaluation
 
 
 
-\section{Graphics programming 2.7/9}
+\section{Graphics programming 3.1/9}
 
 
 Many alorithms describe in later sections use computer graphics techniques or special features of the graphics cards. This sections serves as a quick summary of some of these features and techniques, so the later parts of this thesis can be better understood. 
@@ -80,11 +80,16 @@ The next stage is the geometry stage, which is generally executed on the \gls{gp
 
 \cite{akine:2018:realtime}
 
-\subsection{GPU Features 2.2}
+\subsection{GPU Features / Pipeline 2.6}
 
+\subsubsection{Vertex Processing}
 
+\subsubsection{Clipping 0.4}
+\label{section:clipping}
 
+Not every primitive needs to be drawn, only those who are wholly or at least partially inside the view volume. Primitives wholly inside the view volume are just passed to the rasterizer. Primitives outside will be discarded. For partial primitives clipping needs to be performed. The primitive is cut against the view volume, discarding outside vertices and creating new ones at the intersection with the view volume.  The clipping is performed in clipspace, before the perspective division with 4 dimensional homogenous coordinates. This allows the use of linear interpolation to calculate the new vertices' values attributes, which would not be possible in perspective space. The view volume is often defined as the unit cube, ranging from (-1,-1,-1) to (1,1,1) \cite{akine:2018:realtime}. However, this can be configured and differ for graphic \glspl{api}. For example in Vulkan the view volumes z-coordinates range from 0 to 1, by default \cite{khronos:glsl4.60:spec}. In addition to the 6 clip planes, which define the view volume, additional clip planes can be provided by the user \cite{akine:2018:realtime}. In Vulkan 1.1 and OpenGL 4.6 this can be achieved by setting values in the \textit{gl\_ClipDistance} array in the vertex or geometry shader. Each value defines the distance to the corresponding user defined plane. The user defined plane splits the space in two half spaces, from which only one is kept. A negative value that indicates the point is outside the plane, while a positive value indicates it is inside the plane \cite{khronos:vulkan:spec1.1, khronos:openGL:spec4.6}.
 
+\subsubsection{Rasterization}
 
 \subsubsection{Depth Test 1.1}
 Without additional setups, objects must be drawn according to the painter's algorithm. Objects are sorted by their depth. Then they are drawn back to front storing their color a the coresponding pixels. The object farthest away is drawn first and the nearest object is drawn last. Otherwise objects that are behind other objects may be drawn over them, leading to wrong images. However, there are cases where the painter's algorithm does not work, for example when three objects overlap each other \cite{akine:2018:realtime}.
@@ -146,6 +151,8 @@ History
 
 
 \subsection{Vulkan Overview}
+
+\subsubsection{Renderpass}
 input attachments, tile renderers,
 
 (Sub-)Renderpass, Push Constants, Validation Layers, Pipelines, Dynamic state,
@@ -160,22 +167,15 @@ Molten VK-Framwork
 
 
 
+\subsubsection{Buffers}
+memory chunks
 
 
 
 
 
 
-\subsection{VR Movement}
-
-Portal Locomotion in Budget Cuts\url{https://www.youtube.com/watch?v=f786ak3GKQo}
-
-
-
-
-
-
-\section{Previous Work 2.25/7}
+\section{Previous Work 3.05/7}
 
 \subsection{Potentially Visible Set 0.5}
 
@@ -194,36 +194,30 @@ For point base \gls{pvs} calculation, \textcite{luebke:1995:portals} proposed an
 
 The primary world is rendered object after object. When a SEAM is encountered, for each pixel  the stencil value is increased, the color set to the clear color and  depth value is set to infinitely far away. The stencil buffer is initially at 0. Then the secondary the whole secondary world or recursion 1 is rendered, but only where the stencil value is equal to 1. After the secondary world is rendered, the seam that triggered it sealed. The SEAM is drawn, but only sets the depth values and decreases the stencil buffer. When a SEAM is encountered in the secondary world, it uses the same process, but using a stencil compare value of 2 to render the tertiary world. This process could potentially continues until a limit is reached. The rendering of a world is only finished, when all its SEAMs and their worlds have been drawn and the SEAMs were sealed again. To reduce the amount of worlds that potentially need to be drawn,  the \gls{pvs} algorithms of \textcite{luebke:1995:portals} were used. SEAMs were treated as portals and virtual worlds as regions \cite{schmalstieg:1999:sewing}.
 
-\subsection{Magic Lense}
-Another topic that uses portal rendering techniques are magic lenses. A magic lense is a region, which has a special operation applied. For instance these operation could be magnification, rendering in wireframe, changing color, etc. . Magic lenses are a powerful tool for visualization  \cite{bier:1993:toolglass, tominski:2014:survey}.
+\subsection{Magic Lens}
+Another topic that uses portal rendering techniques are magic lenses. A magic lense is a region, which has a special operation applied. For instance these operation could be magnification, rendering in wireframe, changing color \cite{bier:1993:toolglass}, time \cite{ryall:2005:temporal, tiesel:2009:composable} etc. . Magic lenses are a powerful tool for visualization  \cite{bier:1993:toolglass, tominski:2014:survey}.
 
-While early works  used 2D magic lenses \cite{bier:1993:toolglass} they are not restricted to 2D. \textcite{viega:1996:3d} extended the concept fo magic lenses to 3D. They  are rendered objects multiple times with a different clip plane active. This way only specific parts of an object would be rendered and different operation could be active while rendering.
+While early works used 2D magic lenses \cite{bier:1993:toolglass} they are not restricted to 2D. \textcite{viega:1996:3d} extended the concept fo magic lenses to 3D. They  are rendered objects multiple times with a different clip plane active. This way only specific parts of an object would be rendered and different operation could be active while rendering.
 
 \textcite{ropinski:2004:real} extended the 3D magic lenses for arbitrary shape. To selectively render parts, they used two depth buffers, similar to depth peeling techniques \cite{everitt:2001:interactive}.
 
-\subsubsection{Magic Lense}
-\cite{viega:1996:3d}
 
 
 \subsubsection{VR Interaction 3D Lenses}
 \cite{borst:2009:real}
 3D lenses which change, the properties. E.g. other rendered objects (x ray lense), inverted colors, fish eye effect.
 
-\subsection{Bounding Boxes}
 
-\subsection{Frustrum Culling}
-\cite{assarsson:2000:optimized}
+\subsection{View Frustum Culling 0.8}
+As described in \ref{section:clipping} only a small part of level needs to be rendered. Although clipping discards invisible primitive, before sending them to rasterizer, it still had to process them. \Gls{vfc} is an acceleration algorithms, which finds invisible geometry and omits them from rendering \cite{assarsson:2000:optimized, akine:2018:realtime}.
 
+This is often done via bounding volume hierarchies. Each object is a node is assigned a bounding volume. Multiple close nodes are grouped as the children of another node, which also has a bounding volume. This bounding volume contains all bounding volumes of its child nodes. This nodes can again be ground as children of another node and so forth. The last node whit has no parent forms the root of the bounding box hierarchy tree \cite{clark:1976:hierarchical, assarsson:2000:optimized, akine:2018:realtime}.
 
-\subsection{Portals Algorithms History}
+\gls{vfc} starts with the root node. A nodes bounding box is tested against the frustum. If it is outside, all of its children will also be outside. The node and its children will not processed further. If the node's bounding volume is fully inside all its children will be inside and no further testing is needed for the children. If the node's bounding volume intersects the the view volume, the test must continue for each child \cite{akine:2018:realtime}.
 
+There are multiple algorithms for performing the test itself. \textcite{assarsson:2000:optimized} implemented a fast \gls{vfc} algorithm for hierarchies of \glspl{aabb} and \glspl{obb}, which tests against the world space frustum. The boxes are testes against each of the frustums planes, resulting in either inside, outside or intersecting. If the \gls{aabb} is outside of one plane, the test immediately stop and reports \textit{outside} for the frustum. If all \gls{aabb} are inside the test reports \textit{inside}. If there was an itersection but no outside the \textit{intersection} is returned \cite{assarsson:2000:optimized}.
 
-Portal Rendering in SEAMS (\cite{schmalstieg:1999:sewing})
-
-Complex Portal rendering. (I use the same near Buffer technique) \cite{ lowe:2005:technique}
-
-
-\url{https://th0mas.nl/2013/05/19/rendering-recursive-portals-with-opengl/}
+While a naive approach might test all eight vertices of the box against the plane, the approach of \textcite{greene:1994:detecting} is used instead, which only need to test two vertices. These two vertices are call  \textit{p-vertex} and \textit{n-vertex}. A plane has a direction defined by its normal vector. The \textit{p-vertex} is the vertex of the cube which lies farthest in a planes positive direction, while the \textit{n-vertex} lies in the most negative direction. The \textit{p-vertex} and \textit{n-vertex} were found by taking the three signs of the plane's normal and use them in a lookup table \cite{assarsson:2000:optimized}. If the \textit{p-vertex} is on the negative side of the plane, the \gls{aabb} is outside, if the \textit{n-vertex} is on the positive side it the \gls{aabb} is inside the plane. If neither is true the \gls{aabb} intersects the plane \cite{greene:1994:detecting}.
 
 \subsection{Space Division}
 Rooms are split by portals. For each portal only the objects in its room need to be drawn.
@@ -1295,21 +1289,6 @@ The instance count of the object when rendered should correspond to the amount o
 
 
 
-\subsection{Non-Translating Portals 0.5}
-The implemented portals have two endpoints. Objects Touch on endpoint, get move to the other. However, it is also possible that the portals don't move the object. In this case there are no two end points. It is just one portal.
-
-Entering the portal would apply a operation (e.g. multiplying by matrix), leaving it applies the inverse operation. Instead of rendering two endpoints, only one portal is rendered. Back and Front face detection needs to be used to decide which operation to apply.
-
-This works mostly only for operations which don not move the position of an object. One exception would be a rotation, but portal shape looks the same after applying the rotation to it. E.g. a sphere could allow for any rotation. A cube only for rotation in intervals of 90 degrees. Inverting or the scale of an object would another case.
-
-\subsubsection{More than just transforms 0.2}
-\label{more than transforms}
-
-In the implementation the portals only apply transformative operations in using matrices. Non-Translating Portals would allow for portals that can apply such operations, without needing to also translate an object.
-
-A portals operation could change render parameters. These parameters are store similar to the view matrices. One example inspired by \cite{borst:2009:real} would be marking pixels if one parameter currently has a specific value. Later in a post process the marked pixels could be modified. Another example inspired by magic lenses, would be a parameter which decides which objects to render. Some objects will only be visible, while the parameter has a specific value.
-
-
 
 
 
@@ -1346,6 +1325,7 @@ However, the far depth information of all recursions must be saved. Otherwise, t
 
 
 \subsection{Portal Physics 1}
+\label{section:portalphysics}
 The implementation currently only supports collision for the camera. Depending on the use case for portals, portal physics are need. There are several problems that must be solved to allow for realistic portal physics.
 
 \subsubsection{Portal Edges 0.5}
@@ -1364,6 +1344,22 @@ Figure~\ref{fig:edgecollision} illustrates the problem that can occur. The left 
 As objects are not point it is possible that only part of an object has passed the portal. The two parts of the object must be exists two different locations. Just duplicating the object is not enough however. It must also be insured that an object piercing a portal from the front, cannot be seen or interacted with from the back. Additionally the physics state must the same for both parts. Furthermore similar care must be taken for the player's avatar. If the player is halfway through the portal, they should not see part of their avatar directly at their viewing location. Some of this problems can be seen in the presentation of \textcite{lecture:portalProblems}.
 
 
+\subsection{Non-Translating Portals 0.5}
+The implemented portals have two endpoints. Objects Touch on endpoint, get move to the other. However, it is also possible that the portals don't move the object. In this case there are no two end points. It is just one portal.
+
+Entering the portal would apply a operation (e.g. multiplying by matrix), leaving it applies the inverse operation. Instead of rendering two endpoints, only one portal is rendered. Back and Front face detection needs to be used to decide which operation to apply.
+
+This works mostly only for operations which don not move the position of an object. One exception would be a rotation, but portal shape looks the same after applying the rotation to it. E.g. a sphere could allow for any rotation. A cube only for rotation in intervals of 90 degrees. Inverting or the scale of an object would another case.
+
+
+
+\subsubsection{More than just transforms 0.2}
+
+In the implementation the portals only apply transformative operations in using matrices. Non-Translating Portals would allow for portals that can apply such operations, without needing to also translate an object.
+
+A portals operation could change render parameters. These parameters are store similar to the view matrices. One example inspired by \cite{borst:2009:real} would be marking pixels if one parameter currently has a specific value. Later in a post process the marked pixels could be modified. Another example inspired by magic lenses, would be a parameter which decides which objects to render. Some objects will only be visible, while the parameter has a specific value.
+
+Inspired by the works of \textcite{ryall:2005:temporal} and \textcite{tiesel:2009:composable}, another very interesting form of a non translating portal would be a temporal portal. Instead of moving through space it moves through time. In a temporal portal the past could be seen and by travelling through it objects could time travel. However, even more care than described in section \ref{section:portalphysics} must be take, such as objects colliding with its past self, changing the presence by changing the past etc.
 
 
 
