@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 51.8/69}
+\subsection*{Search Terms TOTAL PAGES 52.4/69}
 portal
 3D lense
 magic lense
@@ -34,7 +34,7 @@ evaluation
 
 
 
-\section{Graphics programming 4.5/9}
+\section{Graphics programming 5.5/9}
 
 
 Many alorithms describe in later sections use computer graphics techniques or special features of the graphics cards. This sections serves as a quick summary of some of these features and techniques, so the later parts of this thesis can be better understood. 
@@ -151,7 +151,7 @@ A occlusion query is a way to count the number of fragments that pass all per fr
 Occlusion queries have many applications. One important one is for occlusion culling. Complex Geometry is approximated by a bounding volume, which is much less expensive to drawn. First a part of the scene can be drawn, but only to the depth buffer. Then the bounding volume is drawn with an active occlusion query. If no fragment passed the test, the bounding volume is either occluded or not in the view volume. The same is true for the complex geometry, which can be skipped in such a case. Occlusion queries have a very high latency, so the time saved by occlusion culling must be worthwhile \cite{akine:2018:realtime, sellers:vulkanprogramming}.
 
 
-\subsection{GLSL / SPIR-V}
+\subsection{GLSL / SPIR-V 0.25}
 
 Shader code in Vulkan must be defined in \gls{spir} format \cite{khronos:vulkan:spec1.1}. \Gls{spir} is an intermediate language for shaders. It can also be used for compute kernels. Shaders written in any shader language can be compiled to \gls{spir} \cite{kessenich:2018:spir}.
 
@@ -161,7 +161,7 @@ Shader code in Vulkan must be defined in \gls{spir} format \cite{khronos:vulkan:
 History
 
 
-\subsection{Vulkan Overview 1.4}
+\subsection{Vulkan Overview 2}
 
 input attachments, tile renderers,
 
@@ -175,18 +175,19 @@ In Vulkan it is possible to intercept \gls{api} with the help of layers. The low
 The core Vulkan layer assumes correct \gls{api} usage, resulting undefined behaviour for incorrect usages for most cases. If error checking is needed it can be performed in validation layers. The Vulkan specification recommends developing applications with enabled validation layers enabled to catch and eliminate errors. On release the validation layers should be disabled for improved performance.
 
 \subsubsection{Renderpass and Framebuffer 0.4}
+\label{section:renderpass}
 
 The renderpass represents attachments, subpasses and their dependencies. For each attachment a renderpass needs a \textit{attachment description}. This description contains the attachment's format, sample count and how its contents are treated at the beginning and end of the renderpass \cite{khronos:vulkan:spec1.1}.
 
 A subpass describes  one part of the renderpass. A renderpass may have only one subpass. It describes how the attachments are used in the subpass. A subpass can use attachments as input, as output, preserve them as well as performing resolve operation on them, for multi sampling applications. A subpass can have multiple input, output, preserve and resolve attachments, but only one depth stencil attachment. All subpasses render to the same dimensions. Fragments a a specific pixels coordinate may only read and write to textures at that coordinate \cite{khronos:vulkan:spec1.1}.
 
-A subpass dependency describes which operations of a subpass depend on which operations of another subpass, in form of a execution and memory barrier. The actual execution of the subpasses may be reordered or overlap as long as it is allowed by the subpass dependencies \cite{khronos:vulkan:spec1.1}.
+A subpass dependency describes which operations of a subpass depend on which operations of another subpass, in form of a execution and memory barrier. The actual execution of the subpasses may be reordered or overlap as long as it is allowed by the subpass dependencies. If a pipeline barrier is used during a subpass, that subpass needs a dependency on itself \cite{khronos:vulkan:spec1.1}.
 
 The renderpass only defines how attachments are used, but does not define their dimension or which attachments are actually used. These are defined in the framebuffer. 
 
 %A framebuffer is created, based on a specific renderpass. It can only be used with that specific renderpass or a compatible one. Two attachments are compatible if they share their format and samplecount. A renderpass is compatible to another they are the same except for 
 
-\subsubsection{Graphicspipeline 0.8}
+\subsubsection{Graphicspipeline 0.7}
 A graphics pipeline defines the various settings for rendering a object. The shader stages define which shader modules to use, their type and their entry point. The vertex input state defines the vertex attributes and whether and how they are interleaved. The input assembly defines how the primitives are created from the vertices. This could be a triangle list, a triangle strip, a point list, etc. The viewport state defines the different viewports, their position, their resolution, min and max depth, as wells as the scissor rectangles used for the individual scissor tests \cite{khronos:vulkan:spec1.1}.
 
 The rasterizer state defines a multitude of settings for the rasterization, including fully disabling it. The polygon mode decides how primitive is rasterized. It can be fully filled, only have its lines drawn for wireframe views, or just have its points drawn. The front face is set to clock-wise or counter-clock-wise to decide which vertex order represents the front face. The cull mode can be configured to cull nothing, front faces, back faces or both. Furthermore the depth values can be modified via depth bias and the line width can be set. \cite{khronos:vulkan:spec1.1}.
@@ -199,10 +200,25 @@ The graphics pipeline also references a pipeline layout. It describes the values
 
 Whenever different settings are needed for drawing objects, a additional pipeline needs to be created. For example if there are two objects which need different shaders, each of the objects needs its own pipeline to draw it. However, there are a few values that can be configured to be dynamically. This can be configured with dynamic state. Dynamic state settings are ignored during pipeline creation and must be set dynamically before rendering \cite{khronos:vulkan:spec1.1}.
 
+\subsubsection{Queues and Command Buffers}
+In Vulkan most commands are not sent directly to the \gls{gpu}. Instead the commands are recorded in a command buffer. Then this command buffer can be submitted to a queue. Not all queues support all commands. Which commands a queue supports depends on its queue family index and the capabilities associated with this index \cite{khronos:vulkan:spec1.1}.
 
-\subsubsection{GPU Synchronisation}
+%Command buffers can not be created directly. First a command pool must be created. During the construction of the command pool, the queue family index must be passed. Command buffers created from a command pool can only be used to submit to queues, which match their command pool
 
 
+\subsubsection{GPU Synchronisation 0.7}
+In Vulkan the order of command executions has only a view implicit guarantees. Dependencies must be explicitly specified. For this Vulkan provides the developer with a few different synchronisation mechanisms \cite{khronos:vulkan:spec1.1}.
+
+%A fence can be used to wait on the \gls{cpu} until certain tasks have been executed on the \gls{gpu} and their results are visible.
+Fences can be in two states, signaled and unsignaled. Fences can be unsignaled from the \gls{cpu}. It can be passes as parameter to a queue submission command. After all commands of a submission have been exectuted and their results are visible the fences gets signaled. The \gls{cpu} can either query the state of the fence or wait until it gets signaled \cite{khronos:vulkan:spec1.1}.
+
+A semaphore can be used to synchronize batches submitted by queues. Just as fences, they have two states: signaled and unsignaled. A sempahore can become signaled after the execution of a batch. The execution of a batch can wait until a semaphore gets signaled \cite{khronos:vulkan:spec1.1}.
+
+An event can be used for dependencies of commands submitted to the same queue or between the \gls{cpu} and queue. It cannot be used to synchronize two different queues. An event has two states: signaled and unsignaled. Events can be signaled and unsignaled on the \gls{cpu} as well as the \gls{gpu}. The \gls{gpu} can wait until a event becomes signaled. The \gls{cpu} cannot wait on a event, but it can query the its current state \cite{khronos:vulkan:spec1.1}.
+
+A pipeline barrier is a command defines a memory dependency between commands submitted to the same queue or commands within the same subpass of a renderpass. The pipeline barrier's memory dependency can be very precisely configured. For example it can define a dependency between the write of a specific image and a read from it. Furthermore, pipeline barriers are used to perform an image layout transition and to transfer queue ownership of buffers an images \cite{khronos:vulkan:spec1.1}.
+
+The last synchronisation mechanisms are renderpasses and subpasses, which are described in section \ref{section:renderpass} \cite{khronos:vulkan:spec1.1}.
 
 \subsubsection{Push Constant}
 
@@ -577,7 +593,7 @@ This section describes the first iteration of the implementation. It uses the sp
 
 
 \subsubsection{Renderpass Setup 1}
-\label{section:renderpass}
+\label{section:renderpasssetup}
 
 The implementation uses just one renderpass, with multiple subpasses. This allows for the use of input attachments and potentially enables the \gls{gpu} driver to optimize. For example many textured are only needed within the renderpass and do not need to be transferred anywhere else.
 
@@ -610,7 +626,7 @@ One important aspect is that pipelines for both scene and portal drawing, have f
 The individual  graphic pipelines for drawing the scene differ by subpass index and stencil compare mask. This is also true for the graphic pipelines for portal drawing. Additionally, subpass 0 has the stencil test completely disabled, while subpass 1 uses an always succeeding test with VK\_STENCIL\_OP\_REPLACE. Other even subpasses use the stencil compare op VK\_COMPARE\_OP\_EQUAL with VK\_STENCIL\_OP\_KEEP for all test result. Other odd subpasses use VK\_COMPARE\_OP\_EQUAL with VK\_STENCIL\_OP\_REPLACE on stencil and depth test success, otherwise VK\_STENCIL\_OP\_KEEP
 
 \subsubsection{Shaders 0.75}
-Vulkan shader module requires the SPIR-V format. The shaders are written using GLSL and are compiled using the GLSL Validator (glslangValidator.exe). All fragment shaders contain the manual check with the near buffer. If it fails the fragment is discarded using the discard statement. However, for subpass 0 and subpass 1 there is no input attachement (see figure \ref{fig:attachments}). Those use shaders where the check is omitted. To prevent shader redundancies the shader is compiled twice. One of the compilations skips the check using the preprocessor and by command line arguments to the GLSL Validator. As previously mentioned in section \ref{section:renderpass} the portals drawn in the last subpass do not need to store anything in the near buffer. This could also be omitted using conditional compilation. All scene object only have one colour. It is passed via push constants. Additional minimal shading is performed using lambert shading with a fixed directional light.
+Vulkan shader module requires the SPIR-V format. The shaders are written using GLSL and are compiled using the GLSL Validator (glslangValidator.exe). All fragment shaders contain the manual check with the near buffer. If it fails the fragment is discarded using the discard statement. However, for subpass 0 and subpass 1 there is no input attachement (see figure \ref{fig:attachments}). Those use shaders where the check is omitted. To prevent shader redundancies the shader is compiled twice. One of the compilations skips the check using the preprocessor and by command line arguments to the GLSL Validator. As previously mentioned in section \ref{section:renderpasssetup} the portals drawn in the last subpass do not need to store anything in the near buffer. This could also be omitted using conditional compilation. All scene object only have one colour. It is passed via push constants. Additional minimal shading is performed using lambert shading with a fixed directional light.
 
 Vertex shaders need to transform the vertices for all the different views. The different view matrices are stored in an \gls{ubo}. The index to access the current view matrix received via push constant. The model matrix is received also via push constant, as it changes per model and it there was still enough space in the push constant. The perspective matrix is passed via \gls{ubo}, as it never changes. Even if it would change than likely at most once per frame. The vertex shaders are the same for all scene draws as well as for all portal draws. No conditional compilation is needed.
 
