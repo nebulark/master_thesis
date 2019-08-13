@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 49.75/69}
+\subsection*{Search Terms TOTAL PAGES 50.4/69}
 portal
 3D lense
 magic lense
@@ -34,7 +34,7 @@ evaluation
 
 
 
-\section{Graphics programming 3.1/9}
+\section{Graphics programming 3.7/9}
 
 
 Many alorithms describe in later sections use computer graphics techniques or special features of the graphics cards. This sections serves as a quick summary of some of these features and techniques, so the later parts of this thesis can be better understood. 
@@ -80,7 +80,7 @@ The next stage is the geometry stage, which is generally executed on the \gls{gp
 
 \cite{akine:2018:realtime}
 
-\subsection{GPU Features / Pipeline 2.6}
+\subsection{GPU Features / Pipeline 3}
 
 \subsubsection{Vertex Processing}
 
@@ -137,27 +137,55 @@ layout(early_fragment_tests) in;
 
 
 \subsubsection{Instanced Drawing}
+
+
 \subsubsection{Uniforms / Storage Buffer Objects}
 
-\subsubsection{Shaders / (Vulkan-) GLSL / SPIR-V}
-branching, fragment discard, early stencil / depth, force early test, Stencil Export
-
-\subsubsection{Occlusion Queries}
 
 
+\subsubsection{Occlusion Queries 0.4}
+A occlusion query is a way to count the number of fragments that pass all per fragment tests, for all rendering commands between the start and the end of the occlusion query. The performance of the query can be improved by configuring it to be less precise \cite{akine:2018:realtime}. For example in Vulkan a occlusion query by default returns 0 if not fragment was drawn and a abitrary non zero value if at least one fragment is drawn. This specification allows Vulkan to fall back to the exact variant if a the more efficient but less precise query is not available. To enable precise precision queries the flag \textit{VK\_QUERY\_CONTROL\_PRECISE\_BIT} must passes to the function that starts the query \cite{khronos:vulkan:spec1.1}.
+
+Occlusion queries have many applications. One important one is for occlusion culling. Complex Geometry is approximated by a bounding volume, which is much less expensive to drawn. First a part of the scene can be drawn, but only to the depth buffer. Then the bounding volume is drawn with an active occlusion query. If no fragment passed the test, the bounding volume is either occluded or not in the view volume. The same is true for the complex geometry, which can be skipped in such a case. Occlusion queries have a very high latency, so the time saved by occlusion culling must be worthwhile \cite{akine:2018:realtime, sellers:vulkanprogramming}.
+
+
+\subsection{GLSL / SPIR-V}
+
+Shader code in Vulkan must be defined in \gls{spir} format \cite{khronos:vulkan:spec1.1}. \Gls{spir} is an intermediate language for shaders. It can also be used for compute kernels. Shaders written in any shader language can be compiled to \gls{spir} \cite{kessenich:2018:spir}.
+
+\Gls{glsl} is a human readable programming language for defining shaders, which is is very similar to C. \Gls{glsl} is a actually set of very close languages, for each programmable part of the graphics pipeline. Some keywords are only available in a subset of those languages. There is a small amount of built in variables that influence the pipeline or made available for use in the shader \cite{khronos:glsl4.60:spec}. Furthermore, the \gls{glsl} used for Vulkan is an extension to \gls{glsl}. Additional features are available and some are removed \cite{khronos:vulkan:glsl}.
 
 \subsection{OpenGL}
 History
 
 
-\subsection{Vulkan Overview}
+\subsection{Vulkan Overview 0.6}
 
-\subsubsection{Renderpass}
 input attachments, tile renderers,
 
-(Sub-)Renderpass, Push Constants, Validation Layers, Pipelines, Dynamic state,
+(Sub-)Renderpass, Push Constants, Pipelines, Dynamic state,
 
 Molten VK-Framwork
+
+\subsubsection{Validation Layers 0.2}
+
+In Vulkan it is possible to intercept \gls{api} with the help of layers. The lowest layer is the core Vulkan \gls{api} defined by the specification. A higher layer can intercept all or a subset of calls for a lower layer. A higher layer can, but does not need to call into its next lower layer \cite{khronos:vulkan:spec1.1}.
+The core Vulkan layer assumes correct \gls{api} usage, resulting undefined behaviour for incorrect usages for most cases. If error checking is needed it can be performed in validation layers. The Vulkan specification recommends developing applications with enabled validation layers enabled to catch and eliminate errors. On release the validation layers should be disabled for improved performance.
+
+\subsubsection{Renderpass and Framebuffer 0.4}
+
+The renderpass represents attachments, subpasses and their dependencies. For each attachment a renderpass needs a \textit{attachment description}. This description contains the attachment's format, sample count and how its contents are treated at the beginning and end of the renderpass \cite{khronos:vulkan:spec1.1}.
+
+A subpass describes  one part of the renderpass. A renderpass may have only one subpass. It describes how the attachments are used in the subpass. A subpass can use attachments as input, as output, preserve them as well as performing resolve operation on them, for multi sampling applications. A subpass can have multiple input, output, preserve and resolve attachments, but only one depth stencil attachment. All subpasses render to the same dimensions. Fragments a a specific pixels coordinate may only read and write to textures at that coordinate \cite{khronos:vulkan:spec1.1}.
+
+A subpass dependency describes which operations of a subpass depend on which operations of another subpass, in form of a execution and memory barrier. The actual execution of the subpasses may be reordered or overlap as long as it is allowed by the subpass dependencies \cite{khronos:vulkan:spec1.1}.
+
+The renderpass only defines how attachments are used, but does not define their dimension or which attachments are actually used. These are defined in the framebuffer. 
+
+%A framebuffer is created, based on a specific renderpass. It can only be used with that specific renderpass or a compatible one. Two attachments are compatible if they share their format and samplecount. A renderpass is compatible to another they are the same except for 
+
+\subsubsection{Pipeline}
+
 
 \subsubsection{GPU Synchronisation}
 
@@ -175,7 +203,7 @@ memory chunks
 
 
 
-\section{Previous Work 3.95/7}
+\section{Previous Work 4.2/7}
 
 \subsection{Potentially Visible Set 0.5}
 
@@ -194,13 +222,12 @@ For point base \gls{pvs} calculation, \textcite{luebke:1995:portals} proposed an
 
 The primary world is rendered object after object. When a SEAM is encountered, for each pixel  the stencil value is increased, the color set to the clear color and  depth value is set to infinitely far away. The stencil buffer is initially at 0. Then the secondary the whole secondary world or recursion 1 is rendered, but only where the stencil value is equal to 1. After the secondary world is rendered, the seam that triggered it sealed. The SEAM is drawn, but only sets the depth values and decreases the stencil buffer. When a SEAM is encountered in the secondary world, it uses the same process, but using a stencil compare value of 2 to render the tertiary world. This process could potentially continues until a limit is reached. The rendering of a world is only finished, when all its SEAMs and their worlds have been drawn and the SEAMs were sealed again. To reduce the amount of worlds that potentially need to be drawn,  the \gls{pvs} algorithms of \textcite{luebke:1995:portals} were used. SEAMs were treated as portals and virtual worlds as regions \cite{schmalstieg:1999:sewing}.
 
-\subsection{Magic Lens}
+\subsection{Magic Lens 0.25}
 Another topic that uses portal rendering techniques are magic lenses. A magic lense is a region, which has a special operation applied. For instance these operation could be magnification, rendering in wireframe, changing color \cite{bier:1993:toolglass}, time \cite{ryall:2005:temporal, tiesel:2009:composable} etc. . Magic lenses are a powerful tool for visualization  \cite{bier:1993:toolglass, tominski:2014:survey}.
 
 While early works used 2D magic lenses \cite{bier:1993:toolglass} they are not restricted to 2D. \textcite{viega:1996:3d} extended the concept fo magic lenses to 3D. They  are rendered objects multiple times with a different clip plane active. This way only specific parts of an object would be rendered and different operation could be active while rendering.
 
 \textcite{ropinski:2004:real} extended the 3D magic lenses for arbitrary shape. To selectively render parts, they used two depth buffers, similar to depth peeling techniques \cite{everitt:2001:interactive}.
-
 
 
 \subsubsection{VR Interaction 3D Lenses}
@@ -219,9 +246,6 @@ There are multiple algorithms for performing the test itself. \textcite{assarsso
 
 While a naive approach might test all eight vertices of the box against the plane, the approach of \textcite{greene:1994:detecting} is used instead, which only need to test two vertices. These two vertices are call  \textit{p-vertex} and \textit{n-vertex}. A plane has a direction defined by its normal vector. The \textit{p-vertex} is the vertex of the cube which lies farthest in a planes positive direction, while the \textit{n-vertex} lies in the most negative direction. The \textit{p-vertex} and \textit{n-vertex} were found by taking the three signs of the plane's normal and use them in a lookup table \cite{assarsson:2000:optimized}. If the \textit{p-vertex} is on the negative side of the plane, the \gls{aabb} is outside, if the \textit{n-vertex} is on the positive side it the \gls{aabb} is inside the plane. If neither is true the \gls{aabb} intersects the plane \cite{greene:1994:detecting}.
 
-\subsection{Space Division}
-Rooms are split by portals. For each portal only the objects in its room need to be drawn.
-\cite{ lowe:2005:technique}
 
 \subsection{World in miniature 0.4}
 \Gls{wim} is a user interface technique for \gls{vr}. In addition to the regular \gls{vr} view of the virtual world, the user additionally holds a miniature version of the world, the \gls{wim} in their hands. The objects in \gls{wim} are in sync with the real world. Objects moved in the real world move in the  \gls{wim} and vice versa \cite{stoakley:1995:virtual}. 
