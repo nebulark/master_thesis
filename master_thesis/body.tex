@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 50.4/69}
+\subsection*{Search Terms TOTAL PAGES 51.8/69}
 portal
 3D lense
 magic lense
@@ -34,7 +34,7 @@ evaluation
 
 
 
-\section{Graphics programming 3.7/9}
+\section{Graphics programming 4.5/9}
 
 
 Many alorithms describe in later sections use computer graphics techniques or special features of the graphics cards. This sections serves as a quick summary of some of these features and techniques, so the later parts of this thesis can be better understood. 
@@ -92,6 +92,7 @@ Not every primitive needs to be drawn, only those who are wholly or at least par
 \subsubsection{Rasterization}
 
 \subsubsection{Depth Test 1.1}
+\label{section:depthtest}
 Without additional setups, objects must be drawn according to the painter's algorithm. Objects are sorted by their depth. Then they are drawn back to front storing their color a the coresponding pixels. The object farthest away is drawn first and the nearest object is drawn last. Otherwise objects that are behind other objects may be drawn over them, leading to wrong images. However, there are cases where the painter's algorithm does not work, for example when three objects overlap each other \cite{akine:2018:realtime}.
 
 The depth test offers a solution to this problem. Before the results of a fragment is written to a texture, the current fragment's depth value to the depth value of the fragment, which was last written to location. The depth value of the last written fragment is stored inside the depth buffer. If the current fragment depth value is not farther from the view point than the last fragment, the current fragment is discarded. Otherwise it writes its values as usual and stores its depth in the depth buffer. The depth buffer is sometimes also called z-buffer.\cite{akine:2018:realtime}.
@@ -113,6 +114,7 @@ The depth test comparison operation must be configure. It should correspond to t
 The depth buffer can also be configured to not write the new value. Additionally the new depth value can be influenced before the test, with a depth bias \cite{sellers:vulkanprogramming}.
 
 \subsubsection{Stencil Test 0.8}
+\label{section:stenciltest}
 
 The stencil test is less commonly used than the depth test, which is used almost everywhere. Similar to the depth test, it serves as another way to discard a fragment. It uses a stencil buffer to store stencil value, similar to the depth buffer. In fact both buffers are stored alongside each other and cannot be separated. The stencil test compares a reference value, with the value inside the stencil buffer at the fragments location. If the test fails the fragment is discarded. Different reference values and comparison operations can be configured. The same comparisons from the depth test can be used. Additionally the stencil test can change the contents of the stencil buffer. The following operations are possible \cite{sellers:vulkanprogramming}:
 \begin{itemize}
@@ -159,7 +161,7 @@ Shader code in Vulkan must be defined in \gls{spir} format \cite{khronos:vulkan:
 History
 
 
-\subsection{Vulkan Overview 0.6}
+\subsection{Vulkan Overview 1.4}
 
 input attachments, tile renderers,
 
@@ -184,7 +186,18 @@ The renderpass only defines how attachments are used, but does not define their 
 
 %A framebuffer is created, based on a specific renderpass. It can only be used with that specific renderpass or a compatible one. Two attachments are compatible if they share their format and samplecount. A renderpass is compatible to another they are the same except for 
 
-\subsubsection{Pipeline}
+\subsubsection{Graphicspipeline 0.8}
+A graphics pipeline defines the various settings for rendering a object. The shader stages define which shader modules to use, their type and their entry point. The vertex input state defines the vertex attributes and whether and how they are interleaved. The input assembly defines how the primitives are created from the vertices. This could be a triangle list, a triangle strip, a point list, etc. The viewport state defines the different viewports, their position, their resolution, min and max depth, as wells as the scissor rectangles used for the individual scissor tests \cite{khronos:vulkan:spec1.1}.
+
+The rasterizer state defines a multitude of settings for the rasterization, including fully disabling it. The polygon mode decides how primitive is rasterized. It can be fully filled, only have its lines drawn for wireframe views, or just have its points drawn. The front face is set to clock-wise or counter-clock-wise to decide which vertex order represents the front face. The cull mode can be configured to cull nothing, front faces, back faces or both. Furthermore the depth values can be modified via depth bias and the line width can be set. \cite{khronos:vulkan:spec1.1}.
+
+The depth stencil state configures the stencil and depth test as decribed in section \ref{section:depthtest} and section \ref{section:stenciltest}. The colourblend state configures how and if the outputs are blended together as well as which colour channels can be written to. Regular blending may be performed or logical operations can be used \cite{khronos:vulkan:spec1.1}.
+
+The tessellation state configures the number of control points a patch has, if tessellation is enabled. It is ignored if not shaders for tessellation control and tessellation evaluation are present. The multisample state configures various multi sampling settings. Tessellation and multisampling are not used in the implementation \cite{khronos:vulkan:spec1.1}.
+
+The graphics pipeline also references a pipeline layout. It describes the values, buffers and textures passed to the shader and how they should be accessed. A graphics pipeline also references a specific subpass within a renderpass\cite{khronos:vulkan:spec1.1}.
+
+Whenever different settings are needed for drawing objects, a additional pipeline needs to be created. For example if there are two objects which need different shaders, each of the objects needs its own pipeline to draw it. However, there are a few values that can be configured to be dynamically. This can be configured with dynamic state. Dynamic state settings are ignored during pipeline creation and must be set dynamically before rendering \cite{khronos:vulkan:spec1.1}.
 
 
 \subsubsection{GPU Synchronisation}
