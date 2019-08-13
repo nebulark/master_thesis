@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 48.85/69}
+\subsection*{Search Terms TOTAL PAGES 49.75/69}
 portal
 3D lense
 magic lense
@@ -175,7 +175,7 @@ memory chunks
 
 
 
-\section{Previous Work 3.05/7}
+\section{Previous Work 3.95/7}
 
 \subsection{Potentially Visible Set 0.5}
 
@@ -188,7 +188,7 @@ For point base \gls{pvs} calculation, \textcite{luebke:1995:portals} proposed an
 
 %\cite{yang:2014:walkthrough}
 
-\subsection{Portals use in Sewing worlds together with SEAMs 0.5}
+\subsection{Connecting virtual worlds 0.5}
 
 \textcite{schmalstieg:1999:sewing} used portals, their paper refereed as SEAMs, to connect different virtual worlds together. Previously when one wanted to travel between virtual worlds this was done via teleportation, which can be very disorienting. They draw the SEAMs in depth first order.
 
@@ -223,13 +223,12 @@ While a naive approach might test all eight vertices of the box against the plan
 Rooms are split by portals. For each portal only the objects in its room need to be drawn.
 \cite{ lowe:2005:technique}
 
-\subsection{Portal Applications}
+\subsection{World in miniature 0.4}
+\Gls{wim} is a user interface technique for \gls{vr}. In addition to the regular \gls{vr} view of the virtual world, the user additionally holds a miniature version of the world, the \gls{wim} in their hands. The objects in \gls{wim} are in sync with the real world. Objects moved in the real world move in the  \gls{wim} and vice versa \cite{stoakley:1995:virtual}. 
 
+This allows the user to orient themselves, similar to a map. Furthermore, objects can easily manipulated with the \gls{wim}. This would otherwise be very difficult, as the world in \gls{vr} is typically in 1:1 scale. Most objects would be out of reach for the user \cite{stoakley:1995:virtual}.
 
-
-\subsection{Portal Navigation}
-Portal Rendering in SEAMS (\cite{schmalstieg:1999:sewing})
-\cite{pausch:1995:navigation} navigation with hand held minatures
+The \gls{wim} can not only move other object, is also possible for user to move their own avatar. This allows them to move around in the virtual world. However, immediately updating the \gls{vr} view while moving the avatar is very disorienting. Users where found to be very focused on the \gls{wim} while manipulating it and any animation of the full scale world requires them to shift focus. A alternative solution is to let the user fly inside their avatar in the \gls{wim}, steadily scaling it and fading out the original full scale world. The old \gls{wim} becomes the new full scale world and a new \gls{wim} is created \cite{pausch:1995:navigation}.
 
 
 \subsection{Transformative Portals in Gameplay 1.25}
@@ -246,15 +245,29 @@ However, there are also games that render portals in ways similar to as in the i
 	
 \end{itemize}
 
+\subsubsection{Portal and Portal 2}
 \textit{Portal} and \textit{Portal 2}, from there on referred as \textit{Portal}, gives the player control of a portal gun. With this gun players may place one orange and one blue portal on a wall. When both portals are placed, they are active and the player can see and traverse between them. In \textit{Portal} only two portals per player can exits. In \textit{Portal} the portals are used for solving puzzles. \textit{Portal} uses an recursion count of 2. However, infinite recursions are visible. Parts of the previous rendered frame are used, as the texture for the final portal \cite{lecture:portalProblems}.
 
+\subsubsection{Splitgate: Arena Warfare}
 \textit{Splitgate: Arena Warfare}, from there on referred as just \textit{Splitgate}, uses a similar mechanic to \textit{Portal}. However, \textit{Splitgate} is a shooter game and the portals are used to outmanoeuvre opponents, instead of for puzzle solving. Portals can only be placed on special walls. Portals must be very near and facing each other for recursion to be visible. In \textit{Splitgate} this can be avoided carefully placing these special walls. Furthermore only players can only look through their own portal. Enemy portals cannot be seen through \cite{splitgate}.
 
+\subsubsection{Antichamber}
 \textit{Antichamber} is another puzzle. Although portals are not its main focus, it is noteworthy as they behave very differently. \textit{Antichamber}'s portals are called \textit{transporter windows}. Instead of moving through them, player teleport when the \textit{transporter window} fills their entire screen. However, the player will not notice the teleportation immediately, as their view is filled with the \textit{transporter window}. Only after turning or moving away the effects can be noticed \cite{antichamber}.
 
+\subsubsection{Budgetcuts}
 \textit{Budgetcuts} is a \gls{vr} stealth game. One important aspect of \gls{vr} games is their locomotion system. Moving with a stick feels unnatural and can introduce motion sickness. In \textit{Budgetcuts} the player moves around the world with a teleporter gun, but works differently compared to the previous games. First the player can create a portal at another place using their translocator device. That place can be seen through another portal, which at the translocator. If the player decides to move to the other portal, they can press a button. Then the portal at the translocator wraps around the player, when finished the player stands at the new location. Portals in \textit{Budgetcuts} are visible only and can be physically interacted with \cite{budgetcuts, gdc:budgetcuts}.
 
+\subsubsection{Manifold Garden}
 Lastly there is \textit{Manifold Garden}, which is, as the time of this writing not, an unreleased game. The game has no actual portals, but the edge of the world acts as one. When moving to the edge of the world, the player gets teleported to the other edge. There is no visible seam at the edge. It looks as if the world continues and repeats itself. The Willian Chyr, \textit{Manifold Garden}'s author, calls this effect \textit{3D World Wrapping}.
+
+\subsection{Portal Textures 0.5}
+In architectural walkthroughs the geometry can be very complex. However, such scenes are typically split into multiple rooms or cells, and connected by doors or portals. This allows the use of portal based acceleration techniques \cite{aliaga:1997:architectural}.
+
+Instead of using portal culling to selectively rendering the geometry, \textcite{aliaga:1997:architectural} propose an alternative approach. Only the current cell needs to be rendered and portals can be replaced by textures. The cost of drawing a texture is significantly lower than drawing the actual geometry. The portal textures can be pre computed on demand or precomputed \cite{aliaga:1997:architectural}. 
+
+There is a balance between visual fidelity and performance that must be considered. If the texture is recreated every frame the technique would be pointless. If the textures are not created often enough the portal looks like a painting with no depth. Pre computing many images takes a considerable amount of memory. Furthermore, the transition between the portal texture and the actual geometry must be smooth, to avoid visual popping. \textcite{aliaga:1997:architectural} accomplish this by smoothly warping the geometry represented by the portal texture from its current incorrectly projected position to its correct one.
+
+Instead of using one texture for a portal, multiple textures can be used. A texture often has not the same viewpoint a needed for the portal. This can be corrected by image warping techniques. A second texture may contain information not present in the first, and helps to improve visual quality. By using multiple texture the total amount of pre computed images can be reduced drastically, improving the viability of pre computing \cite{rafferty:1998:3d}.
 
 
 \section{Implementation 24.65/30}
@@ -1231,12 +1244,11 @@ Static watertight portals, do not really have a purpose. They can't be detected 
 
 When using Watertight portals, they need to be created or transformed during runtime, otherwise they just cost performance without any gain. After discovering this fact, the watertight portals were removed from the implementation's levels.
 
-\subsection{Draw Indirect 0.25}
-Instead of using \textit{drawIndexed} an implementation could use \textit{drawIndexedIndirect}. This allows only only using a single draw call to render the \gls{objectset} multiple times. Additionally, portal fragment shaders could manipulate the values in the draw indirect buffer. If less portals than the maximum visible \gls{portalcount} is visible, there can be fewer instances. The downside is that \textit{gl\_InstanceIndex} cannot be used directly anymore in the shaders, and the real value must be obtained via buffer writes and reads. But when implemented correctly this could reduce the drawn instance count by a lot. The current Implementation produces degenerate triangle instead of skipping the whole instance. It needs to be measured if this approach actually improves performance enough compared to the current implementation, to be worth the extra work.
-
 \subsubsection{Holes 0.25}
 Cutting holes inside an otherwise watertight portal has some interesting properties. As previously mentioned a watertight portal is not really detectable and only serves for switching spaces. However when a hole is cut, the hole would appear as a portal. The hole could be seen as an additional portal, which cancels out the watertight portal. But the watertight portal would not really be visible to the user, so they see only that additional portal, which does not actually exist. This property can be seen in the half sphere portals in the implementation as shown in \ref{fig:nonplanar} in section \ref{section:nonplanar}. The black area in the top image indicates the circular planar hole, which is the only part in the bottom picture which actually looks like a portal. The actual part of the half sphere portal only serves as a border for the swapped space.
 
+\subsection{Draw Indirect 0.25}
+Instead of using \textit{drawIndexed} an implementation could use \textit{drawIndexedIndirect}. This allows only only using a single draw call to render the \gls{objectset} multiple times. Additionally, portal fragment shaders could manipulate the values in the draw indirect buffer. If less portals than the maximum visible \gls{portalcount} is visible, there can be fewer instances. The downside is that \textit{gl\_InstanceIndex} cannot be used directly anymore in the shaders, and the real value must be obtained via buffer writes and reads. But when implemented correctly this could reduce the drawn instance count by a lot. The current Implementation produces degenerate triangle instead of skipping the whole instance. It needs to be measured if this approach actually improves performance enough compared to the current implementation, to be worth the extra work.
 
 
 \subsection{Dynamic Visible Portals count 0.25}
