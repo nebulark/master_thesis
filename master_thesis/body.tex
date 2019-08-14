@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 52.15/69}
+\subsection*{Search Terms TOTAL PAGES 54.45/69}
 portal
 3D lense
 magic lense
@@ -284,7 +284,7 @@ This allows the user to orient themselves, similar to a map. Furthermore, object
 The \gls{wim} can not only move other object, is also possible for user to move their own avatar. This allows them to move around in the virtual world. However, immediately updating the \gls{vr} view while moving the avatar is very disorienting. Users where found to be very focused on the \gls{wim} while manipulating it and any animation of the full scale world requires them to shift focus. A alternative solution is to let the user fly inside their avatar in the \gls{wim}, steadily scaling it and fading out the original full scale world. The old \gls{wim} becomes the new full scale world and a new \gls{wim} is created \cite{pausch:1995:navigation}.
 
 
-\subsection{Transformative Portals in Gameplay 1.25}
+\subsection{Transformative Portals in Games 1.25}
 One area where portals, especially transformative ones, are interesting is in video games. However, many games do not render portals in a special way. The other world cannot be seen through the portal and when entering the users are often brought to a loading screen. 
 
 However, there are also games that render portals in ways similar to as in the implementation describe in this thesis. While many more games with transformative portals exits, this section will only cover the following games:
@@ -1360,7 +1360,7 @@ Figure \ref{fig:frustumbox} shows the portal frustum in camera space as well as 
 
 
 The instance count of the object when rendered should correspond to the amount of times the  test succeeded. However, the gl\_InstanceIndex cannot be used directly anymore to find the correct view matrix and stencil value. Additional information must be passed to the vertex shader. For example an array of stencil values/view matrix accessed via gl\_InstanceIndex.
-\section{Further Work 3.4/5}
+\section{Further Work 2.9/5}
 
 
 
@@ -1438,12 +1438,7 @@ Inspired by the works of \textcite{ryall:2005:temporal} and \textcite{tiesel:200
 
 
 
-\subsection{Use the Instant Occlusion query in occlusion culling 0.5}
-The technique use to calculate previous visible portals could be adapted and used together with \glspl{pvs} based occlusion culling. Objects within cells are rendered using draw indirect. This allows changing the instance count of the objects and can effectively disable them. All objects within are cell are only enabled, if at least a fragment of the corresponding portal is drawn. This can be achieved by initially setting the instance count to 0 for all object. Then in a portals fragment shader the instance count can be set to 1, which only happens if at least one fragment is drawn.
 
-\subsubsection{Extensions 0.25}
-Depending on  available \gls{gpu} extension this approach can be further improved. When using Vulkan the extension VK\_EXT\_conditional\_rendering can be used. This removes the need for an draw indirect buffer. This allows removes the need to loop over all elements of that buffer and setting the instance count individually \cite{khronos:vulkan:spec1.1}.
-Another useful extension is to use representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively.
 
 
 \subsection{Form changing portals}
@@ -1466,21 +1461,15 @@ Combine with portals. Instanced instance drawing. Calculate the two ids from ver
 
 
 \subsection{GPU Raytracing}
-\section{Conclusion 0/3}
+\section{Conclusion 2.8/3}
 
+\subsection{Implementation summary 1.1}
 
-summary
-
-
-
-
-economic effekt
-
-\subsection{Implementation summary}
-
-Previous works used a depth first approach to render transformative portals. This thesis present another approach using breadth first. Additionally it supports arbitrary portals defined by triangle meshes. While arbitrary portals are becoming more common, they are not supported everywhere.
+Previous works used a depth first approach to render transformative portals. This thesis present another approach by using breadth first. Additionally it supports arbitrary portals defined by triangle meshes. While arbitrary portals are becoming more common, they are not supported everywhere.
 
 On the authors machine, the implementation performed quite well. Scenes with 10 or more portals ran smoothly. However, in most settings the \gls{recursioncount} cannot be higher then four. Higher recursion counts took increasingly much longer to render exceeding the maximum time available for real time applications.
+
+
 
 The implementation used many techniques found in previous works to render transformative portals. However, due to breadth first approach, two key improvements could be implemented which the author has not yet seen in other works.
 
@@ -1488,14 +1477,16 @@ The first is the visible portal count algorithm. It allows to perform occlusion 
 
 The second is the use of instanced drawing. While instanced drawing is commonly seen, the author has yet seen its use in the context of transformative portals. Instanced drawing helped to improve performance by drastically reducing the amount of operations sent to the \gls{gpu} improving the overall performance significantly. Upon the introduction of instanced drawing, the time to render was only a sixth of the time before.
 
-Furthermore, the implementation was created using only a single subpass, with multiple renderpasses. This potentially allows the \gls{gpu} to optimize. The number of subpasses needed scales linearly to the \gls{recursioncount}.
+Furthermore, the implementation was created using only a single subpass, with multiple renderpasses. This potentially allows the \gls{gpu} to optimize. The number of subpasses needed scales linearly to the \gls{recursioncount}. However, this thesis only proved that breadth first is a viable approach, which allows for special improvement opportunities. It does not indicated whether depth or breadth first performs better in different situations.
 
 One downside of the breadth first approach was, that drawing instanced prohibited the use of the regular stencil test. As the reference value cannot be changed between instances, the implementation resorted to manually stencil testing and discarding fragments in the shader. This prohibited using early fragment tests. This was not seen as much of a downside, as the dual depth buffer also required also required manual testing and discarding, prohibiting early fragment tests anyway. However, for applications that do not need to use a dual depth buffer, this can be considered a downside. Furthermore, the use of manual test requires inserting them in every shader, which is inconvenient.
 
 Another downside is that due to the way the view matrices are calculated, the implementation still has a limit of maximum portals in a scene. They still affect performance, even if they are not visible. However, this problem should be relatively easy to fix in future.
 
+A interesting discovery were portals defined by watertight meshes. They are not very useful as static portals, but when modified dynamically allow for effects such as swapping or rotating subspaces. Additionally, the holes of almost watertight portals behave as a portal for the user, while the actually portal seems not to be present. But in reality the reverse is true.
 
-\subsection{Improvements}
+
+\subsection{Improvements 1}
 
 While the current version of the prototype has already has some use cases, it there are still many improvement opportunities. However, not every improvement opportunity is useful for every application. Three directions were identified.
 
@@ -1512,7 +1503,22 @@ Additionally there are some possibilities that would require changes in the grap
 At the moment it is not possible to allow early fragment testing, as manual checks against the near buffer need to be performed in the shader. However, if in the future the depth test allows the use of a near buffer some decisions there are some improvement opportunities. It might be worthwhile to remove instanced drawing, in favour of early fragment tests. If stencil export for shaders prior to rasterisation are available, instancing could still be used.
 
 Another opportunity would be the separation of the comparison and write operations of a depth test and stencil test. If the writes only happen after a fragment shader is executed without calling discard, the comparison operation could happen early.
-\subsection{Useful stuff for others}
+
+\subsection{Possible Application 0.7}
+The work of this thesis can probably best applied to video games. Portals can not only only serve a gameplay mechanic, but be used for other purposes as well, such as seamless transitions between levels similar to the work of \textcite{schmalstieg:1999:sewing}. Video games have only used a sparingly amount of portals. The breadth first approach might offer better performance, allowing for a higher portal count. However, as previously stated this would need to be tested first.
+
+Mirrors are a form of a portal that are much more common than transformative portals. The techniques described in this thesis can be applied to them as well. In addition, mirrors are often plane shaped. The the near buffer could be replaced by user defined clip planes.
+
+
+\subsubsection{Improving Portal based occlusion cullin 0.5}
+The technique use to calculate previous visible portals could be adapted and used together with portal based occlusion culling. Objects within cells are rendered using draw indirect. This allows changing the instance count of the objects and can effectively disable them. All objects within are cell are only enabled, if at least a fragment of the corresponding portal is drawn. This can be achieved by initially setting the instance count to 0 for all object. Then in a portals fragment shader the instance count can be set to 1, which only happens if at least one fragment is drawn.
+
+Depending on  available \gls{gpu} extension this approach can be further improved. When using Vulkan the extension VK\_EXT\_conditional\_rendering can be used. This removes the need for an draw indirect buffer and looping over all its elements and setting the instance count individually \cite{khronos:vulkan:spec1.1}.
+
+Another useful extension for this purpose are representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively.
+
+
+
 
 \section*{stuff}
 For debugging OpenGL offers debug output to obtain details about errors, performance warnings and other useful information. They can be obtained via a debug message callback or by querying them from a message log \cite{khronos:openGL:spec4.6}. In Vulkan validations layers are used for finding errors. In Vulkan \gls{api} calls can be intercepted by layers. They perform whatever operation defined by their implementation before maybe passing them to the actual function. Validation layers are layers w
