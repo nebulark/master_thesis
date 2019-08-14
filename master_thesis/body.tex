@@ -566,7 +566,7 @@ When drawing the scene from the portals view, care must be taken to not draw obj
 	\label{fig:bananajuce}
 \end{figure}
 
-Figure \ref{fig:bananajuce} shows such an example. Without additional techniques the square would be drawn. To avoid this, the implementation uses two depth buffers or dual depth buffer: a near depth buffer and a far depth buffer. The far depth buffer is used to discards fragments with a greater depth value. It is just a regular depth buffer, which is used in almost any rendering system. The near depth buffer discards fragments with a lesser depth value. When rendering the portal we render its depth also to the near buffer. The box's depth values from figure \ref{fig:bananajuce} would be greater than the near buffer and its fragments are discarded \cite{lowe:2005:technique, ropinski:2004:real}.
+Figure \ref{fig:bananajuce} shows such an example. Without additional techniques the square would be drawn. One possibility would be use the use of clip distances. However, this limits the portals shapes to planes. Another solution, which allows for arbitrary portals is to use two depth buffers or dual depth buffer: a near depth buffer and a far depth buffer. The far depth buffer is used to discards fragments with a greater depth value. It is just a regular depth buffer, which is used in almost any rendering system. The near depth buffer discards fragments with a lesser depth value. When rendering the portal we render its depth also to the near buffer. The box's depth values from figure \ref{fig:bananajuce} would be greater than the near buffer and its fragments are discarded \cite{lowe:2005:technique, ropinski:2004:real}.
 
 In this implementation the hardware supported depth buffer is used as the far buffer. For the near buffer dual buffering with two color texture are used, a read near buffer and a write near buffer. In the fragment shader, the fragments depth value is compared to the read near buffer. If it is lesser it is manually discarded, with a discard statement in the shader. Whenever the portals are drawn, they not only write the far depth buffer, but also the write near depth buffer. When the implementation transitions to the next recursion, the write near buffer and read near buffers are swapped.
 
@@ -1474,21 +1474,28 @@ summary
 
 
 
-instant pseudo query and other important topics
-breadth first portal rendering - instancing - less "passes"
 economic effekt
 
+\subsection{Implementation summary}
 
+Previous works used a depth first approach to render transformative portals. This thesis present another approach using breadth first. Additionally it supports arbitrary portals defined by triangle meshes. While arbitrary portals are becoming more common, they are not supported everywhere.
 
+On the authors machine, the implementation performed quite well. Scenes with 10 or more portals ran smoothly. However, in most settings the \gls{recursioncount} cannot be higher then four. Higher recursion counts took increasingly much longer to render exceeding the maximum time available for real time applications.
 
+The implementation used many techniques found in previous works to render transformative portals. However, due to breadth first approach, two key improvements could be implemented which the author has not yet seen in other works.
 
+The first is the visible portal count algorithm. It allows to perform occlusion query-esque operation during the execution of a fragment shader. This allowed to many more portals in a scene, as long as only a limited number of them were visible. 
 
+The second is the use of instanced drawing. While instanced drawing is commonly seen, the author has yet seen its use in the context of transformative portals. Instanced drawing helped to improve performance by drastically reducing the amount of operations sent to the \gls{gpu} improving the overall performance significantly. Upon the introduction of instanced drawing, the time to render was only a sixth of the time before.
 
+Furthermore, the implementation was created using only a single subpass, with multiple renderpasses. This potentially allows the \gls{gpu} to optimize. The number of subpasses needed scales linearly to the \gls{recursioncount}.
 
+One downside of the breadth first approach was, that drawing instanced prohibited the use of the regular stencil test. As the reference value cannot be changed between instances, the implementation resorted to manually stencil testing and discarding fragments in the shader. This prohibited using early fragment tests. This was not seen as much of a downside, as the dual depth buffer also required also required manual testing and discarding, prohibiting early fragment tests anyway. However, for applications that do not need to use a dual depth buffer, this can be considered a downside. Furthermore, the use of manual test requires inserting them in every shader, which is inconvenient.
+
+Another downside is that due to the way the view matrices are calculated, the implementation still has a limit of maximum portals in a scene. They still affect performance, even if they are not visible. However, this problem should be relatively easy to fix in future.
 
 
 \subsection{Improvements}
-
 
 While the current version of the prototype has already has some use cases, it there are still many improvement opportunities. However, not every improvement opportunity is useful for every application. Three directions were identified.
 
@@ -1505,7 +1512,7 @@ Additionally there are some possibilities that would require changes in the grap
 At the moment it is not possible to allow early fragment testing, as manual checks against the near buffer need to be performed in the shader. However, if in the future the depth test allows the use of a near buffer some decisions there are some improvement opportunities. It might be worthwhile to remove instanced drawing, in favour of early fragment tests. If stencil export for shaders prior to rasterisation are available, instancing could still be used.
 
 Another opportunity would be the separation of the comparison and write operations of a depth test and stencil test. If the writes only happen after a fragment shader is executed without calling discard, the comparison operation could happen early.
-
+\subsection{Useful stuff for others}
 
 \section*{stuff}
 For debugging OpenGL offers debug output to obtain details about errors, performance warnings and other useful information. They can be obtained via a debug message callback or by querying them from a message log \cite{khronos:openGL:spec4.6}. In Vulkan validations layers are used for finding errors. In Vulkan \gls{api} calls can be intercepted by layers. They perform whatever operation defined by their implementation before maybe passing them to the actual function. Validation layers are layers w
