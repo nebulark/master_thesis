@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 52.75/69}
+\subsection*{Search Terms TOTAL PAGES 52.15/69}
 portal
 3D lense
 magic lense
@@ -323,7 +323,7 @@ There is a balance between visual fidelity and performance that must be consider
 Instead of using one texture for a portal, multiple textures can be used. A texture often has not the same viewpoint a needed for the portal. This can be corrected by image warping techniques. A second texture may contain information not present in the first, and helps to improve visual quality. By using multiple texture the total amount of pre computed images can be reduced drastically, improving the viability of pre computing \cite{rafferty:1998:3d}.
 
 
-\section{Implementation 25/30}
+\section{Implementation 24.4/30}
 
 \subsection{Technologies, Tools and Libraries 2}
 This chapter discussed the various technologies, tools and libraries, which very used to create the implementation.
@@ -407,7 +407,7 @@ This implementation only uses transformative portals.  Two portals  that are con
 
 Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, but have different \glspl{modelmatrix}. The set of all portals is called \gls{portalset}. The number of portals within the \gls{portalset} is called \gls{portalcount}. Each portal within the \gls{portalset} has an unique integer as \gls{portalid}. The range of \glspl{portalid} starts with 0 and ends with the \gls{portalcount} minus 1. \enquote{Portal N} referes to the portal which has a \gls{portalid} equal to N.
 
-\begin{figure}[h]
+\begin{figure}[H]
 	\includegraphics[width=\linewidth]{images/portal.png}
 	\caption{A \gls{portalpair} connecting two parts of the world}
 	\label{fig:portal}
@@ -415,9 +415,9 @@ Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, b
 
 The connections of two parts of the world can be seen when looking at a portal. Figure \ref{fig:portal} shows the camera looking at endpoint A of a portal pair. It appears as if the dotted circle is in front of the camera. However, the actual circle is somewhere else. Instead of seeing endpoint A, the contents other part of the world is from portal camera's view point are seen.
 
-\subsubsection{Teleportation Matrix 1.2}
+\subsubsection{Teleportation Matrix 0.8}
 \label{section:teleportationmatrix}
-To teleport objects travelling through portals their position and rotation need to be changed. Initially this was done by adjusting the location and rotations the following way: First the vector from an \gls{endpoint}['s] location to the the object is calculated. Then that vector is rotated by the rotation difference between the two endpoints. Finally that vector gets added to the other endpoint location. This is new position of the object origin. To calculate the portal view camera rotation, the original camera's rotation is multiplied by the rotation difference between the two endpoints. 
+To teleport objects travelling through portals their position and rotation need to be changed. Initially this was done by adjusting the location and rotations the following way: First the vector from an \gls{endpoint}['s] location to the the object is calculated. Then that vector is rotated by the rotation difference between the two endpoints. Finally that vector gets added to the other endpoint location. This is new position of the object origin.
 
 However the initial approach did only consider rotations and translations and was not really generic. A better way was devised using a \gls{teleportationmatrix}. When this matrix is applied to an object's \gls{modelmatrix}, it is moved and rotated correctly. Additionally, the object is scaled by the difference in scale between the two end points.
 
@@ -471,7 +471,7 @@ This implementation uses a perspective matrix with an infinite far clipping plan
 \subsection{Storing Mesh Data for Rendering}
 
 
-\subsection{Portal drawing 5.6}
+\subsection{Portal drawing 5}
 \label{section:portaldrawing}
 
 This section covers various techniques used for portal rendering. How those techniques are actually applied will be explained in section \ref{section:intialimplementation}
@@ -511,18 +511,20 @@ Previous transformative portal implementations used depth first \cite{lowe:2005:
 
 
 
-\subsubsection{Generating View Matrices 0.75}
+\subsubsection{Generating View Matrices 0.15}
 \label{section:generatingviewmatrices}
-As describe in section \ref{section:textursVsStencil} the scene needs to be rendered from the correct view point. This view point corresponds to the camera's view point teleported by the specific portal's \gls{teleportationmatrix}. As the camera moves the matrices must be calculated every frame.
+As describe in section \ref{section:textursVsStencil} the scene needs to be rendered from the correct view point. When looking through the portal, it must look as if the camera looks directly a the object. To move the camera to the correct location the \gls{endpoint}['s] \gls{teleportationmatrix} is be applied to the camera matrix. Then the  \gls{viewmatrix} can be obtained by inverting it.
 
-\begin{figure}[h]
-	\includegraphics[width=\linewidth]{images/camera_matrices.png}
-	\caption{Portal Camera}
-	\label{fig:cameramatrices}
-\end{figure}
+%This view point corresponds to the camera's view point teleported by the specific portal's \gls{teleportationmatrix}. As the camera moves the matrices must be calculated every frame.
 
-Figure \ref{fig:cameramatrices} shows two portal endpoints. The blue triangle represents the camera and the orange circle represents an objects. The dotted blue triangle represents the portal view camera.
-When looking through the portal, it must look as if the camera looks directly a the object. To move the camera to the correct location the \gls{endpoint}['s] \gls{teleportationmatrix} is be applied to the camera matrix. Then the  \gls{viewmatrix} can be obtained by inverting it.
+%\begin{figure}[H]
+%	\includegraphics[width=\linewidth]{images/camera_matrices.png}
+%	\caption{Portal Camera}
+%	\label{fig:cameramatrices}
+%\end{figure}
+
+%Figure \ref{fig:cameramatrices} shows two portal endpoints. The blue triangle represents the camera and the orange circle represents an objects. The dotted blue triangle represents the portal view camera.
+
 
 
 \subsubsection{Recursive Portal Matrices 0.75}
@@ -1466,10 +1468,44 @@ Combine with portals. Instanced instance drawing. Calculate the two ids from ver
 \subsection{GPU Raytracing}
 \section{Conclusion 0/3}
 
+
 summary
+
+
+
+
 instant pseudo query and other important topics
-breadth first portal rendering
+breadth first portal rendering - instancing - less "passes"
 economic effekt
+
+
+
+
+
+
+
+
+
+
+\subsection{Improvements}
+
+
+While the current version of the prototype has already has some use cases, it there are still many improvement opportunities. However, not every improvement opportunity is useful for every application. Three directions were identified.
+
+In the visual area the prototype can be improved by supporting more than a single directional light for shading and adding shadows. Depending on the application these may be implemented in a less exact way to improve performance. The resulting artefacts can be hidden with well placed light sources. Additionally support for transparent objects can be added.
+
+The portal's capabilities can be improved. Non-translating portals, portals with more than just transform changes and physical portals are important aspects not present in the implementation. This increases the potential for using portals in games or similar applications. Very unique game concepts would be possible, which can set such games apart from competition.
+
+Lastly the performance of the implementation can be improved. Not all performance opportunities are equal. The most performance is likely to be gained by adding culling techniques. Performing visibility culling on portals (see section \ref{section:cullingportals}) seems to be the most important one. Additionally, the results can be reused for the other culling techniques. Furthermore, it the approximate count of drawn portals is known on the \gls{cpu}. This decreases the need for other performance opportunities, such as calculating view matrices on the \gls{gpu}. Another important opportunity is to improve the calculation of the view matrices by removing the need for matrix inversion. This seems to provide some gain for almost no work and is strongly recommended.
+
+The introduction of visibility culling might have strong impact on the prototype and some of the choices need to be revisited. Unless extra steps are taken to prevent false visible portals (see section \ref{section:falsevisible}) the dynamic calculation of visible portals might be almost obsolete. In such a case the extra work introduced via indirections and synchronisation might not be worthwhile.
+
+Additionally there are some possibilities that would require changes in the graphics \gls{api}.
+
+At the moment it is not possible to allow early fragment testing, as manual checks against the near buffer need to be performed in the shader. However, if in the future the depth test allows the use of a near buffer some decisions there are some improvement opportunities. It might be worthwhile to remove instanced drawing, in favour of early fragment tests. If stencil export for shaders prior to rasterisation are available, instancing could still be used.
+
+Another opportunity would be the separation of the comparison and write operations of a depth test and stencil test. If the writes only happen after a fragment shader is executed without calling discard, the comparison operation could happen early.
+
 
 \section*{stuff}
 For debugging OpenGL offers debug output to obtain details about errors, performance warnings and other useful information. They can be obtained via a debug message callback or by querying them from a message log \cite{khronos:openGL:spec4.6}. In Vulkan validations layers are used for finding errors. In Vulkan \gls{api} calls can be intercepted by layers. They perform whatever operation defined by their implementation before maybe passing them to the actual function. Validation layers are layers w
