@@ -1,6 +1,6 @@
 % !TeX spellcheck = en_GB
 
-\subsection*{Search Terms TOTAL PAGES 52.4/69}
+\subsection*{Search Terms TOTAL PAGES 52.75/69}
 portal
 3D lense
 magic lense
@@ -323,7 +323,7 @@ There is a balance between visual fidelity and performance that must be consider
 Instead of using one texture for a portal, multiple textures can be used. A texture often has not the same viewpoint a needed for the portal. This can be corrected by image warping techniques. A second texture may contain information not present in the first, and helps to improve visual quality. By using multiple texture the total amount of pre computed images can be reduced drastically, improving the viability of pre computing \cite{rafferty:1998:3d}.
 
 
-\section{Implementation 24.65/30}
+\section{Implementation 25/30}
 
 \subsection{Technologies, Tools and Libraries 2}
 This chapter discussed the various technologies, tools and libraries, which very used to create the implementation.
@@ -390,7 +390,7 @@ There are still some improvement opportunities with multithreading, rendering to
 
 
 \subsection{Objects 0.15}
-Objects are entities which can be drawn to screen. Objects can share the same model. An objects position, rotation and scale is represented by its \gls{modelmatix}. The set of all objects is called the \gls{objectset}.
+Objects are entities which can be drawn to screen. Objects can share the same model. An objects position, rotation and scale is represented by its \gls{modelmatrix}. The set of all objects is called the \gls{objectset}.
 
 \subsection{Transform 0.33}
 A transform is the combination of position, scale and rotation. A transform can be added to another transform, which can changes its position, scale and rotation at once. Transforms can be subtracted from each other resulting in their difference in position, scale and rotation. Transforms are often expressed as matrices in this implementation. For Matrices Adding and subtracting transforms is expressed as multiplying a matrix with a matrix and multiplying a matrix with a matrix's inverse respectively.
@@ -402,10 +402,10 @@ If object A has a transform, and object B has a transform, the transform that ne
 
 
 
-\subsection{Transformative Portals 1.25}
+\subsection{Transformative Portals 1.6}
 This implementation only uses transformative portals.  Two portals  that are connected form a \gls{portalpair}. These connections are two-way, allowing back and forth teleportation. The individual portals of a \gls{portalpair} are called \glspl{endpoint}. Instead of referring to portals of a \gls{portalpair} as \enquote{the \gls{endpoint}} and \enquote{the other \gls{endpoint}}, they are sometimes called \enquote{\gls{endpoint} A} and \enquote{\gls{endpoint} B}.
 
-Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, but have different \glspl{modelmatix}. The set of all portals is called \gls{portalset}. The number of portals within the \gls{portalset} is called \gls{portalcount}. Each portal within the \gls{portalset} has an unique integer as \gls{portalid}. The range of \glspl{portalid} starts with 0 and ends with the \gls{portalcount} minus 1. \enquote{Portal N} referes to the portal which has a \gls{portalid} equal to N.
+Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, but have different \glspl{modelmatrix}. The set of all portals is called \gls{portalset}. The number of portals within the \gls{portalset} is called \gls{portalcount}. Each portal within the \gls{portalset} has an unique integer as \gls{portalid}. The range of \glspl{portalid} starts with 0 and ends with the \gls{portalcount} minus 1. \enquote{Portal N} referes to the portal which has a \gls{portalid} equal to N.
 
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{images/portal.png}
@@ -415,27 +415,35 @@ Both \glspl{endpoint} of a \gls{portalpair} are represented by the same model, b
 
 The connections of two parts of the world can be seen when looking at a portal. Figure \ref{fig:portal} shows the camera looking at endpoint A of a portal pair. It appears as if the dotted circle is in front of the camera. However, the actual circle is somewhere else. Instead of seeing endpoint A, the contents other part of the world is from portal camera's view point are seen.
 
-\subsubsection{Teleportation Matrix 0.5}
+\subsubsection{Teleportation Matrix 1.2}
 \label{section:teleportationmatrix}
 To teleport objects travelling through portals their position and rotation need to be changed. Initially this was done by adjusting the location and rotations the following way: First the vector from an \gls{endpoint}['s] location to the the object is calculated. Then that vector is rotated by the rotation difference between the two endpoints. Finally that vector gets added to the other endpoint location. This is new position of the object origin. To calculate the portal view camera rotation, the original camera's rotation is multiplied by the rotation difference between the two endpoints. 
 
-However the initial approach did only consider rotations and translations and was not really generic. A better way was devised using a \gls{teleportationmatrix}. When this matrix is applied to an object's \gls{modelmatix}, it is moved and rotated correctly. Additionally, the object is scaled by the difference in scale between the two end points. To transform an object first the \gls{endpoint} A's inverse \gls{modelmatix} is applied, after which \gls{endpoint} B's \gls{modelmatix} is applied. The \gls{teleportationmatrix} is just the product of those two matrices, so that operation can be performed in one step. \Gls{endpoint} B's teleportation matrix is the inverse of \gls{endpoint} A's \gls{teleportationmatrix}.
+However the initial approach did only consider rotations and translations and was not really generic. A better way was devised using a \gls{teleportationmatrix}. When this matrix is applied to an object's \gls{modelmatrix}, it is moved and rotated correctly. Additionally, the object is scaled by the difference in scale between the two end points.
 
 
 
-{\Huge Explainatin problems!!!}
+%To transform an object first the \gls{endpoint} A's inverse \gls{modelmatrix} is applied, after which \gls{endpoint} B's \gls{modelmatrix} is applied. The \gls{teleportationmatrix} is just the product of those two matrices, so that operation can be performed in one step. \Gls{endpoint} B's teleportation matrix is the inverse of \gls{endpoint} A's \gls{teleportationmatrix}.
 
-Imagine an objects travelling through \gls{endpoint} A. Before relative transform to \gls{endpoint} A before the teleport must be equal to the relative transform to \gls{endpoint} B after the teleport. An objects modelmatrix expresses its transform realtive to the world. By multiplying the inverse modelmatrix of \gls{endpoint} A, \gls{endpoint} A's transform is subtracted from it. The object's transform is now relative to \gls{endpoint} A. This is the same realtive transform the object needs to
+In scene graphs a object can be defined relative to another object, as a child being attached to a parent. When the parent changes its world position the child's world position changes as well. However, if only the child changes its world position the parent is unaffected. The same is true for scale and rotation. This effect is achieved with relative model matrices. The child only has a defined relative model matrix, its total model matrix is calculated by multiplying its relative model matrix with the its parent's model matrix (\cite{akine:2018:realtime}?).
 
-By applying the inverse of \gls{endpoint} A's \gls{modelmatix} to object's \gls{modelmatix}, the \gls{object}'s \gls{modelmatix} is now expressed relative to \gls{endpoint} A. If then \gls{endpoint} A's \gls{modelmatix} would be applied, the object would again be a the same position. However, by applying \gls{endpoint} B's \gls{modelmatix}, the \
+Teleport matrices make use of this property. An object could be seen as being attached to a parent \gls{endpoint}. To teleport the child to the other endpoint the object needs to attached to the other endpoint. First the objects relative \gls{modelmatrix} must be calculated, by multiplying its total \gls{modelmatrix} with the inverse of \gls{endpoint} A's model matrix. Then the object is attached to \gls{endpoint} B. It total \gls{modelmatrix} is calculated by multiplying the object's relative \gls{modelmatrix} with \gls{endpoint} B's \gls{modelmatrix}.
+
+The \glspl{modelmatrix} of the endpoints are knows before the teleportation needs to be applied. A part of this process can be precomputed by creating a composite matrix by multiplying \gls{endpoint} A's inverse \gls{modelmatrix} with \gls{endpoint} B's \gls{modelmatrix}. This is \gls{endpoint} A's \gls{teleportationmatrix} which teleports from \gls{endpoint} A to \gls{endpoint} B. \Gls{endpoint} B's \gls{teleportationmatrix} is the inverse of \gls{endpoint} A's \gls{teleportationmatrix}.
 
 
 
-The current approach uses coordinate transforms to calculate the portal view camera. By applying the inverse modelmatrix of endpoint A to the camera matrix, we bring the camera in a coordinate system, where endpoint A is at the origin. The camera matrix is now expressed relative to endpoint A. Finally we can apply Endpoint B's which moves exactly at the right position relative to endpoint B.
-For example if the current camera's location where exactly at endpoint A, applying the inverse modelmatrix of endpoint A would move it to the origin.
-The Application of the two matrices can be combined into one. The implementation this is called the teleportation matrix. It is also used to move objects from one end point to the other.  
+%Imagine an objects travelling through \gls{endpoint} A. Before relative transform to \gls{endpoint} A before the teleport must be equal to the relative transform to \gls{endpoint} B after the teleport. An objects modelmatrix expresses its transform realtive to the world. By multiplying the inverse modelmatrix of \gls{endpoint} A, \gls{endpoint} A's transform is subtracted from it. The object's transform is now relative to \gls{endpoint} A. This is the same realtive transform the object needs to
 
-%TODO other analogy? Relative attachments in scenegraphs? 
+%By applying the inverse of \gls{endpoint} A's \gls{modelmatrix} to object's \gls{modelmatrix}, the \gls{object}'s \gls{modelmatrix} is now expressed relative to \gls{endpoint} A. If then \gls{endpoint} A's \gls{modelmatrix} would be applied, the object would again be a the same position. However, by applying \gls{endpoint} B's \gls{modelmatrix}, the \
+
+
+
+%The current approach uses coordinate transforms to calculate the portal view camera. By applying the inverse modelmatrix of endpoint A to the camera matrix, we bring the camera in a coordinate system, where endpoint A is at the origin. The camera matrix is now expressed relative to endpoint A. Finally we can apply Endpoint B's which moves exactly at the right position relative to endpoint B.
+%For example if the current camera's location where exactly at endpoint A, applying the inverse modelmatrix of endpoint A would move it to the origin.
+%The Application of the two matrices can be combined into one. The implementation this is called the teleportation matrix. It is also used to move objects from one end point to the other.  
+
+%%TODO other analogy? Relative attachments in scenegraphs? 
 
 
 
@@ -1434,6 +1442,11 @@ The technique use to calculate previous visible portals could be adapted and use
 \subsubsection{Extensions 0.25}
 Depending on  available \gls{gpu} extension this approach can be further improved. When using Vulkan the extension VK\_EXT\_conditional\_rendering can be used. This removes the need for an draw indirect buffer. This allows removes the need to loop over all elements of that buffer and setting the instance count individually \cite{khronos:vulkan:spec1.1}.
 Another useful extension is to use representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively.
+
+
+\subsection{Form changing portals}
+{multiple portals, represented by one mesh}
+{portals as mathematical function, implicit surfaces }
 
 
 \subsection{Worthy Section? World Wrapping}
