@@ -26,6 +26,7 @@
 \usepackage{csquotes}
 \bibliography{bibliography}
 
+\makeglossaries
 \input{Abkurzungen}
 \input{Terms}
 
@@ -47,6 +48,9 @@
 %%	emph={discard},emphstyle={\color{blue}}%
 %}%
 
+\setlength{\parindent}{0em}
+\setlength{\parskip}{1em}
+
 
 \begin{document}
 
@@ -57,16 +61,23 @@
 
 \glsresetall
 
+\setlength{\parskip}{0em}
 \tableofcontents
+\setlength{\parskip}{1em}
 
 \input{body}
 
 \input{exzerp}
 
+\clearpage
+\printglossary[type=\acronymtype]
+\printglossary
+
+
 %
 % ---- Bibliography ----
 %
-
+\clearpage
 \printbibliography
 
 \end{document}
