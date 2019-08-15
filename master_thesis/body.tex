@@ -1537,17 +1537,18 @@ Depending on  available \gls{gpu} extension this approach can be further improve
 Another useful extension for this purpose are representative fragment tests. If any primitive produces one or more fragments that all pass the fragment test one or more of those fragments are chosen. All other fragments are discarded. As its only important to detect whether or not at least one fragment is visible, this can reduce the amount of unneccesary fragments. The test can be enabled with GL\_NV\_representative\_fragment\_test and VK\_NV\_representative\_fragment\_test for OpenGL \cite{khronos:openGL:representative} and Vulkan\cite{khronos:vulkan:spec1.1} respectively.
 
 
-\section*{Image based portal rendering - likely does not work well}
-For each portal render its view into texture, if the view contains another portal, save the id and uv coordinates. Make a copy of the textures. Then process textures again, overwriting previously marked portals. This is done by fetching the pixel with the saved uv coords from that texture. This pixel may be a color or could be a portal mark. Repeat this process until there are no more portal markings or when threshold is exceeded.
-Bad scaling with maxiumum portal count
-Good scaling with recursions: as drawing a portals contents also draws its recursion contents, doubling the amount of recursions with each step -> 1,2,4,8,16...
-Might look ugly, wrong perspective
+%\section*{Image based portal rendering - likely does not work well}
+%For each portal render its view into texture, if the view contains another portal, save the id and uv coordinates. Make a copy of the textures. Then process textures again, overwriting previously marked portals. This is done by fetching the pixel with the saved uv coords from that texture. This pixel may be a color or could be a portal mark. Repeat this process until there are no more portal markings or when threshold is exceeded.
+%Bad scaling with maxiumum portal count
+%Good scaling with recursions: as drawing a portals contents also draws its recursion contents, doubling the amount of recursions with each step -> 1,2,4,8,16...
+%Might look ugly, wrong perspective
 
 
 \section*{stuff}
-For debugging OpenGL offers debug output to obtain details about errors, performance warnings and other useful information. They can be obtained via a debug message callback or by querying them from a message log \cite{khronos:openGL:spec4.6}. In Vulkan validations layers are used for finding errors. In Vulkan \gls{api} calls can be intercepted by layers. They perform whatever operation defined by their implementation before maybe passing them to the actual function. Validation layers are layers w
 
-They validate the parameters, before passing them to the actual function. How errors are reported depends on the implementation of the layer.. Multiple layers can be active and are called each one sequentially before calling the actual function. \cite{khronos:vulkan:spec1.1}
+%For debugging OpenGL offers debug output to obtain details about errors, performance warnings and other useful information. They can be obtained via a debug message callback or by querying them from a message log \cite{khronos:openGL:spec4.6}. In Vulkan validations layers are used for finding errors. In Vulkan \gls{api} calls can be intercepted by layers. They perform whatever operation defined by their implementation before maybe passing them to the actual function. Validation layers are layers w
+
+%They validate the parameters, before passing them to the actual function. How errors are reported depends on the implementation of the layer.. Multiple layers can be active and are called each one sequentially before calling the actual function. \cite{khronos:vulkan:spec1.1}
 
 
 
