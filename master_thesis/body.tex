@@ -2,19 +2,19 @@
 
 \section{Introduction}
 
-\subsection{Portal definition 0.2}
+\subsection{Portal definition}
 Our world can be seen as one big space that is divided into multiple subspaces by large objects. For instance walls which spit up a house into multiple rooms. A portal connects two subspaces, similar to a door connecting two rooms. Through a portal the subspace it connects to can be seen. To reach the other subspace one must traverse through the portal.
 
-\subsubsection{Transformative Portals 0.25}
+\subsubsection{Transformative Portals}
 Regular portals can only connect subspaces that are adjacent to each other. If a place can be reached by going in a straight line, this is the shortest possible path. Travelling through a regular portal cannot be faster.
 
 For transformative portals however, there are no such limitations. Transformative portals can connect completely arbitrary subspaces and may even connect a subspace to itself. They could also change where they are connect to. In the presence of transformative portals a straight path may not be the shortest, as travelling through a portal could be faster. Transformative portals are similar to wormholes described by \textcite{Visser:Wormholes} in his book.
 
-\subsubsection{Portal Recursion 0.25}
-When looking through a portal parts of the connected subspace can be seen. In that subspace there can be another portal through which yet another subspace is visible. For this example to see the final subspace two recursions are needed. In reality this could continue indefinitely. However, due to technical reasons, there is often a limit to the number of recursions. In this paper this limit is refered to as \gls{recursioncount}. A recursion count of 0 means that no other subspaces can be seen through portals. A recursion count of 1 allows looking through portals, but portals at the in connected subspaces can not be looked through. When a portal or object can be seen through portal, that portal is that portal's \gls{parentportal}. If the object or portal can be seen through a portal without indrection through other portals, that portal is the direct \gls{parentportal}.
+\subsubsection{Portal Recursion}
+When looking through a portal parts of the connected subspace can be seen. In that subspace there could be another portal through which yet another subspace is visible. In this example  two recursions are needed to see the final subspace. In reality this could continue indefinitely. However, due to technical reasons, there is often a limit to the number of recursions. In this paper this limit is referred to as \gls{recursioncount}. A recursion count of 0 means that no other subspaces can be seen through portals. A recursion count of 1 allows looking through portals, but portals in connected subspaces can not be looked through. When a portal or object can be seen through portal, that portal is that portal's \gls{parentportal}. If the object or portal can be seen through a portal without indrection through other portals, that portal is the direct \gls{parentportal}.
 
-\subsection{Reasons For Portals 0.25}
-Portals are applicable for many different topics. Portals can be used to accelerate rendering speed, by enabling the creation of \glspl{pvs} \cite{luebke:1995:portals}. Although they are not quite portals, magic lenses are very similar to portals and allow for useful visualisations \cite{viega:1996:3d}. In video games portals are especially useful. As previously mentioned they improve performance, but also serve as interesting gameplay mechanics. Furthermore they allow for intuitive transitions between worlds \cite{schmalstieg:1999:sewing} or intuitive locomotion for \gls{vr} games. 
+\subsection{Reasons For Portals}
+Portals are applicable for many different topics. Portals can be used to accelerate rendering speed when used in \glspl{pvs} \cite{luebke:1995:portals} algorithms. Although they are not quite portals, magic lenses are very similar to portals and allow for useful visualisations \cite{viega:1996:3d}. For video games  portals have multiple uses. Not do they improve performance using \gls{pvs} acceleration techniques, but also serve as interesting gameplay mechanics. Furthermore they allow for intuitive transitions between worlds \cite{schmalstieg:1999:sewing} or intuitive locomotion for \gls{vr} games. 
 
 \subsection{Research Question}
 
@@ -30,11 +30,11 @@ Many alorithms describe in later sections use computer graphics techniques or sp
 
 
 \subsection{Ray Tracing}
-Ray tracing is a rendering technique, which creates an image by casting rays into the scene. These rays will be referred to as \glspl{viewray}. For each pixel a ray is cast and checked for intersections with objects in the scene. The colour of an intersected object at the corresponding intersection point decides the colour of the pixel which casted the ray \cite{bungartz:2002:einfuhrung}. This technique can also be extended. For example from the intersection point additional rays can be casted in the directions of all the lights in a scene to test if an object lies in a shadow \cite{whitted:2005:improved}. Raytracing can also be used to implement portals in an intuitive way. When a \gls{viewray} intersects with one \gls{endpoint} the view ray is recast from the other \gls{endpoint}.
+Ray tracing is a rendering technique, which creates an image by casting rays into the scene. These rays will be referred to as \glspl{viewray}. For each pixel a ray is cast and checked for intersections with objects in the scene. The colour of an intersected object at the corresponding intersection point decides the colour of the pixel which casted the ray \cite{bungartz:2002:einfuhrung}. This technique can also be extended. For example from the intersection point additional rays can be casted in the directions of all the lights. If the first intersection is not the light the object lies in a shadow \cite{whitted:2005:improved}. Raytracing can also be used to implement portals in an intuitive way. When a \gls{viewray} intersects with one \gls{endpoint} the view ray is recast from the other \gls{endpoint}.
 
 Ray tracing is well know for being able to produce images with higher quality. But it is also known for being quite expensive and mostly used for offline rendering. However, \textcite{wald:2001:interactive} have shown that in some cases software ray tracing can  outperform rasterization approaches for lower resolutions with a high triangle count \cite{wald:2001:interactive}.
 
-Ray tracing is not limited to the \gls{cpu}, there exists many ray tracing applications for the \gls{gpu} as well such as the works of \textcite{foley:2005:kd} or \textcite{parker:2010:optix}. With the introduction of Nvidia's RTX \glspl{gpu} ray tracing can now be supported in hardware \cite{raytracinggems}.
+Ray tracing is not limited to the \gls{cpu}, there exist many ray tracing applications for the \gls{gpu} as well such as the works of \textcite{foley:2005:kd} or \textcite{parker:2010:optix}. With the introduction of Nvidia's RTX \glspl{gpu} ray tracing can now be supported in hardware \cite{raytracinggems}.
 
 
 \iffalse
@@ -72,16 +72,18 @@ The next stage is the geometry stage, which is generally executed on the \gls{gp
 \fi
 \subsection{GPU Features / Pipeline}
 
-\subsubsection{Vertex Processing?}
-explain shaders?
+\subsubsection{Vertex Processing}
 
-\subsubsection{Clipping }
+The first step in the \gls{gpu} pipeline is vertex processing, via programmable vertex shaders. Vertices are transformed to their correct location using matrices. The vertex processing stage is also responsible for projecting a vertex's position into clip space via a projection matrix. Additional attributes, such as normals or texture coordinates can be set, which can be used in later stages. After vertex processing, individual primitives are assembled to primitives according to the primitive topology. These primitives may be further processed. This can be done with an optional geometry, tessellation control and tessellation evaluation shader \cite{akine:2018:realtime, khronos:vulkan:spec1.1}. However, the implementation will only use vertex shaders.
+
+
+\subsubsection{Clipping}
 \label{section:clipping}
 
 Not every primitive needs to be drawn, only those which are at least partially inside the view volume. Primitives wholly inside the view volume are just passed to the rasterizer. Primitives outside will be discarded. For primitives partially inside the view volume clipping needs to be performed. The primitive is cut against the view volume, discarding outside vertices and creating new ones at the intersection with the view volume. The clipping is performed in clip space, before the perspective division using  4 dimensional homogenous position vectors. This allows the use of linear interpolation to calculate the new vertices' position, which would not be possible in perspective space. The view volume is often defined as the unit cube, ranging from (-1,-1,-1) to (1,1,1).
 \cite{akine:2018:realtime}. However, this can be configured and differ for graphic \glspl{api}. For example in Vulkan the view volumes z-coordinates range from 0 to 1 by default \cite{khronos:glsl4.60:spec}.
 
-The view volume is defined by 6 clip planes. A clip plane device the space into two half spaces, an inside space and an outside space.
+The view volume is defined by 6 clip planes. A clip plane divides the space into two half spaces, an inside space and an outside space.
 In addition to the 6 clip planes, which define the view volume, additional clip planes can be provided by the user \cite{akine:2018:realtime}. In Vulkan 1.1 and OpenGL 4.6 this can be achieved by setting values in the \textit{gl\_ClipDistance} array in the vertex or geometry shader. Each value defines the distance to the corresponding user defined clip plane. A negative value that indicates the point is outside the plane, while a positive value indicates it is inside the plane.  Primitives are clipped against all clip planes and only parts inside all planes remain \cite{khronos:vulkan:spec1.1, khronos:openGL:spec4.6}.
 
 \subsubsection{Screen Mapping}
@@ -1293,7 +1295,7 @@ $$V_n = V_{n-1} * T_n^{-1}$$
 
 Results from previous calculation can be reused, the same way as previously. As the inverse of \gls{endpoint} A's teleportation matrix is equal to \gls{endpoint} B's teleportation matrix, no matrix but the initial camera matrix needs to be inverted. If time had permitted it, this optimization would definitely be included in the implementation.
 
-\subsubsection{Excluding the initial view matrix 0.75}
+\subsubsection{Excluding the initial view matrix}
 \label{section:noveiw}
 Let $Vwv0_n$ be the view matrix for portal n, which misses the multiplication with the initial view matrix. Formally:
 
@@ -1305,7 +1307,7 @@ $$Vwv0_n = Vwv0_{n-1} * T_n^{-1}$$
 
 The advantage of leaving out $V_0$ from the multiplication is that, if all $T$ are constant all $VWV0$ will be constant as well. These matrices only need to be calculated once, instead of every frame. The final calculation to get the real view matrix can be done in the shader. This does not need to be a matrix matrix multiplication, as it the view matrix is used only once in the shader for calculation a vertex's position. The array of these matrices could reside in \gls{gpu} local memory, as they do not need to be changed. Even for levels with moving portals, this could be a useful optimization, as only the parts that depend on the moved portal need to be recalculated. However, if this really improves performance for a specific implementation needs to be tested.
 
-\subsubsection{Calculating on the GPU 0.8}
+\subsubsection{Calculating on the GPU}
 Instead of calculating the view matrices on the \gls{cpu}, they could also be calculated on the \gls{gpu}.
 This saves the \gls{gpu} bandwidth, as only teleport matrices and the view need to be transferred, instead of an array of every possible combination of portals. Additionally, the indirection described in section \ref{section:viewmatrixselection} can be removed. After the previous visible portal calculation the view matrix can be calculated and written to the correct location. Lastly, access is faster as the matrices are in \gls{gpu} local memory.
 
@@ -1434,7 +1436,7 @@ Portals either must have collision on their edges or allow slicing objects into 
 
 Figure~\ref{fig:edgecollision} illustrates the problem that can occur. The left box passes the portal, the middle box goes through the portal, with the dotted  part being present at another location. However, It is not clear what should happen to the right box. The right box case could be  be prevented via collision on the portal edge.  Or the box could be sliced by the portal edge so that one part goes through the portal, while the other passes it. Watertight portals do not have edges, so this problem cannot occur for them.
 
-\subsubsection{Halfway through Objects 0.25}
+\subsubsection{Halfway through Objects}
 As objects are not point it is possible that only part of an object has passed the portal. The two parts of the object must be exists two different locations. Just duplicating the object is not enough however. It must also be insured that an object piercing a portal from the front, cannot be seen or interacted with from the back. Additionally the physics state must the same for both parts. Furthermore similar care must be taken for the player's avatar. If the player is halfway through the portal, they should not see part of their avatar directly at their viewing location. Some of this problems can be seen in the presentation of \textcite{lecture:portalProblems}.
 
 
@@ -1483,7 +1485,7 @@ Combine with portals. Instanced instance drawing. Calculate the two ids from ver
 
 
 \subsection{GPU Raytracing?}
-\section{Conclusion 2.8/3}
+\section{Conclusion}
 
 \subsection{Implementation summary}
 
