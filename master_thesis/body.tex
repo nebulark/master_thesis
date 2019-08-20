@@ -72,6 +72,9 @@ The next stage is the geometry stage, which is generally executed on the \gls{gp
 \fi
 \subsection{GPU Features / Pipeline}
 
+This section gives a quick overview over \gls{gpu} features used in the implementation. The implementation uses the Vulkan \gls{api} with version 1.1. Although many graphic \glspl{api} work similarly, the following sections only refer to Vulkan 1.1 unless otherwise noted.
+
+
 \subsubsection{Vertex Processing}
 
 The first step in the \gls{gpu} pipeline is vertex processing, via programmable vertex shaders. Vertices are transformed to their correct location using matrices. The vertex processing stage is also responsible for projecting a vertex's position into clip space via a projection matrix. Additional attributes, such as normals or texture coordinates can be set, which can be used in later stages. After vertex processing, individual primitives are assembled to primitives according to the primitive topology. These primitives may be further processed. This can be done with an optional geometry, tessellation control and tessellation evaluation shader \cite{akine:2018:realtime, khronos:vulkan:spec1.1}. However, the implementation will only use vertex shaders.
@@ -84,28 +87,30 @@ Not every primitive needs to be drawn, only those which are at least partially i
 \cite{akine:2018:realtime}. However, this can be configured and differ for graphic \glspl{api}. For example in Vulkan the view volumes z-coordinates range from 0 to 1 by default \cite{khronos:glsl4.60:spec}.
 
 The view volume is defined by 6 clip planes. A clip plane divides the space into two half spaces, an inside space and an outside space.
-In addition to the 6 clip planes, which define the view volume, additional clip planes can be provided by the user \cite{akine:2018:realtime}. In Vulkan 1.1 and OpenGL 4.6 this can be achieved by setting values in the \textit{gl\_ClipDistance} array in the vertex or geometry shader. Each value defines the distance to the corresponding user defined clip plane. A negative value that indicates the point is outside the plane, while a positive value indicates it is inside the plane.  Primitives are clipped against all clip planes and only parts inside all planes remain \cite{khronos:vulkan:spec1.1, khronos:openGL:spec4.6}.
+In addition to the 6 clip planes, which define the view volume, additional clip planes can be provided by the user \cite{akine:2018:realtime}. In Vulkan 1.1 and OpenGL 4.6 this can be achieved by setting values in the \textit{gl\_ClipDistance} array in a \gls{glsl} vertex or geometry shader. Each value defines the distance to the corresponding user defined clip plane. A negative value indicates that the point is outside, while a positive value indicates that it is inside.  Primitives are clipped against all clip planes and only parts that are inside for all planes remain \cite{khronos:vulkan:spec1.1, khronos:openGL:spec4.6}.
 
 \subsubsection{Screen Mapping}
-After clipping and the perspective divide all primitves' coordinates are in \textit{normalized device coordinates} and are inside the range defined by the view volume and user clip planes. Before they can be passed to the rasterizer \textit{normalized devices coordinates} must be mapped into \textit{frame buffer coordinates} or \textit{screen coordinates}. This mapping is influenced by the viewport \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
+After clipping and the perspective divide all primitives' coordinates are in \textit{normalized device coordinates} and inside the range defined by the view volume. Before they are passed to the rasterizer the \textit{normalized devices coordinates} are mapped to \textit{frame buffer coordinates}/\textit{screen coordinates}. This mapping is influenced by the viewport \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
 
 For example in Vulkan the \textit{normalized device coordinates} range form (-1,-1,0) to (1,1,1). The x and y coordinates are multiplied by half of the viewports width and height respectively. Then the view port's center is added. The z coordinate is multiplied by maximum depth minus minimum depth, then the minimum depth gets added to the result. \cite{khronos:vulkan:spec1.1}.
 
 \subsubsection{Polygon Rasterization}
-Although it is possible to rasterize points and lines, this section will only focus on polygon rasterization, as only polygon rasterization will be used in the implementation. First the winding order of the polygon is determined. Then depending on the front face settings, clock wise or counter clock wise, the polygon is either front or back facing. All polygons that are not front facing count as back facing, including zero-area polygons. Depending on the active cull mode, the polygon may be culled depending on the way it is facing. This can be no culling, cull front faces, cull back faces or cull all faces \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
+Although it is possible to rasterize points and lines, this section will only cover polygon rasterization, as only polygon rasterization will be used in the implementation.
 
-If the polygon is not culled, fragments will be created for pixels, with a sample point inside the polygon. If the sample point lies on a polygon edge the following rule applies: For two polygons and a sample point on their common edge, exactly one fragment is created. The fragments attributes are then calculated, using a convex combination ot the polygon's vertices. Fragments at a vertex location will have exactly that vertex's attributes. Other fragments' attributes are calculated via a linear combination of the polygon's vertices. The linear combination's scalars depend on the fragment's position within the polygon \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
+First the winding order of the polygon is determined. Then depending on the front face settings, clock wise or counter clock wise, the polygon is either front or back facing. All polygons that are not front facing count as back facing, including zero-area polygons. Depending on the active cull mode, the polygon may be culled depending on the way it is facing. The cull mode can be no culling, cull front faces, cull back faces or cull all faces \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
+
+If the polygon is not culled, fragments will be created for pixels, with a sample point inside the polygon. If the sample point lies on a polygon edge the following rule applies: For two polygons and a sample point on their common edge, exactly one fragment is created. The fragments attributes are then calculated, using a convex combination of the polygon's vertices. Fragments with a sample location at a vertex location will have exactly that vertex's attributes. Other fragments' attributes are calculated via a linear combination of attributes of the polygon's vertices. The linear combination's scalars depend on the sample position within the polygon \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
 
 Instead of a linear combination a attribute can be annotated  as \textit{flat}. In this case the value of the polygon's \textit{provoking vertex} is used directly an no interpolation is performed. The provoking vertex is generally the first vertex of a primitive and depends on the primitive topology \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
 
 
 \subsubsection{Depth Test}
 \label{section:depthtest}
-Without the \gls{gpu}['s] depth test objects would need to be drawn according to the painter's algorithm. First they are sorted by their distance to the camera. Then they are drawn back to front storing their colour a the corresponding pixels. The object farthest away is drawn first and the nearest object is drawn last. Otherwise objects that are behind other objects may be drawn over them, leading to wrong images. However, there are cases where the painter's algorithm does not work, for example when three objects overlap each other \cite{akine:2018:realtime}.
+Without the \gls{gpu}['s] depth test objects would need to be drawn according to the painter's algorithm: First they are sorted by their distance to the camera. Then they are drawn back to front storing their colour a the corresponding pixels. The object farthest away is drawn first and the nearest object is drawn last. Otherwise objects that are behind other objects may be drawn over them, leading to wrong images. However, there are cases where the painter's algorithm does not work, for example when three objects overlap each other \cite{akine:2018:realtime}.
 
-The depth test offers a solution to this problem, as well as removing the need for the painter's algorithm. Before the results of a fragment are written to a texture, the current fragment's depth value to the depth value of the fragment, which was last written to location. The depth value of the last written fragment is stored inside the depth buffer. If the current fragment depth value is not farther from the view point than the last fragment, the current fragment is discarded. Otherwise it writes its values as usual and stores its depth in the depth buffer. The depth buffer is sometimes also called z-buffer.\cite{akine:2018:realtime}.
+The depth test offers a solution to this problem, as well as removing the need for the painter's algorithm. Before the results of a fragment are written to a texture the depth test is performed. The current fragment's depth value is compared to the depth value of the fragment, which was last written to location. The depth value of the last written fragment is stored inside the depth buffer. If the current fragment depth value is not farther from the view point than the last fragment, the current fragment is discarded. Otherwise it writes its values as usual and stores its depth in the depth buffer. The write to the depth buffer is part of the test, but may be disabled. The depth buffer is sometimes also called z-buffer \cite{akine:2018:realtime}.
 
-For Vulkan the depth values range from 0 to 1.  In many applications lower values are used to indicated near values. But this it does not need to be that way. In contrary using high depth values for near objects is better or at least not worse. For perspective view, the depth values however are not linearly distributed. The difference in depth value between two objects becomes smaller, the further both are away from the view. If values close to 0 are used for far away objects, the increased precision of floating point values near 0 increases the precision of the depth buffer. If normalized values are used to store the depth, then this approach will not perform any worse than the alternative\cite{lapidous:1999:optimal, nvidia:inversez}. The reverse depth range mitigates, but not completely removes, z-fighting. Z-fighting occurs the depth values of two objects are the same, even if one is further away from  the other. This can happen due limited floating point precision. Z-fighting causes the objects to randomly overlap each other, leading to visual flickering \cite{akine:2018:realtime}.
+For Vulkan the depth values range from 0 to 1. In many applications lower values are used to indicated near values. But this it does not need to be that way. In contrary using high depth values for near objects is better or at least not worse. For perspective view, the depth values however are not linearly distributed. The difference in depth value between two objects becomes smaller, the further both are away from the view. At some point the difference becomes so smaller than expressible using floating point values. They will have the same depth value, even though they are differently far away. This results in visual flickering as those objects randomly occlude each other. This is called z-fighting. However, when values close to 0 are used for far away objects, these objects can be make used of the increased precision of floating point values near 0. This increased precision helps to mitigate z-fighting. It is also possible that normalized values are used to store depth, which have a constant precision within their range. In this case using an inverse z-buffer will not perform any worse than the alternative \cite{lapidous:1999:optimal, nvidia:inversez}.
 
 The depth test comparison operation can be configured and should correspond to the depth buffer usage. A inverse depth buffer would use the opposite comparison of what a regular depth buffer would use. The following comparisons are possible \cite{sellers:vulkanprogramming}:
 \begin{itemize}
@@ -119,12 +124,12 @@ The depth test comparison operation can be configured and should correspond to t
 	\item Pass if new depth is greater than or equal to  the old value	
 \end{itemize}
 
-The depth buffer can also be configured to not write the new value. Additionally the new depth value can be influenced before the test, with a depth bias \cite{sellers:vulkanprogramming}.
+The write to the depth buffer is part of the test, but it be configured to not write the new value. Additionally the new depth value may be influenced before the test, with a depth bias \cite{sellers:vulkanprogramming}.
 
 \subsubsection{Stencil Test}
 \label{section:stenciltest}
 
-While the depth test is used almost everywhere, the stencil test is less commonly used. Similar to the depth test, it serves as another way to discard a fragment. It uses a stencil buffer to store stencil value, similar to the depth buffer. In fact both buffers are stored alongside each other and cannot be separated. The stencil test compares a reference value, with the value inside the stencil buffer at the fragments location. If the test fails the fragment is discarded. Different reference values and comparison operations can be configured. The same comparisons from the depth test can be used. Additionally the stencil test can change the contents of the stencil buffer. The following operations are possible \cite{sellers:vulkanprogramming}:
+The stencil test serves as another way to discard a fragment. It uses a stencil buffer to store stencil value, similar to the depth buffer. In fact both buffers are stored alongside each other in one attachment and cannot be separated. This is called the depth stencil attachment. The stencil test compares a reference value, with the value inside the stencil buffer at the fragments location. If the test fails, the fragment is discarded. Different reference values and comparison operations can be configured. The same comparisons from the depth test can be used. Additionally the stencil test can change the contents of the stencil buffer. The following operations are possible \cite{sellers:vulkanprogramming}:
 \begin{itemize}
 	\item Keep the value of the stencil buffer
 	\item Set the value to 0
@@ -136,12 +141,12 @@ While the depth test is used almost everywhere, the stencil test is less commonl
 	\item Decrement the stencil value and wrap around	
 \end{itemize}
 
-It is possible to use a different operation depending on the outcome of the depth and stencil test. A different operation can be configured for: stencil failed, stencil passed but depth failed, both tests passed. The test and operations can be different for back and front faces \cite{sellers:vulkanprogramming}. Additionally, a compare and a write mask can be configured. Before the test the reference value and the stencil buffer value are bitwise AND-ed. The write mask selects the bits of the stencil values that are updated. In Vulkan 1.1 the stencil buffer can only have exactly 8 bits or not be present at all. There is no texture format available that allows a different number of bits \cite{khronos:vulkan:spec1.1}.
+It is possible to use a different operation depending on the outcome of the depth and stencil test. A different operation can be configured for: stencil failed, stencil passed but depth failed, both tests passed. The test and operations can be different for back and front faces \cite{sellers:vulkanprogramming}. Additionally, a compare and a write mask can be configured. Before the test the reference value and the stencil buffer value are bitwise AND-ed. The write mask selects the bits of the stencil values that are updated. In Vulkan 1.1 the stencil buffer can only have exactly 8 bits or not be present at all. There is no texture format available for depth stencil attachment that allows a different number of bits \cite{khronos:vulkan:spec1.1}.
 
 \subsubsection{Early Fragment Test}
 Although the depth and stencil test are defined to run after the fragment shader, they can actually happen before the fragment shader is executed. When possible this happens automatically. This improves performance as early discarded fragments do not need to invoke or be processed by the fragment shader. However, this is not always possible In the following cases the test happens late \cite{sellers:vulkanprogramming}:
 
-Firstly, when the fragment shader can update the depth value, the actual depth value cannot be known before executing the shader. Secondly, when the shader has side effects, such as writing into a buffer. Discarding early would prevent the write from happening. Lastly if the shader can discard the fragment, as discarding prevents should prevent updating the depth buffer \cite{sellers:vulkanprogramming}.
+Firstly, when the fragment shader can update the depth value, the actual depth value cannot be known before executing the shader. Secondly, when the shader has side effects, such as writing into a buffer. Discarding early would prevent the write from happening. Lastly, when the shader could discard the fragment, as discarding should prevent updating the depth buffer \cite{sellers:vulkanprogramming}.
 
  It is possible to force the fragment test to run early. In \gls{glsl} this is done via the following line in the fragment shader \cite{khronos:glsl4.60:spec}:
 \begin{lstlisting}
@@ -159,14 +164,14 @@ layout(early_fragment_tests) in;
 \subsubsection{Occlusion Queries}
 A occlusion query is a way to count the number of fragments that pass all fragment tests. The query counts all fragments for all rendering commands between the start and the end of the occlusion query. The performance of the query can be improved by configuring it to be less precise \cite{akine:2018:realtime}. For example in Vulkan a occlusion query by default returns 0 if no fragment was drawn and a arbitrary non zero value if at least one fragment is drawn. This specification allows Vulkan to fall back to the exact variant if a the more efficient but less precise query is not available. To enable precise precision queries the flag \textit{VK\_QUERY\_CONTROL\_PRECISE\_BIT} must be passed to the function that starts the query \cite{khronos:vulkan:spec1.1}.
 
-Occlusion queries have many applications. One important use case is for occlusion culling. Complex geometry is approximated by a simple bounding volume, which is much less expensive to draw. First a part of a scene is drawn, but only to the depth buffer. Then the bounding volume is drawn with an active occlusion query. If no fragment passed the test, the bounding volume is either occluded or not in the view volume. The same is true for the complex geometry, which can be skipped in such a case. Occlusion queries have a very high latency, so the time saved by occlusion culling must be worthwhile \cite{akine:2018:realtime, sellers:vulkanprogramming}.
+Occlusion queries have many applications. One important use case is for occlusion culling. Complex geometry is approximated by a simple bounding volume, which is much less expensive to draw. First a part of a scene is drawn, but only to the depth buffer. Then the bounding volume is drawn with an active occlusion query. If no fragment passed the test, the bounding volume is either occluded or not in the view volume. The same is true for the complex geometry, which can then be skipped in such a case. Occlusion queries have a very high latency, so the time saved by occlusion culling must be worthwhile \cite{akine:2018:realtime, sellers:vulkanprogramming}.
 
 
 \subsection{GLSL and SPIR-V}
 
-Shader code in Vulkan must be defined in \gls{spir} format \cite{khronos:vulkan:spec1.1}. \Gls{spir} is an intermediate language for shaders. It can also be used for compute kernels. Shaders written in any shader language can be compiled to \gls{spir} \cite{kessenich:2018:spir}.
+Shader code in Vulkan must be defined in \gls{spir} format \cite{khronos:vulkan:spec1.1}. \Gls{spir} is an intermediate language for shaders. It can also be used for compute kernels.  Shaders written in any shader language can be compiled to \gls{spir}, as long as corresponding compiler exists \cite{kessenich:2018:spir}.
 
-\Gls{glsl} is a human readable programming language for defining shaders, which is is very similar to C. \Gls{glsl} is a actually set of very close languages, for each programmable part of the graphics pipeline. Some keywords are only available in a subset of those languages. There is a small amount of built in variables that influence the pipeline or made available for use in the shader \cite{khronos:glsl4.60:spec}. Furthermore, the \gls{glsl} used for Vulkan is an extension to \gls{glsl}. Additional features are available and some are removed \cite{khronos:vulkan:glsl}.
+\Gls{glsl} is a human readable programming language for defining shaders, which is is very similar to the C programming language. \Gls{glsl} is a actually set of very close languages, for each programmable part of the graphics pipeline. Some keywords are only available in a subset of those languages. There is a small amount of built in variables that influence the pipeline or made available for use in the shader \cite{khronos:glsl4.60:spec}. Furthermore, the \gls{glsl} used for Vulkan is an extension to \gls{glsl}. Additional features are available and some are removed \cite{khronos:vulkan:glsl}.
 
 \subsection{OpenGL?}
 History
@@ -175,17 +180,24 @@ History
 \subsection{Vulkan Overview}
 
 
+
+
 \subsubsection{Debugging with Validation Layers}
 
-In Vulkan it is possible to intercept \gls{api} calls with the help of layers. The lowest layer is the core Vulkan \gls{api} defined by the specification. A higher layer can intercept all or a subset of calls for a lower layer. A higher layer can, but does not need to call into its next lower layer \cite{khronos:vulkan:spec1.1}.
-The core Vulkan layer assumes correct \gls{api} usage, resulting undefined behaviour for incorrect usages for most cases. If error checking is needed it can be performed in validation layers. The Vulkan specification recommends developing applications with enabled validation layers to catch and eliminate errors. On release the validation layers should be disabled for improved performance.
+In Vulkan it is possible to intercept \gls{api} calls with the help of layers. The lowest layer is the core Vulkan \gls{api} defined by the specification. A higher layer can intercept all or a subset of calls for a lower layer. A higher layer can, but does not need pass on a call to its next lower layer. The core Vulkan layer assumes correct \gls{api} usage, resulting undefined behaviour for incorrect usages for most cases. If error checking is needed it can be performed in validation layers. The Vulkan specification recommends developing applications with enabled validation layers to catch and eliminate errors. On release the validation layers should be disabled for improved performance \cite{khronos:vulkan:spec1.1}.
+
+
+However, a validation layer is often not enough for debugging. Vulkan offers the debug utilities extension. One functionality of this extension is to annotated vulkan objects, such as textures, with user defined names to help identifying them while debugging. Additionally, debug  messengers can be created to provided callbacks for the validation layers.
+\cite{khronos:vulkan:spec1.1}
 
 \subsubsection{Renderpass and Framebuffer}
 \label{section:renderpass}
 
+%TODO Explain: Attachments
+
 The renderpass represents attachments, subpasses and their dependencies. For each attachment a renderpass needs an \textit{attachment description}. This description contains the attachment's format, sample count and how its contents are treated at the beginning and end of the renderpass \cite{khronos:vulkan:spec1.1}.
 
-A subpass describes  one part of the renderpass. A renderpass may have only one subpass. It describes how the attachments are used in the subpass. A subpass can use attachments as input, as output, preserve them as well as performing resolve operation on them, for multi sampling applications. A subpass can have multiple input, output, preserve and resolve attachments, but only one depth stencil attachment. All subpasses render to the same dimensions. Fragments a a specific pixels coordinate may only read and write to textures at that coordinate \cite{khronos:vulkan:spec1.1}.
+A subpass describes  one part of the renderpass. A renderpass may have only one subpass. It describes how the attachments are used in the subpass. A subpass can use attachments as input, as output, preserve them as well as performing resolve operation on them, for multi sampling applications. A subpass can have multiple input, output, preserve and resolve attachments, but only one depth stencil attachment. All subpasses render to the same dimensions. Fragments that write to an output attachment at a specific pixel coordinate may read from input attachments only at that coordinate \cite{khronos:vulkan:spec1.1}.
 
 A subpass dependency describes which operations of a subpass depend on which operations of another subpass, in form of a execution and memory barrier. The actual execution of the subpasses may be reordered or overlap as long as it is allowed by the subpass dependencies. If an explicit pipeline barrier (see section \ref{section:synchronisation}) is used during a subpass, that subpass needs a dependency on itself \cite{khronos:vulkan:spec1.1}.
 
@@ -196,9 +208,9 @@ The renderpass only defines how attachments are used, but does not define their 
  %It can only be used with that specific renderpass or a compatible one. Two attachments are compatible if they share their format and samplecount. A renderpass is compatible to another they are the same except for 
 
 \subsubsection{Graphicspipeline}
-A graphics pipeline defines the various settings for rendering an object. The shader stages define which shader modules to use, their type and their entry point. The vertex input state defines the vertex attributes and whether and how they are interleaved. The input assembly defines how the primitives are created from the vertices. This could be a triangle list, a triangle strip, a point list, etc. The viewport state defines the different viewports, their position, their resolution, min and max depth, as wells as the scissor rectangles used for the individual scissor tests \cite{khronos:vulkan:spec1.1}.
+A graphics pipeline defines the various settings for rendering an object. The shader stages define which shader modules to use, their type and their entry point. The vertex input state defines the vertex attributes as well as whether and how they are interleaved. The input assembly defines how the primitives are created from the vertices. This could be a triangle list, a triangle strip, a point list, etc. The viewport state defines the different viewports, their position, their resolution, min and max depth, as wells as the scissor rectangles used for the individual scissor tests \cite{khronos:vulkan:spec1.1}.
 
-The rasterizer state defines a multitude of settings for the rasterization, including fully disabling it. The polygon mode decides how primitive is rasterized. It can be fully filled, only have its lines drawn for wireframe views, or just have its points drawn. The front face is set to clock-wise or counter-clock-wise to decide which vertex order represents the front facing primitives. The cull mode can be configured to cull nothing, front faces, back faces or both. This can improve performance, as the back faces of watertight meshes are always occluded by the mesh's front faces. Furthermore the depth values can be modified via depth bias and the line width can be set \cite{khronos:vulkan:spec1.1}.
+The rasterizer state defines a multitude of settings for the rasterization, including fully disabling it: The polygon mode decides how primitive is rasterized. It can be fully filled, only have its lines drawn for wireframe views, or just have its points drawn. The front face is set to clock-wise or counter-clock-wise to decide which vertex order represents the front facing primitives. The cull mode can be configured to cull nothing, front faces, back faces or both. This can improve performance, as the back faces of watertight meshes are always occluded by the mesh's front faces. Furthermore the depth values can be modified via depth bias and the line width can be set \cite{khronos:vulkan:spec1.1}.
 
 The depth stencil state configures the stencil and depth test as described in section \ref{section:depthtest} and section \ref{section:stenciltest}. The colour blend state configures how and if the outputs are blended together as well as which colour channels can be written to. Regular blending may be performed or logical operations can be used \cite{khronos:vulkan:spec1.1}.
 
@@ -206,7 +218,7 @@ The tessellation state configures the number of control points a patch has, if t
 
 The graphics pipeline also references a pipeline layout. It describes the values, buffers and textures passed to the shader and how they should be accessed. A graphics pipeline also references a specific subpass within a renderpass\cite{khronos:vulkan:spec1.1}.
 
-Whenever different settings are needed for drawing objects, a additional pipeline needs to be created. For example if there are two objects which need different shaders, each of the objects needs its own pipeline to draw it. However, there are a few values that can be configured to be dynamically. This can be configured with dynamic state. Static settings for specified dynamic state are ignored during pipeline creation and must be set dynamically before rendering \cite{khronos:vulkan:spec1.1}.
+Whenever different settings are needed for drawing objects, an additional pipeline needs to be created. For example, if there are two objects which need different shaders, each of the objects needs its own pipeline to draw it. However, there are a few values that can be configured to be dynamically using dynamic state. Static settings for specified dynamic state are ignored during pipeline creation and must be set dynamically before rendering \cite{khronos:vulkan:spec1.1}.
 
 \subsubsection{Queues and Command Buffers}
 In Vulkan most commands are not sent directly to the \gls{gpu}. Instead the commands are recorded in a command buffer. Then this command buffer can be submitted to a queue for execution on the \gls{gpu}. Not all queues support all commands. Which commands a queue supports depends on its queue family index and the capabilities associated with this index \cite{khronos:vulkan:spec1.1}.
@@ -216,12 +228,12 @@ In Vulkan most commands are not sent directly to the \gls{gpu}. Instead the comm
 
 \subsubsection{GPU Synchronisation}
 \label{section:synchronisation}
-In Vulkan the order of command executions has only a view implicit guarantees. Without explicit dependencies commands may be executed in arbitrary order or even overlap. For this Vulkan provides the developer with a few different synchronisation mechanisms \cite{khronos:vulkan:spec1.1}.
+In Vulkan the order of command executions has only a few implicit guarantees. Without explicit dependencies commands may be executed in arbitrary order or even overlap. For this Vulkan provides the developer with a few different synchronisation mechanisms \cite{khronos:vulkan:spec1.1}.
 
 %A fence can be used to wait on the \gls{cpu} until certain tasks have been executed on the \gls{gpu} and their results are visible.
-A Fence enabled the \gls{cpu} to wait until \gls{gpu} commands have executed and their results are visible. Fences can be in two states, signalled and unsignalled. Fences can be unsignalled from the \gls{cpu}. They can be passes as parameters to a queue submission command. After all commands of a submission have been executed and their results are visible the fences gets signalled. The \gls{cpu} can either query the state of the fence or wait until it gets signalled \cite{khronos:vulkan:spec1.1}.
+A Fence enables the \gls{cpu} to wait until \gls{gpu} commands have executed and their results are visible. Fences can be in two states, signalled and unsignalled. Fences can be unsignalled from the \gls{cpu}. They can be passes as parameters to a queue submission command. After all commands of a submission have been executed and their results are visible the fence gets signalled. The \gls{cpu} can either query the state of the fence or wait until it gets signalled \cite{khronos:vulkan:spec1.1}.
 
-A semaphore can be used to synchronize batches submitted to queues. Just as fences, they have two states: signalled and unsignalled. A semaphore can become signalled after the execution of a batch. The execution of a batch can wait until a semaphore gets signalled. A semaphore can be used to synchronize commands between two different queues \cite{khronos:vulkan:spec1.1}.
+A semaphore can be used to synchronize different batches of recorded commands  which are submitted to queues. Just as fences, they have two states: signalled and unsignalled. A semaphore can become signalled after the execution of a batch. The execution of a batch can wait until a semaphore gets signalled. A semaphore can be used to synchronize commands between two different queues \cite{khronos:vulkan:spec1.1}.
 
 An event can be used for dependencies of commands submitted to the same queue or between the \gls{cpu} and queue. It cannot be used to synchronize two different queues. An event has two states: signalled and unsignalled. Events can be signalled and unsignalled on the \gls{cpu} as well as the \gls{gpu}. The \gls{gpu} can wait until a event becomes signalled. The \gls{cpu} cannot wait on a event, but it can query its current state \cite{khronos:vulkan:spec1.1}.
 
@@ -229,11 +241,11 @@ A pipeline barrier is a explicit command that defines a memory dependency betwee
 
 The last synchronisation mechanisms are render passes and subpasses, which are described in section \ref{section:renderpass} \cite{khronos:vulkan:spec1.1}.
 
-\subsubsection{Push Constant}
+\subsubsection{Push Constant?}
 
 
 
-\subsubsection{Buffers}
+\subsubsection{Buffers?}
 memory chunks
 
 
