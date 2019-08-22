@@ -297,7 +297,7 @@ In addition to moving objects with  the \gls{wim} objects it is also possible fo
 
 
 \subsection{View Frustum Culling}
-As described in section \ref{section:clipping} only a small part of level needs to be rendered. Although clipping discards invisible primitive, before sending them to the rasterizer, it still had to process them. \Gls{vfc} is an acceleration algorithm, which finds invisible geometry and omits them from rendering \cite{assarsson:2000:optimized, akine:2018:realtime}.
+As described in section \ref{section:clipping} only a small part of scene needs to be rendered. Although clipping discards invisible primitive, before sending them to the rasterizer, it still had to process them. \Gls{vfc} is an acceleration algorithm, which finds invisible geometry and omits them from rendering \cite{assarsson:2000:optimized, akine:2018:realtime}.
 
 This is often done via bounding volume hierarchies. Each object is a node in a tree with a bounding volume. Multiple (close) nodes are grouped in a composite node. It children are the grouped nodes and its bounding volume contain all bounding volumes of its child nodes. Nodes can again as another composite node and so forth. The last node whit has no parent forms the root of the bounding box hierarchy tree \cite{clark:1976:hierarchical, assarsson:2000:optimized, akine:2018:realtime}.
 
@@ -309,13 +309,16 @@ While a naive approach might test all eight vertices of the box against the plan
 
 \section{Implementation}
 \label{section:implementation}
-To be able to test techniques to create transformative portals a prototype or implementation needs to be created. The prototype should support multiple transformative portals of arbitrary shape and needs to be useable for real time applications. User should be able to move around in the level and see multiple portal recursions.
+To be able to test techniques to create transformative portals a prototype or implementation needs to be created. The prototype should support multiple transformative portals of arbitrary shape and needs to be useable for real time applications. User should be able to move around in the scene and see multiple portal recursions.
 
 \subsection{Terms}
 In this section some terms will be introduced, which will be used in later sections.
 
 \subsubsection{Objects}
 Objects are entities which can be drawn to screen. Objects can share the same model. An objects position, rotation and scale is its transform. If a matrix is used for an object's transform it is called \gls{modelmatrix}. The term object does not include portals.
+
+\subsubsection{Scene}
+A scene represents the virtual world. A scene contains objects and portals. Drawing a scene refers to drawing all objects and portals contained in it.
 
 \subsubsection{Transform}
 A transform is the combination of position, scale and rotation. A transform can be added to another transform, which can changes its position, scale and rotation at once. Transforms can be subtracted from each other resulting in their difference in position, scale and rotation. Transforms are often expressed as matrices in this implementation. For Matrices adding and subtracting transforms is expressed as multiplying a matrix with a matrix and multiplying a matrix with a matrix's inverse respectively.
@@ -370,14 +373,14 @@ For vector, matrix and other graphic related computations, the \gls{glm} library
 
 
 \subsubsection{Rapid XML}
-Instead of hardcoding the layout of a level in code, level files are used instead. This way levels can be switch or changed, without recompiling. A human readable format was chosen to save the levels, for easier debugging. The levels are stored as XML files and RapidXml \cite{rapidxml} was used as library parse them.
+Instead of hardcoding the layout of a scene in code, scene files are used instead. This way scenes can be switch or changed, without recompiling. A human readable format was chosen to save the scenes, for easier debugging. The scenes are stored as XML files and RapidXml \cite{rapidxml} was used as library parse them.
 
-\subsubsection{UE4 Level Editor}
-To build level some kind of level editor is needed. Imagining the level only in the mind and writing the objects transformation directly into a file, is very difficult and time consuming.
+\subsubsection{UE4 Editor}
+To build scene some kind of editor is needed. Imagining the scene only in the mind and writing the objects transformation directly into a file, is very difficult and time consuming.
 
-Ideally a custom level editor should be built, so the effect of the portals can be seen immediately. However, there was not enough time and other parts of the implementation were prioritised. After looking for various solution, using the \gls{ue4} \cite{ue4} seemed best, as the author of this thesis has some experience with it.The \gls{ue4} Editor is very convenient to use and can be customized. Additionally, code can be executed within the editor, which can query level data.
+Ideally a custom editor should be built, so the effect of the portals can be seen immediately. However, there was not enough time and other parts of the implementation were prioritised. After looking for various solution, using the \gls{ue4} \cite{ue4} seemed best, as the author of this thesis has some experience with it.The \gls{ue4} Editor is very convenient to use and can be customized. Additionally, code can be executed within the editor, which can query scene data.
 
-An additional object type was added to editor, which was used placing the portals in the level. A small script was written to export the levels. It queries for all objects and portals in the level and stores that information in an XML file using RapidXml \cite{rapidxml}. Additionally all meshes from objects in a level are exported as OBJ by the script. However, some care must be taken as UE4 has a different coordinate system. For Vectors y and z must be swapped. For Quaternions, y and z must be swapped and the imaginary part inverted, as the handedness was changed.
+An additional object type was added to editor, which was used placing the portals in the scene. A small script was written to export the scenes. It queries for all objects and portals in the scene and stores that information in an XML file using RapidXml \cite{rapidxml}. Additionally all meshes from objects in a scene are exported as OBJ by the script. However, some care must be taken as UE4 has a different coordinate system. For Vectors y and z must be swapped. For Quaternions, y and z must be swapped and the imaginary part inverted, as the handedness was changed.
 
 \subsubsection{GSL}
 C++ is a powerful language, but allows for many mistakes. Although C++17 already has some types for safety and readability, it still lacks in some areas. This implementation includes Microsoft's \gls{gsl} \cite{microsoft:gsl} for additional safety.
@@ -434,8 +437,8 @@ The \glspl{modelmatrix} of the endpoints are known before the teleportation need
 
 
 
-%\subsection{Level}
-%A level represents the world and contains the \gls{portalset} and the \gls{objectset}.
+%\subsection{Scene}
+%A scene represents the world and contains the \gls{portalset} and the \gls{objectset}.
 
 
 
@@ -461,7 +464,7 @@ This section covers various techniques used for portal rendering. How those tech
 \subsubsection{Recursions 0.15}
 
 
-This implementation performs draws in multiple steps. Initially all the whole level, with all objects and portals is drawn. This is referred as recursion 0. Within recursion 1 the level must be drawn for each portal that was drawn in recursion 0 . Recursion 2 would draw the level for each portals drawn in recursion 1 and so forth. This continues until recursion n, where n is equal to the \gls{recursioncount}.
+This implementation performs draws in multiple steps. Initially all the whole scene, with all objects and portals is drawn. This is referred as recursion 0. Within recursion 1 the scene must be drawn for each portal that was drawn in recursion 0 . Recursion 2 would draw the scene for each portals drawn in recursion 1 and so forth. This continues until recursion n, where n is equal to the \gls{recursioncount}.
 
 
 \subsubsection{Textures vs Stencil Buffer 0.5}
@@ -487,7 +490,7 @@ When drawing multiple portals recursively the draw dependencies can be imagined 
 
 There are two approaches on the drawing order: depth first or breadth first. In depth first the contents of portal 1 in recursion 0 would be fully complete, before it begins drawing the contents of portal 2 in recursion 0. This has the advantage of needing just a small amount of different values to mark a pixel. Going down the tree a different value can be used for each recursion. When going up that value is not needed anymore and can be recyled. However, the implementation must make sure that no unneeded value remains in the stencil buffer. A downside is, that the draws are is fully dependent on each other.
 
-Breath first draws a recursion completely before drawing the next recursion. The amount of different values needed to mark a pixel, scales super linear with the portal count and \gls{recursioncount}. One value is needed of each portal in a recursion. For a level with two portals, to mark all portals from recursion 1 it at least needs 4 different values, excluding 0. For recursion 2 it needs 8 values. With the stencil buffer usually being limited to 8 bits this can be quickly become a hard limit. However, the advantage is that the depth buffer needs to be cleared less often, only when transitioning between recursions. Additionally, within a recursion there are not dependencies between the multiple draws of objects, as well as the portal draws.
+Breath first draws a recursion completely before drawing the next recursion. The amount of different values needed to mark a pixel, scales super linear with the portal count and \gls{recursioncount}. One value is needed of each portal in a recursion. For a scene with two portals, to mark all portals from recursion 1 it at least needs 4 different values, excluding 0. For recursion 2 it needs 8 values. With the stencil buffer usually being limited to 8 bits this can be quickly become a hard limit. However, the advantage is that the depth buffer needs to be cleared less often, only when transitioning between recursions. Additionally, within a recursion there are not dependencies between the multiple draws of objects, as well as the portal draws.
 
 Previous transformative portal implementations used depth first \cite{lowe:2005:technique,lecture:portalProblems}. The implementation presented in this thesis uses breadth first. There are fewer dependencies between the draws, which could be exploited. Additionally similar draws can be grouped, which reduces the amount of render passes. While the amount of stencil values needed scales super linearly, the amount of draws scales super linearly too. The author believes it is more likely that amount of draws will be the limiting factor than running out of values in the stencil buffer.
 
@@ -497,7 +500,7 @@ Previous transformative portal implementations used depth first \cite{lowe:2005:
 \label{section:generatingviewmatrices}
 
 
-As describe in section \ref{section:textursVsStencil} the level needs to be rendered from the correct view point. When looking through the portal, it must look as if the camera looks directly a the object.
+As describe in section \ref{section:textursVsStencil} the scene needs to be rendered from the correct view point. When looking through the portal, it must look as if the camera looks directly a the object.
 
 \begin{figure}[H]
 	\includegraphics[width=\linewidth]{images/portal.png}
@@ -1086,9 +1089,9 @@ The following configurations were tested.
 \fi
 
 \subsubsection{Demo Scene Render Baseline}
-The tests of this section all use the same level. It contains 6 portal pairs or 12 portals in total. This number is important, as it dictates how many view matrices need to be calculated.
+The tests of this section all use the same scene. It contains 6 portal pairs or 12 portals in total. This number is important, as it dictates how many view matrices need to be calculated.
 
-The first test renders the level from a viewpoint, were no geometry or portal is visible. The image will correspond to the clear colour used. It forms a baseline of minimal work done.
+The first test renders the scene from a viewpoint, were no geometry or portal is visible. The image will correspond to the clear colour used. It forms a baseline of minimal work done.
 
 \begin{table}[H]
 	\centering
@@ -1167,7 +1170,7 @@ However both tables show that calculating the view matrices takes a significant 
 		4-4-4       & 2.76    & 2.76   & 2.59   & 2.92   & -0.15           \\ \hline
 		4-4-4-4     & 9.14    & 9.15   & 7.50   & 10.94  & 2.59            \\ \hline
 	\end{tabular}
-	\caption{Time in milliseconds to render a level with 12 portals without an object on screen, as well as the relative median time compared to table \ref{tab:baseline}}
+	\caption{Time in milliseconds to render a scene with 12 portals without an object on screen, as well as the relative median time compared to table \ref{tab:baseline}}
 \end{table}
 
 
@@ -1175,7 +1178,7 @@ Table \ref{tab:rendernothing} shows multiple measurements taken for render no vi
 
 This table indicates not only the recursion count, but also the number of maximum visible portals matter significantly. If the visible portal count is low enough, rendering with additional recursions can still be faster than with higher visible portals counts and less recursions. Rendering all portals, in this case 12 portals, every recursion is similar to the first approach to portal rendering described in section \ref{section:intialimplementation}. Only 2 recursions can be use or the time to render is too high for even 30 \gls{fps}. This means that the initial portal rendering approach was not only limited by the stencil buffer bits, but also by performance. Being able to configure visible portals counts is significant.
 
-Lastly the table indicates that for this implementation the maximum recursion count is 4 to still be viable for real time applications. However, with 4 recursions the level needs to be designed well to keep the maximum visible portal count low.
+Lastly the table indicates that for this implementation the maximum recursion count is 4 to still be viable for real time applications. However, with 4 recursions the scene needs to be designed well to keep the maximum visible portal count low.
 
 
 
@@ -1216,10 +1219,10 @@ Figure \ref{fig:perfviewpoint} shows the view point of the following measurement
 		4-4-4       & 9.45    & 9.45   & 8.08   & 10.48  & 6.69            \\ \hline
 		4-4-4-4     & 16.97   & 16.99  & 15.04  & 19.33  & 7.84            \\ \hline
 	\end{tabular}
-	\caption{Time in milliseconds to render a level with 12 portals from Figure \ref{fig:perfviewpoint}'s viewpoint, as well as the relative median time compared to rendertimes without objects on the screen.}
+	\caption{Time in milliseconds to render a scene with 12 portals from Figure \ref{fig:perfviewpoint}'s viewpoint, as well as the relative median time compared to rendertimes without objects on the screen.}
 \end{table}
 
-Table \ref{tab:perfviewpoint} shows the rendertimes in milliseconds for the image shown in figure \ref{fig:perfviewpoint}. The last column is the difference to the rendertimes for without objects on the screen from table \ref{tab:rendernothing}. The median is significantly higher, compared to table \ref{tab:rendernothing}. This is especially true for the low recursion measurement. Their median render time increase makes up a significant fractions of their total median render time. This makes sense, as the most objects are only rendered for the first recursion. For later recursions, it is less likely that an object needs to be drawn. This indicates that producing degenerate triangles for objects that do not need to be rendered (see section \ref{section:viewmatrixselection}), actually helps to improve performance. However, this also shows that the base render times from table \ref{tab:rendernothing} are not really reliable. The actual rendertimes depend heavily on the rendered scene. This table alone shows render times up to 4 times more than the baseline (Test Case 8-6). Care needs to be taken when building levels. The numbers also suggest that the \gls{recursioncount} should likely be limited to 3 instead of the previous stated 4.
+Table \ref{tab:perfviewpoint} shows the rendertimes in milliseconds for the image shown in figure \ref{fig:perfviewpoint}. The last column is the difference to the rendertimes for without objects on the screen from table \ref{tab:rendernothing}. The median is significantly higher, compared to table \ref{tab:rendernothing}. This is especially true for the low recursion measurement. Their median render time increase makes up a significant fractions of their total median render time. This makes sense, as the most objects are only rendered for the first recursion. For later recursions, it is less likely that an object needs to be drawn. This indicates that producing degenerate triangles for objects that do not need to be rendered (see section \ref{section:viewmatrixselection}), actually helps to improve performance. However, this also shows that the base render times from table \ref{tab:rendernothing} are not really reliable. The actual rendertimes depend heavily on the rendered scene. This table alone shows render times up to 4 times more than the baseline (Test Case 8-6). Care needs to be taken when building scenes. The numbers also suggest that the \gls{recursioncount} should likely be limited to 3 instead of the previous stated 4.
 
 
 \subsection{Properties of Watertight Portals}
@@ -1239,9 +1242,9 @@ The first is that A's view is indicated by full stroked arrows, while B's view i
 The other is that A and B's view is a straight line. When the view is fully stroked only fully stroked objects are scene and when dotted only dotted objects are seen. This is how it actually looks for A and B.
 In this example A can only see the pentagon and the square, while B can only see the star. Only the fully stroked objects are the actual placements of the object. Notice that it looks, as if the are inside both places is swapped.
 
-Static watertight portals, do not really have a purpose. They can't be detected and only the contents are swapped. They might as well not exists and the level could be built accordingly for the same effect.
+Static watertight portals, do not really have a purpose. They can't be detected and only the contents are swapped. They might as well not exists and the scene could be built accordingly for the same effect.
 
-When using Watertight portals, they need to be created or transformed during runtime, otherwise they just cost performance without any gain. After discovering this fact, the watertight portals were removed from the implementation's levels.
+When using Watertight portals, they need to be created or transformed during runtime, otherwise they just cost performance without any gain. After discovering this fact, the watertight portals were removed from the implementation's scenes.
 
 However, this property of watertight portals could be exploited. If watertight portals are treated specially, there might be some opportunities for optimization.
 
@@ -1295,7 +1298,7 @@ $Vwv0_n$ can be defined recursively as:
 
 $$Vwv0_n = Vwv0_{n-1} * T_n^{-1}$$
 
-The advantage of leaving out $V_0$ from the multiplication is that, if all $T$ are constant all $VWV0$ will be constant as well. These matrices only need to be calculated once, instead of every frame. The final calculation to get the real view matrix can be done in the shader. This does not need to be a matrix matrix multiplication, as it the view matrix is used only once in the shader for calculation a vertex's position. The array of these matrices could reside in \gls{gpu} local memory, as they do not need to be changed. Even for levels with moving portals, this could be a useful optimization, as only the parts that depend on the moved portal need to be recalculated. However, if this really improves performance for a specific implementation needs to be tested.
+The advantage of leaving out $V_0$ from the multiplication is that, if all $T$ are constant all $VWV0$ will be constant as well. These matrices only need to be calculated once, instead of every frame. The final calculation to get the real view matrix can be done in the shader. This does not need to be a matrix matrix multiplication, as it the view matrix is used only once in the shader for calculation a vertex's position. The array of these matrices could reside in \gls{gpu} local memory, as they do not need to be changed. Even for scenes with moving portals, this could be a useful optimization, as only the parts that depend on the moved portal need to be recalculated. However, if this really improves performance for a specific implementation needs to be tested.
 
 \subsubsection{Calculating on the GPU}
 Instead of calculating the view matrices on the \gls{cpu}, they could also be calculated on the \gls{gpu}.
@@ -1305,9 +1308,9 @@ The total number of calculated matrices might be more or less on the the \gls{gp
 
 For example for a scene containing 12 portals 22,620 matrices are needed. This is the amount of matrix multiplications that would be done on the \gls{cpu}. When rendering with visible portal counts of 8-6-4-2, only 632 matrices are actually used at most. Most likely the number will be significantly lower. When only 4 of 8 portals are visible in recursion 0 at most half the previous state amount of matrices will be needed. When combined with the optimizations described in section \ref{section:falsevisible} there will be even less matrices needed. However, the \gls{gpu} would need to calculate the matrix for each fragment of a portal. But the \gls{gpu} does this in parallel so this might not as dramatic. 
 
-This approach increases the \gls{gpu} workload, while reducing \gls{cpu} load. Depending on the current bottleneck, this can be an advantage or a downside. The workload of the \gls{cpu} increase with number of portals in a level, while the \gls{gpu} workload increases with resolution and the maximum visible portal counts. If the visible portal counts stay the same, at a certain amount of portals in a level there will be a tipping point.
+This approach increases the \gls{gpu} workload, while reducing \gls{cpu} load. Depending on the current bottleneck, this can be an advantage or a downside. The workload of the \gls{cpu} increase with number of portals in a scene, while the \gls{gpu} workload increases with resolution and the maximum visible portal counts. If the visible portal counts stay the same, at a certain amount of portals in a scene there will be a tipping point.
 
-Lastly this approach can not be used together with the one described in the previous section. Which one to use depends on the nature of the scene. If the portal matrices stay (mostly) the same and there is enough buffer storage available, the previous approach is probably better suited. But for levels with many moving portals, the matrices must be recalculated anyway, so this approach might be a better fit. 
+Lastly this approach can not be used together with the one described in the previous section. Which one to use depends on the nature of the scene. If the portal matrices stay (mostly) the same and there is enough buffer storage available, the previous approach is probably better suited. But for scenes with many moving portals, the matrices must be recalculated anyway, so this approach might be a better fit. 
 
 
 
@@ -1321,7 +1324,7 @@ The visible portal count may not only be different for every recursion, it could
 
 For example dynamically decreasing the visible portal count for recursion 0, while increasing it for recursion 1. This is useful for situations where only one portal is visible, because the camera is directly in front of it.
 
-This this allows for more visible portals during recursion 1. The amount of stencil values used as well as the amount of times the level is rendered stays roughly the same.
+This this allows for more visible portals during recursion 1. The amount of stencil values used as well as the amount of times the scene is rendered stays roughly the same.
 
 \subsection{CPU Portal Culling}
 \label{section:cullingportals}
@@ -1345,7 +1348,7 @@ Culling portals does not make the dynamic calculation of actual visible portals 
 \subsection{Portal Frustum Primitive Clipping}
 \label{section:portalprimitiveclipping}
 
-When drawing recursion 1 and onward only a small part of the level will be drawn. Although the near buffer allows for correct drawing, unneeded fragments are still generated. One good way of reducing the produced fragments is by allowing fewer triangles to be passed to the rasterizer. 
+When drawing recursion 1 and onward only a small part of the scene will be drawn. Although the near buffer allows for correct drawing, unneeded fragments are still generated. One good way of reducing the produced fragments is by allowing fewer triangles to be passed to the rasterizer. 
 
 One way to achieve this is by decreasing the clip volume. Regularly the view frustum is used as clip volume for primitive clipping. However, as the portals is only at part of the screen primitives should be clipped to this much smaller volume. This volume is referred to as \gls{portalfrustrum}. The \glspl{psb} introduced in section \ref{section:cullingportals} can be used to calculated the frustum. The \gls{psb} must be available in the vertex shader. The individual clip distances are calculated via subtractions in the vertex shader. Note that while Z can be directly used, the  x and y coordinate must be in the same space as the ones of \gls{psb}. Either the \gls{psb} is transformed into view space, using the the vertex's z. Or the vertex's x and y coordinates are projected into screen space. The only difference between those two possibilities is that the clip distances are scaled by z. This should not matter for the primitive clipping \cite{khronos:vulkan:spec1.1}.  Which variant is faster would need to be investigated. The regular clip planes for the regular view frustum can then also be disabled, as the \gls{portalfrustrum} is a subspace of it.
 
@@ -1400,7 +1403,7 @@ However for lights without shadow maps light seems impossible. Lighting a fragme
 \label{section:portalsaslights}
 Performing doing correct lighting and shadows is expensive. Depending on the use case a potential solution would be to perform lighting and shadowing as though portals did not exist. To hide the seams at portal locations, the portals could behave as a very bright point light. Fragments would appear almost fully lit and shadows would fade out near portals. All fragments close to the portals would be lit the same and not seams would be visible.
 
-However, this has the downside that the location of portals is very visible. If this is not desired the level must be designed in a way that there are always lights near portals or only use one directional light without shadows and no other light sources.
+However, this has the downside that the location of portals is very visible. If this is not desired the scene must be designed in a way that there are always lights near portals or only use one directional light without shadows and no other light sources.
 
 
 \subsection{Transparent Objects}
@@ -1515,7 +1518,7 @@ At the moment it is not possible to allow early fragment testing, as manual chec
 Another opportunity would be the separation of the comparison and write operations of a depth test and stencil test. If the writes only happen after a fragment shader is executed without calling discard, the comparison operation could happen early.
 
 \subsection{Possible Applications}
-The work of this thesis can probably best applied to video games. Portals can not only only serve a gameplay mechanic, but be used for other purposes as well, such as seamless transitions between levels similar to the work of \textcite{schmalstieg:1999:sewing}. Video games have only used a sparingly amount of portals. The breadth first approach might offer better performance, allowing for a higher portal count. However, as previously stated this would need to be tested first.
+The work of this thesis can probably best applied to video games. Portals can not only only serve a gameplay mechanic, but be used for other purposes as well, such as seamless transitions between scenes similar to the work of \textcite{schmalstieg:1999:sewing}. Video games have only used a sparingly amount of portals. The breadth first approach might offer better performance, allowing for a higher portal count. However, as previously stated this would need to be tested first.
 
 Mirrors are a form of a portal that are much more common than transformative portals. The techniques described in this thesis can be applied to them as well. In addition, mirrors are often plane shaped. The the near buffer could be replaced by user defined clip planes.
 
