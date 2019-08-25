@@ -6,6 +6,6 @@ In this thesis the rendering of transformative portals was investigated. A proto
 
 Additionally, a technique was developed to count the number of previous drawn portals. It works similar to a occlusion query. However, the calculation happens in the fragment shader and the result is available immediately in that shader. With this technique the amount of draws was reduce further.
 
-The prototype supports multiple transformative portals of arbitrary shape. Multiple portal recursions are rendered and users are able to move around in the scene and through portals.
+The prototype supports multiple transformative portals of arbitrary shape. Multiple portal recursions are rendered, and users are able to move around in the scene and through portals.
 
 Measurements showed that the implemented prototype is real-time capable for up to three to four recursions depending on the maximum allowed number of visible portals. However, the measurements also showed a few areas for performance improvements. Furthermore, only directional light is supported, while shadows and transparent objects are completely missing. Improving these areas as well as the portal capabilities is discussed.
