@@ -1,18 +1,7 @@
-%%%%%%%%%%%%%%%%%%%% author.tex %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% sample root file for your "contribution" to a proceedings volume
-%
-% Use this file as a template for your own input.
-%
-%%%%%%%%%%%%%%%% Springer %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\documentclass[MMR,Master,english]{twbook}
+%\documentclass{article}
 
-\documentclass{article}
-%
-% RECOMMENDED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-
-% to typeset URLs, URIs, and DOIs
 \usepackage{url}
 \usepackage{abbrevs}
 \usepackage{graphicx}
@@ -23,6 +12,8 @@
 
 \def\UrlFont{\rmfamily}
 \usepackage[acronym]{glossaries}
+
+\usepackage{eso-pic,graphicx}
 
 \usepackage{csquotes}
 \bibliography{bibliography}
@@ -44,21 +35,43 @@
 	morekeywords={mat4, vec3, vec4, in, out, discard, layout, push\_constant, uniform, uint}
 }
 
-%%\lstset{
-%%	emph={mat4, vec3, vec3, in, out},emphstyle={\color{blue}}%
-%%	emph={discard},emphstyle={\color{blue}}%
-%}%
-
 \setlength{\parindent}{0em}
 \setlength{\parskip}{1em}
+
+\usepackage{blindtext}
+
+%
+% Einträge für Deckblatt, Kurzfassung, etc.
+%
+\title{Arbeitstitel\\Arbeitstitel}
+\author{Titel Vorname Name, Titel}
+\studentnumber{XXXXXXXXXXXXXXX}
+%\author{Titel Vorname Name, Titel\and{}Titel Vorname Name, Titel}
+%\studentnumber{XXXXXXXXXXXXXXX\and{}XXXXXXXXXXXXXXX}
+\supervisor{Titel Vorname Name, Titel}
+%\supervisor[Begutachter]{Titel Vorname Name, Titel}
+%\supervisor[Begutachterin]{Titel Vorname Name, Titel}
+%\secondsupervisor{Titel Vorname Name, Titel}
+%\secondsupervisor[Begutachter]{Titel Vorname Name, Titel}
+%\secondsupervisor[Begutachterinnen]{Titel Vorname Name, Titel}
+\place{Wien}
+\kurzfassung{\blindtext}
+\schlagworte{Schlagwort1, Schlagwort2, Schlagwort3, Schlagwort4}
+\outline{\blindtext}
+\keywords{Keyword1, Keyword2, Keyword3, Keyword4}
+%\acknowledgements{\blindtext}
 
 
 \begin{document}
 
+\maketitle
 
-\begin{abstract}
+%\input{titlepage}
+
+
+
 	\input{abstract}
-\end{abstract}
+
 
 \glsresetall
 
