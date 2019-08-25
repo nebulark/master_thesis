@@ -471,13 +471,13 @@ This implementation uses a perspective matrix with an infinite far clipping plan
 
 This section covers various techniques used for portal rendering. How those techniques are actually applied will be explained in section \ref{section:intialimplementation}
 
-\subsection{Recursions 0.15}
+\subsection{Recursions}
 
 
 This implementation performs draws in multiple steps. Initially all the whole scene, with all objects and portals is drawn. This is referred as recursion 0. Within recursion 1 the scene must be drawn for each portal that was drawn in recursion 0 . Recursion 2 would draw the scene for each portals drawn in recursion 1 and so forth. This continues until recursion n, where n is equal to the \gls{recursioncount}.
 
 
-\subsection{Textures vs Stencil Buffer 0.5}
+\subsection{Textures vs Stencil Buffer}
 \label{section:textursVsStencil}
 Two different approaches were considered to render the contents of a portal. The first approach is to render the portals contents to a texture in the first renderpass. In the next renderpass this texture is applied to the portal and the whole scene is then rendered as usual \cite{schmalstieg:1999:sewing, lecture:portalProblems}.
 
@@ -487,7 +487,7 @@ The other approach utilises the stencil test. The stencil test is initially set 
 
 This implementation uses the latter approach, as it does not need extra textures. Especially considering recursions, the first approach might need many textures. 
 
-\subsection{Portal drawing orderer 1.25}
+\subsection{Portal drawing orderer}
 
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{images/rendertree.png}
@@ -506,7 +506,7 @@ Previous transformative portal implementations used depth first \cite{lowe:2005:
 
 
 
-\subsection{Generating View Matrices 0.5}
+\subsection{Generating View Matrices}
 \label{section:generatingviewmatrices}
 
 
@@ -535,7 +535,7 @@ To move the camera to the correct location the \gls{endpoint}['s] \gls{teleporta
 
 
 
-\subsection{Recursive Portal Matrices 0.75}
+\subsection{Recursive Portal Matrices}
 \label{section:recursivecameramatrices}
 The previous section explained how to calculate the camera matrices for each portal for recursion 1. For recursion 2 a the camera's viewpoint must be transform twice, by two sequential applied \glspl{teleportationmatrix}. This needs to be done for every combination of two portals. For recursion 3 this is done for every combination of three portals and so forth. This different combinations of matrices can be seen as a tree. The root is the current camera matrix. An nth child node's matrix is equal to its parent matrix multiplied by the portal n's \gls{teleportationmatrix}. The tree is filled level by level, each level reusing the calculations of the previous level.
 
@@ -565,7 +565,7 @@ The implementations stores this tree of camera matrices in an array. The indices
 Figure \ref{fig:cameraindices} shows the indices for 4 portals, with 2 iterations. For example to find the view matrix of Portal 0, seen through Portal 1, we would access the array at index 9. Note that the size of the tree scales exponentially, with the \gls{recursioncount}, as every possible combination of portals needs to be covered. At the end of the calculation of the tree, every matrix of in the tree needs to be inverted.
 
 
-\subsection{Dual Depth Buffer 1}
+\subsection{Dual Depth Buffer}
 
 When drawing the scene from the portals view, care must be taken to not draw objects, that are between the camera and other endpoint. In previous works this is often referred to as clipping \cite{lowe:2005:technique}.
 \begin{figure}[h]
@@ -582,13 +582,13 @@ Dual buffering the near buffer avoids problems with edge cases where one portal 
 
 The read near buffer is a input attachment and the write near buffer is a colour attachment. In recursion 0, no read near buffer test is used.
 
-\subsection{Portal near Z fighting 0.33}
+\subsection{Portal near Z fighting}
 \label{section:portalzfighting}
 When rendering the contents of one endpoint of a portal pair, the other endpoint would be rendered directly at the same location. They would have the exact same depth value. The other endpoint's fragments would sometimes be discard by the near buffer and sometimes not. This leads to a special case of Z fighting. To avoid this the winding order of a fragment is stored in the near buffer. When the fragments depth value and the near buffer value are nearly equal and winding order is the same, this would be exactly the previously mentioned case and the fragment should be discarded. This is done by increasing the comparison value by some small amount or percentage for same winding orders.
 
 For the prototype the depth values range of 0 to 1, and does not use negative values. This allows the implementation to store the winding order as the sign of the near buffer. Positive depth values indicate front facing and negative depth values indicate back facing. Near Depth comparison is done with the absolute value of the buffer.
 
-\subsection{Stencil Values and compare masks 0.66}
+\subsection{Stencil Values and compare masks}
 \label{section:stencilcomparemasks}
 
 As the implementation uses the breadth first approach, it can not use the stencil increment and decrement technique described in other works \cite{schmalstieg:1999:sewing, lowe:2003:fragment, lecture:portalProblems}. Different values need to be stored and compared against. Directly setting the stencil value can be achieved, by setting a reference value and use the replace stencil operation. However, the stencil reference is also used for the comparison. This means that the implementation must be use the same value for comparison as well as writing. This can be achieved by the use of stencil compare mask and generating stencil values with postfixing.
@@ -1019,7 +1019,7 @@ For testing the implementation a demo scene was built. This section demonstrates
 
 Figure \ref{fig:demodisabled} shows a snapshot of the scene. The \gls{recursioncount} was to 0, essentially disabling the portals. They are displayed in grey, which is the colour indicating reaching the maximum recursion count. Note that portals' transform and shape can be completely arbitrary.
 
-\subsection{Recursions 1.25}
+\subsection{Recursions}
 
 \begin{figure}[H]
 	\centering
@@ -1040,7 +1040,7 @@ Figure \ref{fig:roomlayout} shows a room within the scene from the top with disa
 
 Figure \ref{fig:room} shows the same room from figure \ref{fig:roomlayout}, but from a different view point. The top image has a \gls{recursioncount} of 0, while the bottom has a \gls{recursioncount} of 4. Note that the orange and light blue colored walls cannot be seen without the portals. On the right side multiple recursion can be seen. The green and orange wall are alternating. This indicates that more than one portal pair is involved in the recursion.
 
-\subsection{Non Planar Portals 1.5}
+\subsection{Non Planar Portals}
 \label{section:nonplanar}
 
 This sections showcases portals, that are defined by half spheres. It shows the the implementation works with non planar portals.

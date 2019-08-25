@@ -1,5 +1,5 @@
 
-\documentclass[MMR,Master,english]{twbook}
+\documentclass[MGS,Master,english]{twbook}
 %\documentclass{article}
 
 \usepackage{url}
@@ -43,25 +43,23 @@
 %
 % Einträge für Deckblatt, Kurzfassung, etc.
 %
-\title{Arbeitstitel\\Arbeitstitel}
-\author{Titel Vorname Name, Titel}
-\studentnumber{XXXXXXXXXXXXXXX}
+\title{Efficient Transformative Portal Rendering}
+\author{Florian Schmiderer, BSc.}
+\studentnumber{1710585006}
 %\author{Titel Vorname Name, Titel\and{}Titel Vorname Name, Titel}
 %\studentnumber{XXXXXXXXXXXXXXX\and{}XXXXXXXXXXXXXXX}
-\supervisor{Titel Vorname Name, Titel}
-%\supervisor[Begutachter]{Titel Vorname Name, Titel}
-%\supervisor[Begutachterin]{Titel Vorname Name, Titel}
-%\secondsupervisor{Titel Vorname Name, Titel}
-%\secondsupervisor[Begutachter]{Titel Vorname Name, Titel}
-%\secondsupervisor[Begutachterinnen]{Titel Vorname Name, Titel}
+\supervisor{Dipl.-Ing. Dr. Gerd Hesina}
+
+\secondsupervisor{FH-Prof. DI Alexander Nimmervoll}
+
 \place{Wien}
 \kurzfassung{\blindtext}
 \schlagworte{Schlagwort1, Schlagwort2, Schlagwort3, Schlagwort4}
-\outline{\blindtext}
-\keywords{Keyword1, Keyword2, Keyword3, Keyword4}
+\outline{\input{abstract}}
+\keywords{Rendering, Portal, Transformative Portal, Keyword4}
 %\acknowledgements{\blindtext}
 
-
+\setcounter{tocdepth}{1}
 \begin{document}
 
 \maketitle
@@ -70,15 +68,11 @@
 
 
 
-	\input{abstract}
+%
 
 
 \glsresetall
 
-\setlength{\parskip}{0em}
-\setcounter{tocdepth}{2}
-\tableofcontents
-\setlength{\parskip}{1em}
 
 \input{body}
 
