@@ -1,4 +1,11 @@
 % !TeX spellcheck = en_GB
 
+Transformative portals are a special form of portals. While regular portals are often used for acceleration algorithms, transformative portals can be used for wormhole or similar effects. Transformative portals allow for special gameplay mechanics in video games, seamless traversals between virtual worlds and another kind of locomotion for \gls{vr} applications.
 
+In this thesis the rendering of transformative portals was investigated. A prototype was created to test a new approach to transformative portal rendering. Typically a depth first portal rendering order together with a stencil buffer is used to recursively render portals. However, for this thesis' prototype uses breadth first order. This enabled the use of instanced rendering, which is not possible using depth first order and significantly reduces the amount of draw calls. The usual hardware stencil test was replaced by a manual test in the shader.
 
+Additionally, a technique was developed to count the number of previous drawn portals. It works similar to a occlusion query. However, the calculation happens in the fragment shader and the result is available immediately in that shader. With this technique the amount of draws was reduce further.
+
+The prototype supports multiple transformative portals of arbitrary shape. Multiple portal recursions are rendered and users are able to move around in the scene and through portals.
+
+Measurements showed that the implemented prototype is real-time capable for up to three to four recursions depending on the maximum allowed number of visible portals. However, the measurements also showed a few areas for performance improvements. Furthermore, only directional light is supported, while shadows and transparent objects are completely missing. Improving these areas as well as the portal capabilities is discussed.
