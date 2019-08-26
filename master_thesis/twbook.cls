@@ -87,6 +87,7 @@ numbers=noendperiod]{scrbook}
 \RequirePackage{palatino}
 \RequirePackage{scrpage2}
 \RequirePackage{acronym}
+\usepackage{eso-pic,graphicx}
 \RequirePackage{amsmath,amssymb,amsfonts,amstext}
 \RequirePackage[\sprache]{babel}
 \ifstr{\sprache}{ngerman}
@@ -100,8 +101,6 @@ numbers=noendperiod]{scrbook}
  %Do nothing; everything's fine
 }%
 \RequirePackage{array}
-%\RequirePackage{tikz}
-%\usetikzlibrary{external}
 \RequirePackage{caption}
 \DeclareCaptionLabelSeparator{periodcolon}{.: }
 \captionsetup{labelsep=colon}
@@ -404,9 +403,9 @@ Medicine}}{}
 \renewcommand*\maketitle[1][1]{%
 \begin{titlepage}
 \pagestyle{empty}
-\tikzifexternalizing{}{%
-  \ThisTileWallPaper{\paperwidth}{\paperheight}{\cover}%
-}
+
+\AddToShipoutPictureBG*{\includegraphics[width=\paperwidth,height=\paperheight]{\cover}}
+
 
 \ifstr{\doctype}{}
 {
