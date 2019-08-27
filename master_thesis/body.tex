@@ -218,56 +218,56 @@ In Vulkan the order of executed commands has only a few implicit guarantees. Wit
 %A fence can be used to wait on the \gls{cpu} until certain tasks have been executed on the \gls{gpu} and their results are visible.
 A Fence enables the \gls{cpu} to wait until \gls{gpu} commands have been executed and their results are visible. Fences can be in two states, signalled and unsignalled. Fences can be unsignalled from the \gls{cpu}. They can be passed as parameters to a queue submission command. After all commands in a submission have been executed and their results are visible the fence becomes signalled. The \gls{cpu} can either query the state of the fence or wait until it becomes signalled \cite{khronos:vulkan:spec1.1}.
 
-A semaphore can be used to synchronize different batches of recorded commands which are submitted to queues. Just as fences, they have two states: signalled and unsignalled. A semaphore can become signalled after the execution of a batch. The execution of a batch can wait until a semaphore becomes signalled. With a semaphore it is possible to synchronize commands between two different queues, which cannot be done using other types of synchronisation \cite{khronos:vulkan:spec1.1}.
+A semaphore can be used to synchronize different batches of recorded commands which are submitted to queues. Just as fences, they have two states: signalled and unsignalled. A semaphore can become signalled after the execution of a batch. The execution of a batch can be delayed until a semaphore becomes signalled. Both can be achieved by passing a semaphore as the corresponding parameter when submitting a batch of commands. With a semaphore it is possible to synchronize commands between two different queues, which cannot be done using other types of synchronisation \cite{khronos:vulkan:spec1.1}.
 
-An event can be used for dependencies of commands submitted to the same queue or between the \gls{cpu} and queue. It cannot be used to synchronize two different queues. An event has two states: signalled and unsignalled. Events can be signalled and unsignalled on the \gls{cpu} as well as the \gls{gpu}. The \gls{gpu} can wait until an event becomes signalled. The \gls{cpu} cannot wait on an event, but it can query its current state \cite{khronos:vulkan:spec1.1}.
+An event can be used for dependencies of commands submitted to the same queue or between the \gls{cpu} and queue. It cannot be used to synchronize two different queues. An event has two states: signalled and unsignalled. Events can be signalled and unsignalled on the \gls{cpu} as well as the \gls{gpu}. The execution of a command batch on the \gls{gpu} waits until an event becomes signalled. The \gls{cpu} cannot wait on an event, but it can query its current state \cite{khronos:vulkan:spec1.1}.
 
 A pipeline barrier is an explicit command that defines a memory dependency between commands submitted to one queue or commands within the same subpass of a render pass. The pipeline barrier's memory dependency can be very precisely configured. For example, it can define a dependency between the write of a specific image and a read from it. Furthermore, pipeline barriers are used to perform an image layout transition and to transfer queue ownership of buffers and images \cite{khronos:vulkan:spec1.1}.
 
-The last synchronisation mechanisms are render passes and subpasses, which are described in section \ref{section:renderpass} \cite{khronos:vulkan:spec1.1}.
+Render passes and subpasses, which are described in section \ref{section:renderpass} \cite{khronos:vulkan:spec1.1}, provide synchronisation mechanism for rendering.
 
 
 
 \subsection{Push Constant}
 
-Instead of using buffers to pass data to a shader, a push constant can be used instead. They do not require a buffer. Individual parts of push constants are be directly updated by recording \textit{pushConstants} into a command buffer. At the beginning of recording the command buffer the push constant's content is undefined. A push constant allows only for a small amount of data. Vulkan only requires a limit of 128 bytes, which is equivalent to the bytes needed for two 4x4 float matrices. However, push constants are expected to outperform memory-backed resource updates, which is useful for data that changes rapidly. One example would be model matrices which change for each drawn object. 
+Push constants are an alternative to buffers for providing a shader with data. They do not require a buffer. Individual parts of push constants are directly updated by recording the \textit{pushConstants} command into a command buffer. At the beginning of recording the command buffer, the push constant's content is undefined. A push constant allows only for a small amount of data. Vulkan only requires a limit of 128 bytes, which is equivalent to the bytes needed for two 4x4 float matrices. However, push constants are expected to outperform memory-backed resource updates, which is useful for data that changes rapidly. One example would be model matrices which change for each drawn object. 
 
 
 \chapter{Related Work}
-This section covers works related to this thesis. First other works, which make use of portals are discussed. Next works with relate to, but do not use, portals are presented. Finally, \gls{vfc} is covered, which is often used together with \gls{pvs} algorithms. A modified version of \gls{vfc} could provide future optimization possibilities for the prototype presented in this thesis.
+The following sections cover works related to this thesis. First, other works, which make use of portals are discussed. Next, works which relate to but do not use portals are presented. Finally, \gls{vfc} is covered, which is often used together with \gls{pvs} algorithms. A modified version of \gls{vfc} could provide future optimization possibilities for the prototype presented in this thesis.
 
 
 \section{Potentially Visible Set}
 
-One use case for portals is the calculation of \gls{pvs}. A \gls{pvs} can be used to determine which geometry could be visible. This can either be defined for a specific point or for a whole region or subspace. While it is more difficult to calculate the \gls{pvs} for a region, this information can be used for many locations. The information contained in \glspl{pvs} is very useful for occlusion culling. Only object which contribute to the final image need to be drawn. Skipping invisible objects reduces the \gls{gpu}['s] workload, leading to better performance \cite{cohen:2003:survey}.
+One use case for portals is the calculation of \gls{pvs}. A \gls{pvs} can be used to determine which geometry could be visible. This can either be defined for a specific point or for a whole region or subspace. Calculating a \gls{pvs} for a region is more difficult than calculating it for a point. However, the region based \gls{pvs} can be used for every point within that region, while the point based \gls{pvs} would need to be recalculated when moving. The information contained in \glspl{pvs} is very useful for occlusion culling. Only objects which contribute to the final image need to be drawn. Skipping invisible objects reduces the \gls{gpu}['s] workload, leading to better performance \cite{cohen:2003:survey}.
 
-In \gls{pvs} algorithms the regions or subspaces are called \textit{cells}, which are connected by portals. A \gls{pvs} for a \textit{cell} describes which geometry is visible for that \textit{cell}. For a \textit{cell} all geometry within itself and within adjacent \textit{cell} it is connected to is potentially visible. However, it is also possible to see geometry in \textit{cells} which are not directly connected to the original \textit{cell}. Note that a \gls{pvs} is not required to be exact and can be overestimated \cite{cohen:2003:survey}.
+In \gls{pvs} algorithms the regions or subspaces are called \textit{cells}, which are connected by portals. A \gls{pvs} for a \textit{cell} describes which geometry can be seen from \textit{cell}. For a \textit{cell} all geometry within itself and within adjacent \textit{cells} is potentially visible. However, it is also possible to see geometry in \textit{cells} which are not directly connected to the original \textit{cell}. Note that a \gls{pvs} is not required to be exactly determining and can be overestimated \cite{cohen:2003:survey}.
 
-To calculate point based \glspl{pvs}, \textcite{luebke:1995:portals} proposed an on-the-fly algorithm. It is a variation of \textcite{jones:1971:new}'s work. A portal's vertices are projected into screen space. Then an axial 2D bounding box of those vertices is created. This box forms a conservative bound for the portal and is called \textit{cull box}. Whenever all screen space projected vertices of an object lie outside this \textit{cull box} the object can safely be culled. To improve performance an even more conservative estimate can be used. Instead of each vertex only an object's bounding box could be projected. For portal recursions the \textit{cull box} is the intersection of all the portals' \textit{cull boxes} which are involved in the recursion \cite{luebke:1995:portals}. 
+To calculate point based \glspl{pvs}, \textcite{luebke:1995:portals} proposed an on-the-fly algorithm. It is based an approach to the hidden line problem by \textcite{jones:1971:new}. A portal's vertices are projected to screen space. Then an axial 2D bounding box of those vertices is created. This box is a conservative bounding volume for the portal and is called \textit{cull box}. When all screen-space-projected vertices of an object lie outside this \textit{cull box} the object can safely be culled. To improve performance, an even more conservative estimate can be used. Instead of projecting each vertex of an object, only the vertices of an object's bounding box can be projected. For portal recursions the \textit{cull box} is the intersection of all the portals' \textit{cull boxes} which are involved in the recursion \cite{luebke:1995:portals}. 
 
 
 %\cite{yang:2014:walkthrough}
 
 \section{Connecting virtual worlds}
 
-\textcite{schmalstieg:1999:sewing} used portals, to connect different virtual worlds together. In their paper the portals were referred to as SEAMs. Previously teleportation was used to travel between virtual worlds, which can be very disorienting. With their implementation the user could see where they will go to and transitions smoothly between worlds.
+\textcite{schmalstieg:1999:sewing} used portals, to connect different virtual worlds together. In their paper, \textit{Sewing worlds together with SEAMs}, the portals were referred to as SEAMs. Previously teleportation was used to travel between virtual worlds, which can be very disorienting. With their implementation users could see their new destination and travel smoothly between worlds.
 
 
-Their implementation drew the SEAMs in depth first order. The primary world is rendered object after object. When a SEAM is encountered, for each SEAM pixel the stencil value is increased, the colour set to the clear colour and depth value is set to infinitely far away. The stencil buffer values are initialized with 0. Then the secondary the whole secondary world or recursion 1 is rendered, but only where the stencil value is equal to 1. After the secondary world is rendered, the seam that triggered it is sealed. This was done by drawing the SEAM, but it only sets the depth to its depth and decreases the stencil buffer. When a SEAM is encountered in the secondary world, it uses the same process, but with the stencil reference for comparison being incremented by 1. This process continues until a limit is reached. The rendering of a world is only finished, when all its SEAMs and their worlds have been drawn and the SEAMs were sealed again. To reduce the number of worlds that potentially need to be drawn, an adapted version of \textcite{luebke:1995:portals} on the fly \gls{pvs} algorithm was used. SEAMs were treated as portals and virtual worlds as regions in the algorithm \cite{schmalstieg:1999:sewing}.
+Their implementation drew the SEAMs in depth-first order. The primary world is rendered object after object. When a SEAM is encountered, for each drawn pixel of the SEAM the stencil value is incremented by 1, the colour set to the clear colour and depth value is set to infinitely far away. The stencil buffer values are initialized with 0. Then the whole secondary world or \textit{recursion 1} is rendered, but only to screen pixels with a stencil value equal to 1. After the secondary world is rendered, the SEAM that triggered it is sealed. This was done by drawing the SEAM, but only writing to the depth buffer and decrementing the stencil buffer by 1. When a SEAM is encountered in the secondary world, it the same process is repeated. However, the stencil reference used for  comparison is more than the previous recursion. The rendering of a world is only finished, when all its SEAMs and their worlds were drawn and the SEAMs were sealed. To reduce the number of worlds that potentially need to be drawn, an adapted version of \textcite{luebke:1995:portals} on-the-fly \gls{pvs} algorithm was used. SEAMs were treated as portals and virtual worlds as regions in the algorithm \cite{schmalstieg:1999:sewing}.
 
 \section{Portal Textures}
-In architectural walkthroughs geometry can be very complex. However, such scenes are usually split into multiple rooms / cells connected by doors / portals. This allows the use of portal-based acceleration techniques \cite{aliaga:1997:architectural}.
+In architectural walkthroughs the geometry can be very complex. However, such scenes are usually split into multiple rooms / cells connected by doors / portals. This allows the use of portal-based acceleration techniques \cite{aliaga:1997:architectural}.
 
-Instead of using portal culling to selectively render geometry, \textcite{aliaga:1997:architectural} propose an alternative approach. Only the current cell needs to be rendered and portals can be replaced by textures. The cost of drawing a texture is significantly lower than drawing the actual geometry. The portal textures can be precomputed or computed on demand \cite{aliaga:1997:architectural}. 
+Instead of using portal culling to selectively render geometry, \textcite{aliaga:1997:architectural} propose an alternative approach. Only the current cell needs to be rendered and portals can be replaced by textures. Drawing a texture required significantly \gls{gpu} work than drawing the actual geometry. The portal textures can be precomputed or computed on demand \cite{aliaga:1997:architectural}. 
 
-There is a balance between visual fidelity and performance that must be considered. If the texture is recreated every frame the technique would be almost pointless. If the textures are not created often enough the portal could look like a painting with no depth. Precomputed images need a considerable amount of memory. Furthermore, the transition between the portal texture and the actual geometry must be smooth, to avoid visual popping. \textcite{aliaga:1997:architectural} accomplish this by smoothly warping the geometry represented by the portal texture from its current incorrectly projected position to its correct one.
+The balance between visual fidelity and performance must be considered. If the texture is recreated every frame, the technique would be almost pointless. If the textures are not recreated often enough the portal could look like a painting with no depth. Precomputed images need a considerable amount of memory. Furthermore, the transition between the portal texture and the actual geometry needs to avoid visual popping. \textcite{aliaga:1997:architectural} accomplish this by smoothly warping the geometry represented by the portal texture from its current incorrectly projected position to its correct one.
 
-Instead of using one texture for a portal, multiple textures can be used. A texture often has not the same viewpoint a needed for the portal. This can be corrected by image warping techniques. A second texture may contain information not available in the first, and helps to improve visual quality. Using multiple textures reduces the total number of precomputed images drastically, improving the viability of precomputing \cite{rafferty:1998:3d}.
+Instead of using one texture for a portal, multiple textures can be used. A texture often has not the same viewpoint a needed for the portal. This can be corrected with image warping techniques. A second texturethat contains information not available in the first one helps to improve visual quality. Using multiple textures reduces the total number of precomputed images drastically, improving the viability of precomputing \cite{rafferty:1998:3d}.
 
 \section{Transformative Portals in Games}
-One area where portals, especially transformative ones, are interesting is in video games. However, many games do not render portals in a special way. Other subspaces cannot be seen through the portal and when entering the users are often brought to a loading screen. 
+One area where portals, especially transformative ones, are useful, are video games. However, many games do not render portals in a special way. Other subspaces cannot be seen through the portal and when entering the game is interrupted by a loading screen. 
 
-However, there are also games that render portals in a similar way as described this thesis. While many more games with transformative portals exist, this section will only cover the following games:
+However, there are also games that render portals in a similar way as described this thesis. While many more games with transformative portals exist, this section will only cover the following:
 \begin{itemize}
 	\item Portal and Portal 2
 	\item Splitgate: Arena Warfare
@@ -279,42 +279,42 @@ However, there are also games that render portals in a similar way as described 
 \end{itemize}
 
 \subsection{Portal and Portal 2}
-\textit{Portal} and \textit{Portal 2}, from there on referred as \textit{Portal}, gives the player control of a portal gun. With this gun players may place one orange and one blue portal on a wall. When both portals are placed, they become a connected \gls{portalpair} and the player can see and traverse between them. In \textit{Portal} only two portals per player can exist. In \textit{Portal} the portals are used for solving puzzles. \textit{Portal} uses a recursion count of 2. However, infinite recursions are visible. Parts of the previous rendered frame are used, as the texture for the final portal to achieve this effect \cite{lecture:portalProblems}.
+\textit{Portal} and \textit{Portal 2}, henceforth referred to as \textit{Portal}, give the player control over a so-called portal gun. With this gun players may place one orange and one blue portal on a wall. When both portals are placed, they become a connected \gls{portalpair} and the player can look through and traverse between them. In \textit{Portal} only two portals per player can exist which are used for solving puzzles. \textit{Portal} uses a recursion count of 2. However, infinite recursions are visible. Parts of the previous rendered frame are used, as the texture for the final portal to achieve this effect \cite{lecture:portalProblems}.
 
 \subsection{Splitgate: Arena Warfare}
-\textit{Splitgate: Arena Warfare}, from there on referred as just \textit{Splitgate}, uses a similar mechanic to \textit{Portal}. However, \textit{Splitgate} is a shooter game and the portals are used to outmanoeuvre opponents, instead of puzzle solving. Portals can only be placed on special walls. Portals must be very near and facing each other for recursion to be visible. In \textit{Splitgate} this can be avoided carefully placing these special walls.  Furthermore, only players can only look through their own portal. Enemy portals cannot be seen through \cite{splitgate}.
+\textit{Splitgate: Arena Warfare}, from there on referred to as \textit{Splitgate}, uses a similar mechanic to \textit{Portal}. However, \textit{Splitgate} is a shooter game and the portals are used to outmanoeuvre opponents, instead of puzzle solving. Portals can only be placed on specific walls. Portals must be very near and facing each other for recursion to be visible. In \textit{Splitgate} this can be avoided carefully selecting walls portals can be placed on. Furthermore, players can only look through their own portal, enemy portals cannot be seen through \cite{splitgate}.
 
 \subsection{Antichamber}
-\textit{Antichamber} is another puzzle game. Although portals are not its main focus, it is noteworthy as they behave very differently. \textit{Antichamber}'s portals are called \textit{transporter windows}. Instead of moving through them, player teleport when the \textit{transporter window} fills their entire screen. However, the player will not notice the teleportation immediately, as their view is filled with the \textit{transporter window}. Only after turning or moving away the teleportation can be noticed \cite{antichamber}.
+\textit{Antichamber} is another puzzle game. Although portals are not its main focus, it is noteworthy as they behave very differently compared to the other games' portals as well as the portals implemented in this thesis. \textit{Antichamber}'s portals are called \textit{transporter windows}. Instead of moving through them, players teleport when the \textit{transporter window} fills their entire screen. However, the player will not notice the teleportation immediately, as the \textit{transporter window} takes up their whole screen. Only after turning or moving away the teleportation can be noticed \cite{antichamber}.
 
 \subsection{Budgetcuts}
-\textit{Budgetcuts} is a \gls{vr} stealth game. One important aspect of \gls{vr} games is their locomotion system. Moving with a joystick feels unnatural and can introduce motion sickness. In \textit{Budgetcuts} the player moves around the world with a translocator, but it works differently compared to the previous games. First, the player can create a portal at another place using their translocator device. Then, they can view that place by looking through another portal, which is located at the translocator. After that, the player can decide to move to the other portal by pressing a button. If the player decides to move, the portal at the translocator will wrap around the player. When this process is finished the player stands at the new location. Portals in \textit{Budgetcuts} are visible only and cannot be physically interacted with \cite{budgetcuts, gdc:budgetcuts}.
+\textit{Budgetcuts} is a \gls{vr} stealth game. One important aspect of \gls{vr} games is their locomotion system. Moving with a joystick feels unnatural and can induce motion sickness. In \textit{Budgetcuts} the player moves around the world with a translocator, but it works differently compared to the previous games. First, the player can create a portal to another place using their translocator device. Then, another portal is created, which is located at the translocator. These two portals are connected allowing the player to inspect the other location. After that, the player can decide to move to the other portal by pressing a button. If the player decides to move, the portal at the translocator will wrap around the player. When this process is finished the player stands at the new location. Portals in \textit{Budgetcuts} are visible only and cannot be physically interacted with \cite{budgetcuts, gdc:budgetcuts}.
 
 \subsection{Manifold Garden}
-Lastly there is \textit{Manifold Garden}, which is, as the time of this writing, an unreleased game. The game has no actual portals, but the edge of the world acts as one. When moving to the edge of the world, the player gets teleported to the other edge. There is no visible seam at the edge. It looks as if the world continues and repeats itself. Willian Chyr, \textit{Manifold Garden}'s author, calls this effect \textit{3D World Wrapping}.
+Lastly there is \textit{Manifold Garden}, which is, as the time of this writing, still in development. The game has no actual portals, but the edge of the world acts as one. When moving to the edge of the world, the player gets teleported to the other edge. There is no visible seam at the edge. It looks as if the world repeats itself indefinitely. Willian Chyr, \textit{Manifold Garden}'s author, calls this effect \textit{3D World Wrapping}.
 
 
 
 
 \section{Magic Lens}
-Another topic that uses techniques similar to portal rendering are magic lenses. A magic lens is a region, which has a special operation applied. For instance, these operations could be magnification, rendering in wireframe, changing colour \cite{bier:1993:toolglass}, changing time \cite{ryall:2005:temporal, tiesel:2009:composable} etc. Magic lenses are a powerful tool for visualization \cite{bier:1993:toolglass, tominski:2014:survey}.
+Another area that uses techniques similar to portal rendering are magic lenses. A magic lens is a region, which has a special operation applied. For instance, these operations could be magnification, rendering in wireframe, changing colour \cite{bier:1993:toolglass}, changing time \cite{ryall:2005:temporal, tiesel:2009:composable} etc. This makes magic lenses are a powerful tool for visualization \cite{bier:1993:toolglass, tominski:2014:survey}.
 
-While early works used 2D magic lenses \cite{bier:1993:toolglass} they are not restricted to 2D. \textcite{viega:1996:3d} extended the concept for magic lenses to 3D. They rendered objects multiple times with a different clip plane active. This way only specific parts of an object would be rendered and different operation could be active while rendering.
+While early works used 2D magic lenses \cite{bier:1993:toolglass} they are not restricted to 2D. \textcite{viega:1996:3d} extended the concept for magic lenses to 3D. They rendered objects multiple times, each time with a different clip plane active. This way only specific parts of an object would be rendered and different operations can be active while rendering.
 
 \textcite{ropinski:2004:real} extended the 3D magic lenses for arbitrary shapes. To selectively render parts, they used two depth buffers, similar to depth peeling techniques \cite{everitt:2001:interactive}.
 
 \section{World in miniature}
-\Gls{wim} is a user interface technique for \gls{vr}. In addition to the regular \gls{vr} view of the virtual world, the user additionally holds a miniature version of the world, the \gls{wim}, in their hands. The objects in the \gls{wim} are in sync with the real world. Objects that move in the real world move in the \gls{wim} and vice versa \cite{stoakley:1995:virtual}. 
+\Gls{wim} is a user interface technique for \gls{vr}. In addition to the regular \gls{vr} view, the user additionally holds a virtual miniature version of the world, the \gls{wim}, in their hands. The objects in the \gls{wim} are in sync with the real world. Objects that move in the real world move in the \gls{wim} and vice versa \cite{stoakley:1995:virtual}. 
 
-This allows the user to orient themselves, similar to a map. Furthermore, objects can easily manipulated with the \gls{wim}. This would otherwise be very difficult, as the world in \gls{vr} is usually in 1:1 scale. Most objects would be out of reach for the user \cite{stoakley:1995:virtual}.
+This allows the user to orient themselves, similar to using a map. Furthermore, objects can be easily manipulated with the \gls{wim}. This would otherwise be very difficult, as the world in \gls{vr} is usually in 1:1 scale. Most objects would be out of reach for the user \cite{stoakley:1995:virtual}.
 
-In addition to moving objects with the \gls{wim} objects it is also possible for user to move their own avatar. This allows them to move around in the virtual world. However, immediately updating the \gls{vr} view while moving the avatar is very disorienting. Users where found to be very focused on the \gls{wim} while manipulating it and any animation of the full-scale world requires them to shift focus. An alternative solution is to let the user fly inside their avatar in the \gls{wim}, steadily scaling it and fading out the original full-scale world. The old \gls{wim} becomes the new full-scale world and a new \gls{wim} is created \cite{pausch:1995:navigation}.
+In addition to moving objects with the \gls{wim} objects it is also possible for user to move their own avatar. This allows them to move around in the virtual world. However, immediately updating the \gls{vr} view while moving the avatar is very disorienting. Users were found to be very focused on the \gls{wim} while manipulating it and any animation of the full-scale world requires them to shift focus. An alternative solution is to let the user fly inside their avatar in the \gls{wim}, steadily scaling it and fading out the original full-scale world. The old \gls{wim} becomes the new full-scale world and a new \gls{wim} is created \cite{pausch:1995:navigation}.
 
 
 
 
 \section{View Frustum Culling}
-As described in section \ref{section:clipping} only a small part of scene needs to be rendered. Although clipping discards invisible primitive, before sending them to the rasterizer, it still had to process them. \Gls{vfc} is an acceleration algorithm, which finds invisible geometry and omits them from rendering \cite{assarsson:2000:optimized, akine:2018:realtime}.
+As described in section \ref{section:clipping} only the part of the scene within the view volume needs to be rendered. Although clipping discards invisible primitive, before sending them to the rasterizer, it still had to process them. \Gls{vfc} is an acceleration algorithm, which finds invisible geometry and omits them from rendering \cite{assarsson:2000:optimized, akine:2018:realtime}.
 
 This is often done via bounding volume hierarchies. Each object is a node in a tree with a bounding volume. Multiple (close) nodes are grouped in a composite node. Its children are the grouped nodes and its bounding volume contain all bounding volumes of its child nodes. Nodes can again as another composite node and so forth. The last node whit has no parent forms the root of the bounding box hierarchy tree \cite{clark:1976:hierarchical, assarsson:2000:optimized, akine:2018:realtime}.
 
@@ -481,7 +481,7 @@ This section covers various techniques used for portal rendering. How those tech
 \subsection{Recursions}
 
 
-This implementation performs draws in multiple steps. Initially all the whole scene is drawn. This is referred as recursion 0. Within recursion 1 the scene must be drawn for each portal that was drawn in recursion 0. Recursion 2 would draw the scene for each portal drawn in recursion 1 and so forth. This continues until recursion n, where n is equal to the \gls{recursioncount}.
+This implementation performs draws in multiple steps. Initially all the whole scene is drawn. This is referred as recursion 0. Within \textit{recursion 1} the scene must be drawn for each portal that was drawn in recursion 0. \textit{recursion 2} would draw the scene for each portal drawn in \textit{recursion 1} and so forth. This continues until recursion n, where n is equal to the \gls{recursioncount}.
 
 
 \subsection{Textures vs Stencil Buffer}
@@ -503,13 +503,13 @@ This implementation uses the latter approach, as it does not need extra textures
 \end{figure}
 
 
-When drawing multiple portals recursively the draw dependencies can be imagined as a tree. Figure \ref{fig:rendertree} shows the dependencies for two portals. In recursion 0 the two portals can only be drawn after the all objects were drawn. Otherwise portals that are occluded by an object might wrongly mark the pixel in the stencil buffer. The two draws of all objects in recursion 1 can only be drawn when their respective portal was already drawn. However, it is not necessary that all portals from recursion 0 were drawn, before objects can be drawn in recursion 1. For example, in recursion 0 portal 1 could be drawn, and the recursion 1 objects that depend on that portal. After this portal 2 from recursion 0 can be drawn.
+When drawing multiple portals recursively the draw dependencies can be imagined as a tree. Figure \ref{fig:rendertree} shows the dependencies for two portals. In \textit{recursion 0} the two portals can only be drawn after the all objects were drawn. Otherwise portals that are occluded by an object might wrongly mark the pixel in the stencil buffer. The two draws of all objects in \textit{recursion 1} can only be drawn when their respective portal was already drawn. However, it is not necessary that all portals from \textit{recursion 0} were drawn, before objects can be drawn in \textit{recursion 1}. For example, in \textit{recursion 0} portal 1 could be drawn, and the \textit{recursion 1} objects that depend on that portal. After this portal 2 from \textit{recursion 0} can be drawn.
 
-There are two approaches on the drawing order: depth first or breadth first. In depth first the contents of portal 1 in recursion 0 would be fully complete, before it begins drawing the contents of portal 2 in recursion 0. This has the advantage of needing just a small number of different values to mark a pixel. Going down the tree a different value can be used for each recursion. When going up that value is not needed anymore and can be recycled. However, the prototype must make sure that no unneeded value remains in the stencil buffer. A downside is, that the draws are is fully dependent on each other.
+There are two approaches on the drawing order: depth-first or breadth-first. In depth-first the contents of portal 1 in \textit{recursion 0} would be fully complete, before it begins drawing the contents of portal 2 in recursion 0. This has the advantage of needing just a small number of different values to mark a pixel. Going down the tree a different value can be used for each recursion. When going up that value is not needed anymore and can be recycled. However, the prototype must make sure that no unneeded value remains in the stencil buffer. A downside is, that the draws are is fully dependent on each other.
 
-Breath first draws a recursion completely before drawing the next recursion. The number of different values needed to mark a pixel, scales super linear with the \gls{portalcount} and \gls{recursioncount}. One value is needed of each portal in a recursion. For a scene with two portals, to mark all portals from recursion 1 it at least needs 4 different values, excluding 0. For recursion 2 it needs 8 values. With the stencil buffer usually being limited to 8 bits this can be quickly become a hard limit. However, the advantage is that the depth buffer needs to be cleared less often, only when transitioning between recursions. Additionally, within a recursion there are not dependencies between the multiple draws of objects, as well as the portal draws.
+Breath first draws a recursion completely before drawing the next recursion. The number of different values needed to mark a pixel, scales super linear with the \gls{portalcount} and \gls{recursioncount}. One value is needed of each portal in a recursion. For a scene with two portals, to mark all portals from \textit{recursion 1} it at least needs 4 different values, excluding 0. For \textit{recursion 2} it needs 8 values. With the stencil buffer usually being limited to 8 bits this can be quickly become a hard limit. However, the advantage is that the depth buffer needs to be cleared less often, only when transitioning between recursions. Additionally, within a recursion there are not dependencies between the multiple draws of objects, as well as the portal draws.
 
-Previous transformative portal implementations used depth first \cite{lowe:2005:technique,lecture:portalProblems}. The implementation presented in this thesis uses breadth first. There are fewer dependencies between the draws, which could be exploited. Additionally, similar draws can be grouped, which reduces the number of render passes. While the number of stencil values needed scales super linearly, the number of draws scales super linearly too. The author believes it is more likely that number of draws will be the limiting factor than running out of values in the stencil buffer.
+Previous transformative portal implementations used depth-first \cite{lowe:2005:technique,lecture:portalProblems}. The implementation presented in this thesis uses breadth-first. There are fewer dependencies between the draws, which could be exploited. Additionally, similar draws can be grouped, which reduces the number of render passes. While the number of stencil values needed scales super linearly, the number of draws scales super linearly too. The author believes it is more likely that number of draws will be the limiting factor than running out of values in the stencil buffer.
 
 
 
@@ -544,7 +544,7 @@ To move the camera to the correct location the \gls{endpoint}['s] \gls{teleporta
 
 \subsection{Recursive Portal Matrices}
 \label{section:recursivecameramatrices}
-The previous section explained how to calculate the camera matrices for each portal for recursion 1. For recursion 2 the camera's viewpoint must be transformed twice, by two sequential applied \glspl{teleportationmatrix}. This needs to be done for every combination of two portals. For recursion 3 this is done for every combination of three portals and so forth. This different combinations of matrices can be seen as a tree. The root is the current \gls{cameramatrix}. An nth child node's matrix is equal to its parent matrix multiplied by the portal n's \gls{teleportationmatrix}. The tree is filled level by level, each level reusing the calculations of the previous level.
+The previous section explained how to calculate the camera matrices for each portal for \textit{recursion 1}. For \textit{recursion 2} the camera's viewpoint must be transformed twice, by two sequential applied \glspl{teleportationmatrix}. This needs to be done for every combination of two portals. For \textit{recursion 3} this is done for every combination of three portals and so forth. This different combinations of matrices can be seen as a tree. The root is the current \gls{cameramatrix}. The matrix of child node n is equal to its parent matrix multiplied by the portal n's \gls{teleportationmatrix}. The tree is filled level by level, each level reusing the calculations of the previous level.
 
 
 
@@ -552,7 +552,7 @@ The previous section explained how to calculate the camera matrices for each por
 The tree of camera matrices is stored in an array. The indices can be found the following way:
 
 \begin{itemize}
-	\item $ nth child = current index * portalcount + 1 + n$
+	\item $ n^{th} child = current index * portalcount + 1 + n$
 	\item $ parent = \lfloor(current index-1)/portal count\rfloor $
 \end{itemize}
 
@@ -598,7 +598,7 @@ For the prototype the depth values range of 0 to 1 and does not use negative val
 \subsection{Stencil Values and compare masks}
 \label{section:stencilcomparemasks}
 
-As the prototype uses the breadth first approach, it cannot use the stencil increment and decrement technique described in other works \cite{schmalstieg:1999:sewing, lowe:2003:fragment, lecture:portalProblems}. Different values need to be stored and compared against. Directly setting the stencil value can be achieved, by setting a reference value and used the replace stencil operation. However, the stencil reference is also used for the comparison. This means that the same value for comparison as well as writing. This can be achieved by the use of stencil compare mask and prepending stencil values.
+As the prototype uses the breadth-first approach, it cannot use the stencil increment and decrement technique described in other works \cite{schmalstieg:1999:sewing, lowe:2003:fragment, lecture:portalProblems}. Different values need to be stored and compared against. Directly setting the stencil value can be achieved, by setting a reference value and used the replace stencil operation. However, the stencil reference is also used for the comparison. This means that the same value for comparison as well as writing. This can be achieved by the use of stencil compare mask and prepending stencil values.
 
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{images/stencilvalues2.png}
@@ -606,7 +606,7 @@ As the prototype uses the breadth first approach, it cannot use the stencil incr
 	\label{fig:stencilvalues}
 \end{figure}
 
-Figure \ref{fig:stencilvalues} shows is process with two portals and 6 bits. The grey part is used for comparisons, while the whole value is used to write. The comparison mask of recursion 0 masks out all bits. For recursion 0 the stencil test will always succeed. For two portals, recursion 1 masks out all but the last two bits. Notice that the last two bits of recursion 1's stencil values are the same as their respective parent values. It is important that stencil values start with 1 and not with 0, otherwise they are not distinguishable from their parent values.
+Figure \ref{fig:stencilvalues} shows is process with two portals and 6 bits. The grey part is used for comparisons, while the whole value is used to write. The comparison mask of \textit{recursion 0} masks out all bits. For \textit{recursion 0} the stencil test will always succeed. For two portals, \textit{recursion 1} masks out all but the last two bits. Notice that the last two bits of \textit{recursion 1}'s stencil values are the same as their respective parent values. It is important that stencil values start with 1 and not with 0, otherwise they are not distinguishable from their parent values.
 
 This also means that the range of values is one less than representable by the number of bits. This is very significant, as the portals come in pairs. Scenes with two and four portals each require one more bit than normally needed. As the stencil buffer usually only has eight bits, this limits the number of recursions considerably.
 
@@ -752,7 +752,7 @@ Listing \ref{listing:viewmatrixselection} shows the code of the vertex shader. N
 \subsection{Properties of the Index Array}
 \label{section:indexarrayproperties}
 
-The implementation allows the maximum visible portal count to differ for each recursion. This is useful, as in recursion 0 the draw area is the whole screen, resulting in more visible portals. The contents within portals cover much less screen space, so it is less likely that portals can been seen within them. For each recursion the screen space which is drawn will get even smaller. This means recursion 0 will likely need the most visible portals, while the next recursions will need less and less visible portals.
+The implementation allows the maximum visible portal count to differ for each recursion. This is useful, as in \textit{recursion 0} the draw area is the whole screen, resulting in more visible portals. The contents within portals cover much less screen space, so it is less likely that portals can been seen within them. For each recursion the screen space which is drawn will get even smaller. This means \textit{recursion 0} will likely need the most visible portals, while the next recursions will need less and less visible portals.
 
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{images/indexarray.png}
@@ -764,11 +764,11 @@ Just as the view matrix array, the indices array is also a tree. However, due to
 
 The following terms are used for index calculation formulas:
 \begin{itemize}
-	\item $L_n$ ... the nth level,
-	\item $LC_n$ ... the element count of the nth level
-	\item $LF_n$ ... the index of the first element of the nth level
-	\item $LDC_n$ ... the number of direct child nodes for each element in the nth level. 
-	\item $L_nE_i$ ... the index of the i-th element in the nth-level
+	\item $L_n$ ... the n\textsuperscript{th} level,
+	\item $LC_n$ ... the element count of the n\textsuperscript{th} level
+	\item $LF_n$ ... the index of the first element of the n\textsuperscript{th} level
+	\item $LDC_n$ ... the number of direct child nodes for each element in the n\textsuperscript{th} level. 
+	\item $L_nE_i$ ... the index of the i-th element in the n\textsuperscript{th}-level
 	\item $L_nE_iC_k$ ... the index of the k-th child of the i-th element in the n-th level 
 \end{itemize}
 
@@ -782,7 +782,7 @@ The following formulas can be used to calculate indices:
 	\item $L_nE_iC_k = LF_{n+1} + LDC_{n} * i + k$
 \end{itemize}
 
-For every recursion the whole corresponding level of the index array tree is traversed, drawing each object and portal a total of $LC_n$ times. Using figure \ref{fig:indexarray} as example, every object and portal in recursion 0 is drawn 1 time. For recursion 1 and recursion 2 they are drawn 4 and 12 times respectively. Finally, for the last recursion, recursion 3, everything is drawn 24 times. In total 41 draws would be issued for each object and portal.
+For every recursion the whole corresponding level of the index array tree is traversed, drawing each object and portal a total of $LC_n$ times. Using figure \ref{fig:indexarray} as example, every object and portal in \textit{recursion 0} is drawn 1 time. For \textit{recursion 1} and \textit{recursion 2} they are drawn 4 and 12 times respectively. Finally, for the last recursion, recursion 3, everything is drawn 24 times. In total 41 draws would be issued for each object and portal.
 
 \subsection{Filling the Index Array}
 For the indirection from the previous section to work, the index array must be filled with correct values. Before starting to record draw commands, the index array is filled with an invalid index value by calling \textit{fillBuffer}. Listing \ref{listing:indicesindexcalculation} shows the algorithm used by the fragment shader to calculate and set the individual index array elements.
@@ -839,7 +839,7 @@ For each portal's fragment shader, the previous visible portal count is calculat
 
 If the previous visible portal count is less than the index for writing is calculated using $L_nE_iC_k = LF_{n+1} + LDC_{n} * i + k$ (see section \ref{section:indexarrayproperties}). $LF_{n+1}$ is provided by via push constant and is the same for the whole recursion. $LDC_{n}$ is also the maximum visible portal count, which was used for the previous check. It is provided via push constant and also stays the same for the whole recursion. $i$ is equal to the number of previous \glspl{portalset} for that recursion. This value will be referred as the \gls{portalsetid} which is unique within for each draw of a \gls{portalset} in a recursion. It is provided via push constant. $k$ is equal to the number of previous visible portals, that was just calculated.
 
-Now that the index for the element in the index array that should be written to has been calculated, the shader needs to write the right value to it. Using the formula $ nth child = current index * portalcount + 1 + portalId$ from section \ref{section:recursivecameramatrices} the view index can be calculated. $currentindex$ was the index used in the vertex shader to access the right view matrix. The $portalcount$ is passed via push constants. $n$ is equal to a portal's \gls{portalid} and passed via push constants.
+Now that the index for the element in the index array that should be written to has been calculated, the shader needs to write the right value to it. Using the formula $ n\textsuperscript{th} child = current index * portalcount + 1 + portalId$ from section \ref{section:recursivecameramatrices} the view index can be calculated. $currentindex$ was the index used in the vertex shader to access the right view matrix. The $portalcount$ is passed via push constants. $n$ is equal to a portal's \gls{portalid} and passed via push constants.
 
 Every fragment shader invocation will either write the same value or write nothing at all. If nothing was written to an index array element, it will have its initial invalid index value. For the last portal iteration a visible portal count of 0 is passed. This is an indicator that it is the last recursion. This prevents the portals from writing past the end of the index array.
 
@@ -1003,7 +1003,7 @@ Whenever the camera's position, rotation or \gls{cameramatrix} is needed, they a
 
 
 \section{Camera Object Rendering}
-When looking through a portal the camera should see itself, being represented by a camera model. However, if that model was rendered in recursion 0 the view would be inside that model. The implementation avoids this problem, by only conditionally drawing the camera model. In the first subpass drawing the camera is skipped. It is only drawn for subsequent passes.
+When looking through a portal the camera should see itself, being represented by a camera model. However, if that model was rendered in \textit{recursion 0} the view would be inside that model. The implementation avoids this problem, by only conditionally drawing the camera model. In the first subpass drawing the camera is skipped. It is only drawn for subsequent passes.
 
 
 
@@ -1081,7 +1081,7 @@ All tests are run on the same machine. It runs on Microsoft Windows 10 Education
 In this test measures the time taken to render one frame. This includes the time the \gls{cpu} needs to prepare the data for the \gls{gpu} (e.g. calculating camera matrices) as well as recording the command buffer. The time is measure in milliseconds using C++'s chrono library. The time is measured for 128 consecutive frames. The average, median, minimum and maximum time of the measured times are printed to the console.
 
 
-The measured milliseconds differ depending on the current viewpoint and looking direction. Multiple viewpoints were measured. Multiple recursion counts and maximum visible portals are measured. The recursions are noted in the form X-Y-Z, where X corresponds to the maximum visible portals in recursion 0, Y to maximum visible portals of recursion 1 and so forth. For example, 8-6-4 indicates a recursion count of 3, using 8 maximum visible portals for recursion 0, 6 for recursion 1, and 4 for recursion 2. The last recursion always has a count of 0, as nothing will be drawn inside the portals. 
+The measured milliseconds differ depending on the current viewpoint and looking direction. Multiple viewpoints were measured. Multiple recursion counts and maximum visible portals are measured. The recursions are noted in the form X-Y-Z, where X corresponds to the maximum visible portals in recursion 0, Y to maximum visible portals of \textit{recursion 1} and so forth. For example, 8-6-4 indicates a recursion count of 3, using 8 maximum visible portals for recursion 0, 6 for \textit{recursion 1}, and 4 for recursion 2. The last recursion always has a count of 0, as nothing will be drawn inside the portals. 
 
 \iffalse
 
@@ -1289,7 +1289,7 @@ There is also another possibility, which only needs an additional depth texture,
 In section \ref{section:generatingviewmatrices} it was found that generating view matrices takes a considerable amount of time. Three areas were found, where the algorithm could be improved.
 
 \subsection{Using view matrices directly instead of camera matrices 0.5}
-Currently when calculating the view matrices, first all camera matrices are calculated, after which each of them is inverted to find the view matrices. $C_n$ is the nth \gls{cameramatrix}, $T_n$ is the nth teleport matrix and $V_n$ is the nth view matrix. $C_0$ is the initial \gls{cameramatrix}. This can be written as:
+Currently when calculating the view matrices, first all camera matrices are calculated, after which each of them is inverted to find the view matrices. $C_n$ is the n\textsuperscript{th} \gls{cameramatrix}, $T_n$ is the n\textsuperscript{th} teleport matrix and $V_n$ is the n\textsuperscript{th} view matrix. $C_0$ is the initial \gls{cameramatrix}. This can be written as:
 
 $$C_n = T_{n} * C_{n-1}$$
 $$V_n = (C_{n})^{-1}$$
@@ -1322,7 +1322,7 @@ This saves the \gls{gpu} bandwidth, as only teleport matrices and the view need 
 
 The total number of calculated matrices might be more or less on the \gls{gpu} compared to calculating it on the \gls{cpu}. This depending on the number of portals on the scene and the number recursion and visible portal counts. 
 
-For example, for a scene containing 12 portals 22,620 matrices are needed. This is the number of matrix multiplications that would be done on the \gls{cpu}. When rendering with visible portal counts of 8-6-4-2, only 632 matrices are actually used at most. Most likely the number will be significantly lower. When only 4 of 8 portals are visible in recursion 0 at most half the previous state number of matrices will be needed. When combined with the optimizations described in section \ref{section:falsevisible} there will be even less matrices needed. However, the \gls{gpu} would need to calculate the matrix for each fragment of a portal. But the \gls{gpu} does this in parallel so this might not as dramatic. 
+For example, for a scene containing 12 portals 22,620 matrices are needed. This is the number of matrix multiplications that would be done on the \gls{cpu}. When rendering with visible portal counts of 8-6-4-2, only 632 matrices are actually used at most. Most likely the number will be significantly lower. When only 4 of 8 portals are visible in \textit{recursion 0} at most half the previous state number of matrices will be needed. When combined with the optimizations described in section \ref{section:falsevisible} there will be even less matrices needed. However, the \gls{gpu} would need to calculate the matrix for each fragment of a portal. But the \gls{gpu} does this in parallel so this might not as dramatic. 
 
 This approach increases the \gls{gpu} workload, while reducing \gls{cpu} load. Depending on the current bottleneck, this can be an advantage or a downside. The workload of the \gls{cpu} increase with number of portals in a scene, while the \gls{gpu} workload increases with resolution and the maximum visible portal counts. If the visible portal counts stay the same, at a certain number of portals in a scene there will be a tipping point.
 
@@ -1338,9 +1338,9 @@ Lastly this approach cannot be used together with the one described in the previ
 \section{Dynamic Visible Portals count}
 The visible portal count may not only be different for every recursion, it could even change during run time. The only change is reserving enough space for the indices array and helper array as described in section \ref{section:indexarrayproperties} and \ref{section:helperarrayproperties} respectively. Everything else uses values that can change during run time.
 
-For example, dynamically decreasing the visible portal count for recursion 0, while increasing it for recursion 1. This is useful for situations where only one portal is visible, because the camera is directly in front of it.
+For example, dynamically decreasing the visible portal count for recursion 0, while increasing it for \textit{recursion 1}. This is useful for situations where only one portal is visible, because the camera is directly in front of it.
 
-This this allows for more visible portals during recursion 1. The number of needed stencil values used as well as the number of times the scene is rendered stays roughly the same.
+This this allows for more visible portals during \textit{recursion 1}. The number of needed stencil values used as well as the number of times the scene is rendered stays roughly the same.
 
 Another application would be dynamically lowering the visible portal counts, if the last frame took too long to render.
 
@@ -1368,7 +1368,7 @@ Culling portals does not make the dynamic calculation of actual visible portals 
 \section{Portal Frustum Primitive Clipping}
 \label{section:portalprimitiveclipping}
 
-When drawing recursion 1 and onward only a small part of the scene will be drawn. Although the near buffer allows for correct drawing, unneeded fragments are still generated. One good way of reducing the produced fragments is by allowing fewer triangles to be passed to the rasterizer. 
+When drawing \textit{recursion 1} and onward only a small part of the scene will be drawn. Although the near buffer allows for correct drawing, unneeded fragments are still generated. One good way of reducing the produced fragments is by allowing fewer triangles to be passed to the rasterizer. 
 
 One way to achieve this is by decreasing the clip volume. Regularly the view frustum is used as clip volume for primitive clipping. However, a portal fills only a part of the screen. The primitives could be clipped to this much smaller volume. This volume is referred to as \gls{portalfrustrum}. The \glspl{psb} introduced in section \ref{section:cullingportals} can be used to calculate the frustum. The \gls{psb} must be available in the vertex shader. The individual clip distances are calculated via subtractions in the vertex shader. Note that while Z can be directly used, the x and y coordinate must be in the same space as the ones of \gls{psb}. Either the \gls{psb} is transformed into view space, using the vertex's z. Or the vertex's x and y coordinates are projected into screen space. The only difference between those two possibilities is that the clip distances are scaled by z. This should not matter for the primitive clipping \cite{khronos:vulkan:spec1.1}. The faster variant would need to be found via testing. The regular clip planes for the regular view frustum can then also be disabled, as the \gls{portalfrustrum} is a subspace of it.
 
@@ -1498,7 +1498,7 @@ However, if portals are already present it is probably better to just define big
 
 %\section{Implementation summary}
 
-Previous works used a depth first approach to render transformative portals. This thesis presents another approach using breadth first. Additionally, it supports arbitrary portals defined by triangle meshes. While arbitrary portals are becoming more common, they are not supported everywhere.
+Previous works used a depth-first approach to render transformative portals. This thesis presents another approach using breadth-first. Additionally, it supports arbitrary portals defined by triangle meshes. While arbitrary portals are becoming more common, they are not supported everywhere.
 
 On the authors machine, the prototype performed quite well. Scenes with 10 or more portals ran smoothly. However, in most settings the \gls{recursioncount} cannot be higher than four. Higher recursion counts took increasingly much longer to render exceeding the maximum time available for real time applications.
 
@@ -1506,11 +1506,11 @@ On the authors machine, the prototype performed quite well. Scenes with 10 or mo
 
 The implementation used many techniques found in previous works to render transformative portals. However, two key improvements could be implemented which the author has not yet seen in other works.
 
-The first is the visible portal count algorithm. It to performs an operation during the fragment shader which is similar to an occlusion query. This allowed to many more portals in a scene, as long as only a limited number of them were visible. While this could be used in depth first portal rendering, the author has not yet seen something similar implemented.
+The first is the visible portal count algorithm. It to performs an operation during the fragment shader which is similar to an occlusion query. This allowed to many more portals in a scene, as long as only a limited number of them were visible. While this could be used in depth-first portal rendering, the author has not yet seen something similar implemented.
 
-The second is the use of instanced drawing. While instanced drawing is commonly seen, the author has yet seen its use in the context of transformative portals. Instanced drawing helped to improve performance by drastically reducing the number of operations sent to the \gls{gpu} improving the overall performance significantly. Upon the introduction of instanced drawing, the time to render was only a sixth of the time before. Instanced drawing is probably one of the biggest benefits of breadth first portal rendering.
+The second is the use of instanced drawing. While instanced drawing is commonly seen, the author has yet seen its use in the context of transformative portals. Instanced drawing helped to improve performance by drastically reducing the number of operations sent to the \gls{gpu} improving the overall performance significantly. Upon the introduction of instanced drawing, the time to render was only a sixth of the time before. Instanced drawing is probably one of the biggest benefits of breadth-first portal rendering.
 
-Furthermore, the prototype was created using only a single render pass, with multiple subpasses. This potentially allows the \gls{gpu} to optimize. The number of subpasses needed scales linearly to the \gls{recursioncount}. However, this thesis only proved that breadth first is a viable approach, which allows for special improvement opportunities. It does not indicate whether depth or breadth first performs better in different situations.
+Furthermore, the prototype was created using only a single render pass, with multiple subpasses. This potentially allows the \gls{gpu} to optimize. The number of subpasses needed scales linearly to the \gls{recursioncount}. However, this thesis only proved that breadth-first is a viable approach, which allows for special improvement opportunities. It does not indicate whether depth or breadth-first performs better in different situations.
 
 One downside of instanced drawing is that the regular stencil test cannot be used. As the reference value cannot be changed between instances, stencil testing and discarding fragments was performed in the fragment shader. This prohibited using early fragment tests. This was not seen as much of a downside, as the dual depth buffer also required also required manual testing and discarding, prohibiting early fragment tests anyway. However, for applications that do not need to use a dual depth buffer, this can be considered a downside. Furthermore, the use of manual test requires inserting them in every shader, which is inconvenient.
 
@@ -1538,7 +1538,7 @@ At the moment it is not possible to allow early fragment testing, as manual chec
 Another opportunity would be the separation of the comparison and write operations of a depth test and stencil test. If the writes only happen after a fragment shader is executed without calling discard, the comparison operation could happen early.
 
 \section{Possible Applications}
-The work of this thesis can probably best used for creating video games. Portals cannot only serve a gameplay mechanic, but be used for other purposes as well, such as seamless transitions between scenes similar to the work of \textcite{schmalstieg:1999:sewing}. Video games have only used a sparingly number of portals. The breadth first approach might offer better performance, allowing for a higher \gls{portalcount}. However, as previously stated this would need to be tested first.
+The work of this thesis can probably best used for creating video games. Portals cannot only serve a gameplay mechanic, but be used for other purposes as well, such as seamless transitions between scenes similar to the work of \textcite{schmalstieg:1999:sewing}. Video games have only used a sparingly number of portals. The breadth-first approach might offer better performance, allowing for a higher \gls{portalcount}. However, as previously stated this would need to be tested first.
 
 Mirrors are a form of a portal that are much more common than transformative portals. The techniques described in this thesis can be applied to them as well. In addition, mirrors are often plane shaped. The near buffer could be replaced by user defined clip planes.
 
