@@ -1,0 +1,11 @@
+%!TeX spellcheck = de_DE
+
+Portale werden üblicherweise für Beschleunigungsalgorithmen verwenden. Das transformative Portal ist eine Spezialform, welche Wurmlöcher und ähnliche Effekte ermöglicht. In Computerspielen können sie als interessante Spielmechanik dienen und ermöglichen das passieren von Reisen zwischen virtuellen Welten ohne immersionsbrechende Schnitte oder Ladebildschirme. Außerdem bieten sie sich als weitere Form zur Fortbewegung in der Virtuellen Realität an.
+
+Diese Arbeit beschäftigt sich mit dem Rendern transformativer Portale. Ein Prototyp wurde entwickelt, um neue Herangehensweisen zum Rendern dieser Portale zu testen. Frühere Arbeiten renderten zuerst ein Portal mit allen Rekursionen, bevor das nächste Portal gerendert wurde, ähnlich wie bei einer Tiefensuche. Sie nutzen den Stencil Test, um an den richtigen Stellen des Bildschirms zu rendern.  Der Prototyp dieser Arbeite, rendert jedoch alle Portale einer Rekursion bevor die der nächsten Rekursion gerendert wird, ähnlich einer Breitensuche. Dies erlaubt die Nutzung von Instanced Rendering und kann die Anzahl der Renderbefehle erheblich reduzieren. Statt des reguläre Stencil Tests, wird eine ähnlicher Test mittels Shadercode verwendet.
+
+Weiters wurde eine Methode entwickelt, welcher einer Occlusion Query ähnelt. Diese kann, während ein Portal gerendert wird, die Anzahl zuvor gerenderten Portale sofort feststellen. Mittels dieser Methode wurde die Performance des Prototyps weiter verbessert.
+
+Der Prototyp erlaubt Portale jeglicher Form. Mehrere Rekursionen werden unterstützt und Anwender können sich frei durch die Szene und durch deren Portale bewegen.
+
+Messungen zeigten die Echtzeitfähigkeit des Prototyps für bis zu 3 Rekursionen, je nach Konfiguration. Jedoch wurden auch Bereiche gefunden, welche noch Optimierungen benötigen. Weiters wird nur direktionales Licht unterstützt. Schatten und transparente Objekte sind nicht implementiert. Implementierungsmöglichkeiten dieser und mögliche Erweiterungen für Portale werden in dieser Arbeite ebenfalls behandelt.
