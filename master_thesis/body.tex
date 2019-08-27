@@ -70,7 +70,7 @@ First, the winding order of the polygon is determined. Depending on the front fa
 
 If the polygon is not culled, fragments will be created for pixels, with a sample point inside the polygon. If the sample point lies on a polygon edge the following rule applies: For two polygons and a sample point on their common edge, exactly one fragment is created. The fragments attributes are then calculated, using a convex combination of the polygon's vertices. Fragments with a sample location at a vertex location will have exactly that vertex's attributes. Other fragments' attributes are calculated via a linear combination of attributes of the polygon's vertices. The linear combination's scalars depend on the sample position within the polygon \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
 
-Instead of a linear combination an attribute can be annotated as \textit{flat}. In this case the value of the polygon's \textit{provoking vertex} is used directly without interpolating. In general, the \textit{provoking vertex}is the first vertex of a primitive and depends on the primitive topology \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
+Instead of a linear combination an attribute can be annotated as \textit{flat}. In this case the value of the polygon's \textit{provoking vertex} is used directly without interpolating. In general, the \textit{provoking vertex} is the first vertex of a primitive and depends on the primitive topology \cite{akine:2018:realtime, khronos:vulkan:spec1.1}.
 
 \subsection{Early Per Fragment Tests}
 Before fragments are passed to the fragment processing stage, various tests are performed, which may discard the fragment. These tests form the early per-fragment tests. One example of an early per fragment test would be the scissor test. It can be used to drawn only in a selected area of the screen. The scissor test checks whether a given fragment is inside a specified rectangle. If it is outside the fragment is discarded \cite{khronos:vulkan:spec1.1}. 
@@ -650,7 +650,7 @@ One important aspect is that pipelines for both scene and portal drawing, have f
 The individual graphic pipelines for drawing the scene differ by subpass index and stencil compare mask. This is also true for the graphic pipelines for portal drawing. Additionally, subpass 0 has the stencil test completely disabled, while subpass 1 uses an always succeeding test with VK\_STENCIL\_OP\_REPLACE. Other even subpasses use the stencil compare op VK\_COMPARE\_OP\_EQUAL with VK\_STENCIL\_OP\_KEEP for all depthstencil test results. Other odd subpasses use VK\_COMPARE\_OP\_EQUAL with VK\_STENCIL\_OP\_REPLACE on when both tests succeed and  VK\_STENCIL\_OP\_KEEP otherwise.
 
 \subsection{Shaders}
-Vulkan shader module requires the SPIR-V format. The shaders are written using GLSL and are compiled using the GLSL Validator (glslangValidator.exe) from LunarG's Vulkan SDK. All fragment shaders contain the manual check with the near buffer. If it fails, the fragment is discarded using the discard statement. However, for subpass 0 and subpass 1 there is no input attachment (see figure \ref{fig:attachments}). For those shaders the check is omitted. To prevent shader redundancies the shader is compiled twice. One of the compilations skips the check using the preprocessor and by command line arguments to the GLSL Validator. As previously mentioned in section \ref{section:renderpasssetup}, the portals drawn in the last subpass do not need to store anything in the near buffer. This could also be omitted using conditional compilation. All scene objects only have one colour. It is passed via push constants. Additional minimal shading is performed using diffuse only shading with a fixed directional light.
+Vulkan shader module requires the SPIR-V format. The shaders are written using \gls{glsl} and are compiled using the \gls{glsl} Validator (glslangValidator.exe) from LunarG's Vulkan SDK. All fragment shaders contain the manual check with the near buffer. If it fails, the fragment is discarded using the discard statement. However, for subpass 0 and subpass 1 there is no input attachment (see figure \ref{fig:attachments}). For those shaders the check is omitted. To prevent shader redundancies the shader is compiled twice. One of the compilations skips the check using the preprocessor and by command line arguments to the GLSL Validator. As previously mentioned in section \ref{section:renderpasssetup}, the portals drawn in the last subpass do not need to store anything in the near buffer. This could also be omitted using conditional compilation. All scene objects only have one colour. It is passed via push constants. Additional minimal shading is performed using diffuse only shading with a fixed directional light.
 
 Vertex shaders need to transform the vertices for all the different views. The different view matrices are stored in a \gls{ubo}. The index to access the current view matrix received via push constant. The model matrix is received also via push constant, as it changes per model and it there was still enough space in the push constant. The perspective matrix is passed via \gls{ubo}, as it never changes. Even if it would change than likely at most once per frame. The vertex shaders are the same for all scene draws as well as for all portal draws. No conditional compilation is needed.
 
@@ -660,7 +660,7 @@ The shaders are automatically recompiled after a change, using Visual Studio's C
 \subsection{Pre draw steps}
 
 At the beginning it is waited on a fence to make sure, that submission of a previous command buffer has already finished. Then the fence is set to the unsignalled state. The camera matrices and perspective matrix are calculated. Both \glspl{ubo} use host visible memory, so the result is written to them via memory mapping. Their memory is also host coherent, so no explicit flushes are needed.
-Then the next image for rendering is acquired. A semaphore is passed, which can be waited on before submitting the command buffer.
+Then the index for next image for rendering is acquired. A semaphore is passed, which can be waited on before submitting the command buffer until the image is available.
 Lastly the command pool for the command buffer used for drawing is reset.
 
 \subsection{Filling the command buffer}
@@ -1243,7 +1243,7 @@ Table \ref{tab:perfviewpoint} shows the render times in milliseconds for the ima
 
 \section{Properties of Watertight Portals}
 \label{section:watertight}
-Special properties of watertight portals were found while testing the prototype. Watertight portals are portals that use a watertight mesh. A watertight mesh does not have any holes. When looking at a watertight portal, objects behind it will be visible a though it did not exist. Watertight portals seem as though they did not exists. However, their contents are swapped.
+Special properties of watertight portals were found while testing the prototype. Watertight portals are portals that use a watertight mesh. A watertight mesh does not have any holes. When looking at a watertight portal, objects behind it will be visible. Watertight portals seem as though they did not exist. However, their contents are swapped.
 
 \begin{figure}[h]
 	\centering
@@ -1429,7 +1429,7 @@ However, this has the downside that the location of portals is very visible. If 
 \section{Transparent Objects}
 Transparent objects are not supported in the prototype, but there is nothing that would stop implementing them. They would be rendered very similar to regular approaches. First, everything opaque is rendered, including all portal recursions. After that, the transparent objects are drawn back to front, starting from the last recursion and ending with the initial recursion \cite{lecture:portalProblems}.
 
-However, the far depth information of all recursions must be saved. Otherwise, the whole scene must be redrawn to get the depth information. This could be done by saving using different depth buffers and not clearing them. Or By using a depth pre pass for portals and when rendering the again setting the depth value to infinite far away, instead of clearing the whole buffer. The near buffer can be recreated by drawing the portals again. Drawing a few portals is likely far less expensive compared to drawing the whole scene and might not be a huge concern. Alternatively, the far buffers for each recursion could be saved, but would requires more textures.
+However, the far depth information of all recursions must be saved. Otherwise, the whole scene must be redrawn to get the depth information. This could be done by saving using different depth buffers and not clearing them. Or By using a depth pre pass for portals and when rendering the again setting the depth value to infinite far away, instead of clearing the whole buffer. The near buffer can be recreated by drawing the portals again. Drawing a few portals is likely far less computationally expensive compared to drawing the whole scene. Alternatively, the far buffers for each recursion could be saved, but would requires more textures.
 
 
 \chapter{Portal Capability Improvement Opportunities}
@@ -1467,7 +1467,7 @@ This works mostly only for operations which don not move the position of an obje
 
 \subsection{Arbitrary Operations}
 
-In the prototype the portals only apply transformative operations in using matrices. Non-translating could also allow completely arbitrary operations.
+In the prototype the portals only apply transformative operations in using matrices. Non-translating portals could also allow completely arbitrary operations.
 
 A portal's operation could change render parameters. These parameters are store similar to the view matrices. One example inspired by \cite{borst:2009:real} would be marking pixels if one parameter currently has a specific value. Later in a post process the marked pixels could be modified. Another example inspired by magic lenses, would be a parameter which decides which objects to render. Some objects will only be visible, while the parameter has a specific value.
 

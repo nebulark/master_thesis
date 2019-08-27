@@ -4,7 +4,7 @@ Transformative portals are a special kind of portals. While regular portals are 
 
 In this thesis the rendering of transformative portals was investigated. A prototype was created to test a new approach to transformative portal rendering. Usually a depth first portal rendering order is used together with a stencil buffer to recursively render portals. However, this thesis' prototype uses breadth first order. This enabled the use of instanced rendering, which is not possible using depth first order, and significantly reduces the number of draw calls. The usual hardware stencil test was replaced by a manual test in the shader.
 
-Additionally, a technique was developed to count the number of previously drawn portals. It works similar to a occlusion query. However, the calculation happens in the fragment shader and the result is available immediately in that shader. With this technique the amount of draws was reduce further.
+Additionally, a technique was developed to count the number of previously drawn portals. It works similar to an occlusion query. However, the calculation happens in the fragment shader and the result is available immediately in that shader. With this technique the amount of draws was reduce further.
 
 The prototype supports multiple transformative portals of arbitrary shape. Multiple portal recursions are rendered, and users can move around in the scene and through portals.
 
