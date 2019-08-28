@@ -2,15 +2,15 @@
 
 \newglossaryentry{cameramatrix}{name={camera matrix}, description={The cameras position and rotation represented as matrix. Other term for the camera's \gls{modelmatrix}}}
 
-\newglossaryentry{viewmatrix}{name={view matrix}, description={A view matrix is used to draw from the viewpoint of the object the view matrix belongs to}, plural={view matrices}}
+\newglossaryentry{viewmatrix}{name={view matrix}, plural={view matrices}, description={A view matrix is used to draw from the viewpoint of the object the view matrix belongs to}}
 
 
 
 \newglossaryentry{portalpair}{name={portal pair}, description={Two connected portals. When travelling through a portal pair's portal the  object is teleported to the  portal pair's other portal}}
 
-\newglossaryentry{endpoint}{name={endpoint}, description={One portal of a portal pair}}
+\newglossaryentry{endpoint}{name={endpoint}, plural={end points}, description={One portal of a portal pair}}
 
-\newglossaryentry{teleportationmatrix}{name={teleportation matrix}, description={An endpoint's matrix that when applied to an object moves that object to the other endpoints location}, plural={teleportation matrices}}
+\newglossaryentry{teleportationmatrix}{name={teleportation matrix}, plural={teleportation matrices}, description={An endpoint's matrix that when applied to an object moves that object to the other endpoints location}}
 
 \newglossaryentry{renderpass}{name={renderpass}, description={A renderpass defined by Vulkan specification \cite{khronos:vulkan:spec1.1}. Can have multiple subpasses}}
 
@@ -26,7 +26,7 @@
 \newglossaryentry{portalcount}{name={portal count}, description={The number of portals within the \gls{portalset}}}
 \newglossaryentry{portalid}{name={portal id}, description={An unique integer identifying  a portal}}
 
-\newglossaryentry{portalfrustrum}{name={portal frustrum}, description={A subspace of the view frustrum. Objects rendered inside a portal must be inside it to be visible}, plural={portal frustra}}
+\newglossaryentry{portalfrustrum}{name={portal frustrum}, plural={portal frustra}, description={A subspace of the view frustrum. Objects rendered inside a portal must be inside it to be visible}}
 
 \newglossaryentry{object}{name={object}, description={A entity which can be drawn}}
 \newglossaryentry{objectset}{name={object set}, description={The set of all Objects}}
@@ -36,7 +36,7 @@
 \newglossaryentry{parentportal}{name={parent portal}, description={The portal in within a portal or object was drawn}}
 
 
-\newglossaryentry{viewray}{name={view ray}, description={A ray that is cast for raytracing. Its intersection determines a pixel's colour}}
+\newglossaryentry{viewray}{name={view ray}, description={A ray that is cast for raytracing. Its intersection determines a pixel's colour}  plural={view rays}}
 
 \newglossaryentry{spir}{name={SPIR-V}, description={SPIR-V is a simple binary intermediate language. In Vulkan only shaders in SPIR-V format may be used}}
 
@@ -45,4 +45,4 @@
 \newglossaryentry{currenthelperelement}{name={current helper element}, description={The current element within the \gls{helperarray}. It will only be written to but never read}}
 \newglossaryentry{firsthelperindex}{name={first helper index}, description={The first element of a range within the \gls{helperarray}}}
 \newglossaryentry{currenthelperindex}{name={current helper index}, description={The index to \gls{currenthelperelement}}}
-\newglossaryentry{additionaltransform}{name={current helper index}, description={When retrieving the camera position or rotation, they are first multiplied by this matrix. It serves as a way to teleport the matrix between portals}}
+\newglossaryentry{additionaltransform}{name={additional transform}, description={When retrieving the camera position or rotation, they are first multiplied by this matrix. It serves as a way to teleport the matrix between portals}}
