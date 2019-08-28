@@ -40,7 +40,9 @@
 
 \newglossaryentry{spir}{name={SPIR-V}, description={SPIR-V is a simple binary intermediate language. In Vulkan only shaders in SPIR-V format may be used}}
 
-
-
-
-
+\newglossaryentry{helperarray}{name={helper array}, description={Storage for the previous visible portal count algorithm (see section \ref{section:visibleportalcount})}}
+\newglossaryentry{indexarray}{name={index array}, description={Used to access view matrices indirectly (see section \ref{section:viewmatrixselection})}}
+\newglossaryentry{currenthelperelement}{name={current helper element}, description={The current element within the \gls{helperarray}. It will only be written to but never read}}
+\newglossaryentry{firsthelperindex}{name={first helper index}, description={The first element of a range within the \gls{helperarray}}}
+\newglossaryentry{currenthelperindex}{name={current helper index}, description={The index to \gls{currenthelperelement}}}
+\newglossaryentry{additionaltransform}{name={current helper index}, description={When retrieving the camera position or rotation, they are first multiplied by this matrix. It serves as a way to teleport the matrix between portals}}
