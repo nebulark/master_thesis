@@ -46,3 +46,16 @@
 \newglossaryentry{firsthelperindex}{name={first helper index}, description={The first element of a range within the \gls{helperarray}}}
 \newglossaryentry{currenthelperindex}{name={current helper index}, description={The index to \gls{currenthelperelement}}}
 \newglossaryentry{additionaltransform}{name={additional transform}, description={When retrieving the camera position or rotation, they are first multiplied by this matrix. It serves as a way to teleport the matrix between portals}}
+
+
+\newglossaryentry{fardepthbuffer}{name={far depth buffer}, description={Stores depth values for each pixel. Fragments that are further away than the far depth buffer are discarded. The far buffer ensures correct occlusions when objects are drawn in arbitrary order.}}
+
+\newglossaryentry{neardepthbuffer}{name={near depth buffer}, description={Stores depth values for each pixel. If a fragment is nearer than the near depth buffer, it is discarded. The near buffer ensures that no parts of objects between the portals view an the portal are rendered (see figure \ref{fig:bananajuce})}}
+
+\newglossaryentry{writenearbuffer}{name={write near buffer}, description={The \gls{neardepthbuffer} uses double buffering. Old \gls{neardepthbuffer} values are used, while new values are written. This buffer represents the write buffer for writing new values}}
+
+\newglossaryentry{readnearbuffer}{name={read near buffer}, description={The \gls{neardepthbuffer} uses double buffering. Old \gls{neardepthbuffer} values are used, while new values are written. This buffer represents the read buffer for retrieving old values}}
+
+
+
+
