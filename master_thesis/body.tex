@@ -422,7 +422,7 @@ There are still some improvement opportunities with multithreading, rendering to
 
 \section{Teleportation Matrix}
 \label{section:teleportationmatrix}
-To teleport objects travelling through portals, their position and rotation needs to be changed. Initially this was done by adjusting the location and rotations the following way: First, the vector from an \gls{endpoint}['s] location to the object is calculated. Then that vector is rotated by the rotation difference between the two endpoints. Finally, that vector gets added to the other endpoint's location. This is the new position of the object origin. The new rotation is calculated by adding the rotation difference of the two endpoints to the object's rotation.
+To teleport objects travelling through portals, their position and rotation needs to be changed. Initially this was done by adjusting the location and rotations the following way: First, the vector from an \gls{endpoint}['s] location to the object is calculated. Then that vector is rotated by the rotation difference between the two \glspl{endpoint}. Finally, that vector gets added to the other endpoint's location. This is the new position of the object origin. The new rotation is calculated by adding the rotation difference of the two \glspl{endpoint} to the object's rotation.
 
 However, the initial approach did only consider rotations and translations and was not really generic enough. A better way was devised using a \gls{teleportationmatrix}. When this matrix is applied to an object's \gls{modelmatrix}, it is moved and rotated correctly. Additionally, the object is scaled by the difference in scale between the two end points.
 
@@ -432,7 +432,7 @@ However, the initial approach did only consider rotations and translations and w
 
 In scene graphs an object can be defined relative to another object, as a child being attached to a parent. When the parent changes its world position the child's world position changes as well. However, if only the child changes its world position the parent is unaffected. The same is true for scale and rotation. This effect can be achieved with relative model matrices. The child's transform is defined as relative model matrix. Its total model matrix is calculated by multiplying its relative model matrix with the its parent's model matrix \cite{akine:2018:realtime}.
 
-Teleport matrices make use of this property. An object can be seen as being attached to a parent \gls{endpoint}. To teleport the child between endpoints, the object needs to be attached to the other endpoint. First the object's relative \gls{modelmatrix} must be calculated, by multiplying its total \gls{modelmatrix} with the inverse of \gls{endpoint} A's model matrix. Then the object is attached to \gls{endpoint} B. Its total \gls{modelmatrix} is calculated by multiplying the object's relative \gls{modelmatrix} with \gls{endpoint} B's \gls{modelmatrix}.
+Teleport matrices make use of this property. An object can be seen as being attached to a parent \gls{endpoint}. To teleport the child between \glspl{endpoint}, the object needs to be attached to the other endpoint. First the object's relative \gls{modelmatrix} must be calculated, by multiplying its total \gls{modelmatrix} with the inverse of \gls{endpoint} A's model matrix. Then the object is attached to \gls{endpoint} B. Its total \gls{modelmatrix} is calculated by multiplying the object's relative \gls{modelmatrix} with \gls{endpoint} B's \gls{modelmatrix}.
 
 The \glspl{modelmatrix} of the \glspl{endpoint} are known before the teleportation needs to be applied. A part of this process can be precomputed by creating a composite matrix by multiplying \gls{endpoint} A's inverse \gls{modelmatrix} with \gls{endpoint} B's \gls{modelmatrix}. The result is \gls{endpoint} A's \gls{teleportationmatrix} which teleports from \gls{endpoint} A to \gls{endpoint} B. \Gls{endpoint} B's \gls{teleportationmatrix} is the inverse of \gls{endpoint} A's \gls{teleportationmatrix}.
 
@@ -538,7 +538,7 @@ To move the camera to the correct location, the \gls{endpoint}['s] \gls{teleport
 %	\label{fig:cameramatrices}
 %\end{figure}
 
-%Figure~\ref{fig:cameramatrices} shows two portal endpoints. The blue triangle represents the camera and the orange circle represents an objects. The dotted blue triangle represents the portal view camera.
+%Figure~\ref{fig:cameramatrices} shows two portal \glspl{endpoint}. The blue triangle represents the camera and the orange circle represents an objects. The dotted blue triangle represents the portal view camera.
 
 
 
@@ -999,7 +999,7 @@ One important aspect of portals is moving objects. For this implementation telep
 The camera is imagined as an object without volume. Each time the camera is moved a ray cast is performed from the camera's old location to its new location. The ray intersection is first performed against the portals' \glspl{aabb}. For this test, the method described by \textcite{williams:2005:efficient} was used. If that test passed, the ray is then tested against the portals mesh's triangles. The ray triangle intersection of \textcite{moller:2005:fast} was used to test for triangle intersections.
 
 
-The triangles and \gls{aabb} are stored in the model space coordinates. This way only one triangle mesh and \gls{aabb} need to be stored for each model that can represent a portal. Before a ray is tested against the \gls{aabb} and triangle mesh, it needs to be transformed into model space. This is achieved by multiplying the portal's inverse model matrix with the origin and direction of the ray.
+The triangles and \gls{aabb} are stored relative to their model or in \textit{model space}. This way only one triangle mesh and \gls{aabb} need to be stored for each model that can represent a portal. Before a ray is tested against the \gls{aabb} and triangle mesh, it needs to be transformed into model space. This is achieved by multiplying the portal's inverse model matrix with the origin and direction of the ray.
 
 \subsection{Collision Response}
 
@@ -1075,7 +1075,7 @@ Figure~\ref{fig:nonplanarlayout} shows the two half-sphere portals and their sur
 
 Figure~\ref{fig:nonplanar} shows the same two half-sphere portals from another viewpoint. The top picture is with a recursion count of 0, the bottom with a recursion count of 4. In this picture the light grey colour not only indicates the portals front face, but also which pixels needed two recursions for their colour in the bottom picture. At the dark grey pixels one recursion only one recursion is needed. The front half-sphere portal will be referred as \gls{endpoint} A and the back half-sphere portals as \gls{endpoint} B.
 
-Notice that in the bottom picture more parts of the purple bench behind the \gls{endpoint} A are visible. The two portal cancel each other out. Additionally, parts of the blue rock which is inside \gls{endpoint} B can be seen. The contents of \gls{endpoint} A and B appear swapped. When looking through the hole in \gls{endpoint} A, the orange table next to \gls{endpoint} B can be seen. Inside \gls{endpoint} B a green colour can be seen, which is the same colour as the one from the wall next to \gls{endpoint} A.
+Notice that in the bottom picture more parts of the purple bench behind the \gls{endpoint} A are visible. The two portals cancel each other out. Additionally, parts of the blue rock which is inside \gls{endpoint} B can be seen. The contents of \gls{endpoint} A and B appear swapped. When looking through the hole in \gls{endpoint} A, the orange table next to \gls{endpoint} B can be seen. Inside \gls{endpoint} B a green colour can be seen, which is the same colour as the one from the wall next to \gls{endpoint} A.
 
 \section{Implementation Performance}
 \label{section:performancemeasurement}
@@ -1258,7 +1258,7 @@ Special properties of watertight portals were found while testing the prototype.
 	\label{fig:watertightportals}
 \end{figure}
 
-Figure~\ref{fig:watertightportals} show an example of a watertight portal pair. The two big spheres are the two endpoints of a watertight portal pair. There are two viewpoints A and B.
+Figure~\ref{fig:watertightportals} show an example of a watertight portal pair. The two big spheres are the two \glspl{endpoint} of a watertight portal pair. There are two viewpoints A and B.
 There are two approaches to interpret the figure, which both are valid.
 
 The first is that A's \gls{viewray} is indicated by full stroked arrows, while B's \gls{viewray} is indicated by doted arrows. Only objects with full strokes can be seen. The \gls{viewray} teleports when passing through the portal, and teleports back when passing it again. This is how the view is rendered.
@@ -1345,9 +1345,11 @@ Another application would be dynamically lowering the visible portal counts, if 
 
 \section{CPU Portal Culling}
 \label{section:cullingportals}
-Table~\ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. Keeping this value low could improve performance drastically. A similar approach to the one suggested by \textcite{luebke:1995:portals} could be used.
+%Table~\ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. Keeping this value low could improve performance drastically. A similar approach to the one suggested by \textcite{luebke:1995:portals} could be used.
 
-This process creates \glspl{psb} for each portal permutation, which represents a volume containing a permutation's projected view volume and space behind it. Multiple recursions are performed, which reuse the \glspl{psb} of the previous recursion, similar to the matrix array calculation of section \ref{section:generatingviewmatrices}.
+Table~\ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. \textcite{schmalstieg:1999:sewing} used an adapted version of the on-the-fly \gls{pvs} algorithm of \textcite{luebke:1995:portals} to cull SEAMs which are not visible. Another adaptation of that algorithm could be used, which will be described in this section.
+
+For each portal permutation, a \gls{psb} will be created, which represents a volume containing a permutation's projected view volume and the space behind it. Multiple recursions are performed, which reuse the \glspl{psb} of the previous recursion, similar to the matrix array calculation in section \ref{section:generatingviewmatrices}.
 
 For \textit{recursion 0} each portal's vertices are multiplied with the view matrix. Next, the x- and y- components of these vertices are projected. However, the z-component should be left intact, as it is useful for further calculations. Conceptionally the vertices are multiplied with the perspective matrix and then divided by their w component. Then the w gets discarded and the z coordinate is overridden with its original value.
 
@@ -1355,7 +1357,7 @@ Then an \gls{aabb} is created for the projected vertices. Next, this \gls{aabb} 
 
 In \textit{recursion 1} a same process is repeated for each portal of the \textit{recursion 0} with a non-empty volume. Instead of multiplying with the camera's view matrix, the vertices must be multiplied by the corresponding portal's \gls{viewmatrix} before projecting. Instead of performing the intersection with the view volume, it is performed with the \gls{psb} of the corresponding portal of \textit{recursion 0}. This yields a \gls{psb} for every visible two-portal-permutation.
 
-This is repeated \gls{recursioncount} times. Each recursion uses \glspl{psb} and \gls{viewmatrix} from the previous recursion's portal permutation.
+This is repeated \gls{recursioncount} times. Each recursion uses \glspl{psb} and \gls{viewmatrix} from the previous recursion's portal permutations.
 
 Instead of using a portal's vertices, the vertices of its bounding volume could be used instead. This reduces the number of calculations needed, but may overestimate the \glspl{psb} resulting in more false visible portals.
 
@@ -1459,9 +1461,9 @@ For an object with a volume it is possible that only a part of it travelled thro
 
 
 \section{Non-Translating Portals}
-The implemented portals have two endpoints. Objects move through one endpoint, appear at the other. However, it is also possible that the portals don't move the object. In this case there is just one portal.
+The implemented portals always come in a pairs of two \glspl{endpoint}. Objects move through one endpoint, appear at the other. However, it is also possible that the portals don't move the object. In this case there is just one portal.
 
-Entering the portal would apply an operation (e.g. multiplying by matrix), leaving it applies the inverse operation. Instead of rendering two endpoints, only one portal is rendered. Back and Front face detection needs to be used to decide which operation to apply.
+Entering the portal would apply an operation (e.g. multiplying by matrix), leaving it applies the inverse operation. Instead of rendering two \glspl{endpoint}, only one portal is rendered. Back and Front face detection needs to be used to decide which operation to apply.
 
 This works only for operations which do not move the position of an object. One exception would be a rotation. However, the portal shape must look the same after applying the rotation to it. E.g. a sphere could allow for any rotation. A cube only for rotation in intervals of 90 degrees. Inverting or the scale of an object would another case.
 
