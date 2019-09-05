@@ -544,7 +544,7 @@ To move the camera to the correct location, the \gls{endpoint}['s] \gls{teleport
 
 \subsection{Recursive Portal Matrices}
 \label{section:recursivecameramatrices}
-The previous section explained how to calculate the camera matrices for each portal for \textit{recursion 1}. For \textit{recursion 2} the camera's viewpoint must be transformed twice by two sequential applied \glspl{teleportationmatrix}. This needs to be done for every combination of two portals. For \textit{recursion 3} this is done for every combination of three portals and so forth. These different combinations of matrices form a tree. The root is the current \gls{cameramatrix}. The matrix of child node n is equal to its parent matrix multiplied by portal n's \gls{teleportationmatrix}. The tree is filled level by level, each level reusing the calculations of the previous level.
+The previous section explained how to calculate the camera matrices for each portal for \textit{recursion 1}. For \textit{recursion 2} the camera's viewpoint must be transformed twice by two sequential applied \glspl{teleportationmatrix}. This needs to be done for every permutation of two portals. For \textit{recursion 3} this is done for every permutation of three portals and so forth. These different permutations of matrices form a tree. The root is the current \gls{cameramatrix}. The matrix of child node n is equal to its parent matrix multiplied by portal n's \gls{teleportationmatrix}. The tree is filled level by level, each level reusing the calculations of the previous level.
 
 
 
@@ -569,7 +569,7 @@ The tree of camera matrices is stored in an array. The indices can be found the 
 	\label{fig:cameraindices}
 \end{figure}
 
-Figure~\ref{fig:cameraindices} shows the indices for four portals, with two iterations. For example, to find the view matrix of portal 0, seen through portal 1, we would access the array at index 9. Note that the size of the tree scales exponentially, with the \gls{recursioncount}, as all possible combinations of portals need to be covered. When the calculation of the tree is finished, every matrix in the tree is inverted.
+Figure~\ref{fig:cameraindices} shows the indices for four portals, with two iterations. For example, to find the view matrix of portal 0, seen through portal 1, we would access the array at index 9. Note that the size of the tree scales exponentially, with the \gls{recursioncount}, as all possible permutations of portals need to be covered. When the calculation of the tree is finished, every matrix in the tree is inverted.
 
 
 \subsection{Dual Depth Buffer}
@@ -681,7 +681,7 @@ Subsequent even subpasses are similar to \textit{subpass 0}, but all objects are
 
 Subsequent odd subpasses are similar to \textit{subpass 1}, but all portals are drawn multiple times. Each portal uses a different stencil reference.  At the begin of drawing all portals one time, the stencil compare mask is set dynamically with \textbf{setStencilCompareMask}. Similar to the objects, each draw of all portals uses different \gls{cameramatrix} id specified via push constant. 
 
-In total all objects and all portals are drawn for each possible combination of portals. The number of draws for each of them is equal to the size of the view matrix array.
+In total all objects and all portals are drawn for each possible permutation of portals. The number of draws for each of them is equal to the size of the view matrix array.
 
 
 \section{Dynamic Portal Rendering}
@@ -1323,7 +1323,7 @@ An array of these matrices could reside in \gls{gpu} local memory, as they do no
 
 \subsection{Calculating on the GPU}
 Instead of calculating the view matrices on the \gls{cpu}, they could also be calculated on the \gls{gpu}.
-This saves the \gls{gpu} bandwidth, as only the \glspl{teleportationmatrix}  and the camera's \gls{viewmatrix} need to be transferred, instead of an array of every possible combination of portals. Additionally, the indirection described in section~\ref{section:viewmatrixselection} would not be needed anymore and could be removed. After the previous visible portal calculation, the \gls{viewmatrix} can be calculated and written to the correct location. Lastly, access is faster as the matrices are in \gls{gpu} local memory.
+This saves the \gls{gpu} bandwidth, as only the \glspl{teleportationmatrix}  and the camera's \gls{viewmatrix} need to be transferred, instead of an array of every possible permutation of portals. Additionally, the indirection described in section~\ref{section:viewmatrixselection} would not be needed anymore and could be removed. After the previous visible portal calculation, the \gls{viewmatrix} can be calculated and written to the correct location. Lastly, access is faster as the matrices are in \gls{gpu} local memory.
 
 The total number of calculated matrices might be more or less on the \gls{gpu} compared to calculating it on the \gls{cpu}. This depends on the number of portals on the scene, the number recursion and visible portal counts, as well as screen resolution. 
 
@@ -1347,15 +1347,15 @@ Another application would be dynamically lowering the visible portal counts, if 
 \label{section:cullingportals}
 Table~\ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. Keeping this value low could improve performance drastically. A similar approach to the one suggested by \textcite{luebke:1995:portals} could be used.
 
-This process creates \glspl{psb} for each portal combination. It uses multiple recursions, which reuse the \glspl{psb} of the previous recursion, similar to the matrix array calculation of section \ref{section:generatingviewmatrices}.
+This process creates \glspl{psb} for each portal combination, which represents a volume containing a combination's projected view volume and space behind it. Multiple recursions are performed, which reuse the \glspl{psb} of the previous recursion, similar to the matrix array calculation of section \ref{section:generatingviewmatrices}.
 
-For \textit{recursion 0} each portal's vertices are multiplied with the view matrix. Next, the x- and y- components of these vertices are projected into screen-space. However, the z-component should be left intact, as it is useful for further calculations. Conceptionally the vertices are multiplied with the perspective matrix and then divided by their w component. Then the w gets discarded and the z coordinate is overridden with its original value.
+For \textit{recursion 0} each portal's vertices are multiplied with the view matrix. Next, the x- and y- components of these vertices are projected to normalised device coordinates screen-space. However, the z-component should be left intact, as it is useful for further calculations. Conceptionally the vertices are multiplied with the perspective matrix and then divided by their w component. Then the w gets discarded and the z coordinate is overridden with its original value.
 
-Then an \gls{aabb} is created for the projected vertices. Next, this \gls{aabb} is intersected with the view volume's  \gls{aabb} ranging from (-1,-1,0) to (1, 1, +infinity) to create the \gls{psb}. If the \gls{psb}'s volume is empty the portal is not visible, and it can be culled. Otherwise the \gls{psb}['s] max z value is set to positive infinity as the last step.
+Then an \gls{aabb} is created for the projected vertices. Next, this \gls{aabb} is intersected with the view volume's \gls{aabb} which ranges from (-1,-1,0) to (1, 1, +infinity). If the intersection's volume is zero, the portal is not visible and can be culled. Otherwise a \gls{psb} is created for the portal. It uses the intersection's values, except for the max z value. The \gls{psb}['s] max z value is always set to positive infinity, to include the space behind the intersection.
 
-In \textit{recursion 1} a same process is repeated for each portal of the \textit{recursion 0} with a non-empty volume. Instead of multiplying with the camera's view matrix, the vertices must be multiplied by the corresponding portal's \gls{viewmatrix} before projecting. Instead of performing the intersection with the view volume, it is performed with the \gls{psb} of the corresponding portal of \textit{recursion 0}. This yields \glspl{psb} for every visible portal 2-tuple.
+In \textit{recursion 1} a same process is repeated for each portal of the \textit{recursion 0} with a non-empty volume. Instead of multiplying with the camera's view matrix, the vertices must be multiplied by the corresponding portal's \gls{viewmatrix} before projecting. Instead of performing the intersection with the view volume, it is performed with the \gls{psb} of the corresponding portal of \textit{recursion 0}. This yields a \gls{psb} for every visible two-portal-permutation.
 
-This is repeated \gls{recursioncount} times. Each recursion uses \glspl{psb} and \gls{viewmatrix} from the previous recursions portal tuple. 
+This is repeated \gls{recursioncount} times. Each recursion uses \glspl{psb} and \gls{viewmatrix} from the previous recursions portal permutation. 
 
 Instead of using a portal's vertices, the vertices of its bounding volume could be used instead. This reduces the number of calculations needed, but may overestimate the \glspl{psb} resulting in more false visible portals.
 
@@ -1412,7 +1412,7 @@ The rendering of shadows maps uses the same approach as rendering the regular sc
 
 When rendering the scene, the shadow test is performed. However, as it is not known whether the light travelled through a portal or lit the fragment directly. It is possible that the same fragment can be lit by the same light multiple times, using different portals. They need to be regarded as separate dynamic lights which share their shadow map. 
 
-For each portal combination the light could have travelled through, the corresponding teleport matrices must be applied to the light position. Then the position on the shadow map is calculated using that transformed light's position. The shadow map's matrix is compared against the matrix used to transform the light position. If they match the light could illuminated the fragment by travelling through this portal combination. The regular depth test can to be is performed using the transformed light position. If the matrices do not match the object is not lighted by this light-portal combination but can still be lit by latter combinations.
+For each portal permutation the light could have travelled through, the corresponding teleport matrices must be applied to the light position. Then the position on the shadow map is calculated using that transformed light's position. The shadow map's matrix is compared against the matrix used to transform the light position. If they match the light could illuminated the fragment by travelling through this portal combination. The regular depth test can to be is performed using the transformed light position. If the matrices do not match the object is not lighted by this light-portal permutation but can still be lit by latter combinations.
 
 
 \subsection{Lighting}
