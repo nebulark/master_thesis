@@ -759,7 +759,7 @@ Listing~\ref{listing:viewmatrixselection} shows the code of the vertex shader. N
 \subsection{Properties of the Index Array}
 \label{section:indexarrayproperties}
 
-In the prototype the maximum visible portal count can differ for each recursion. This is useful, as in \textit{recursion 0} the draw fills the whole screen, resulting in more visible portals. The contents within portals cover much less screen-space, so it is less likely that portals can be seen within them. For each recursion the screen-space which is drawn will get even smaller. This means \textit{recursion 0} will likely need the most visible portals, while the next recursions will need less and less visible portals.
+In the prototype the maximum visible portal count can differ for each recursion. This is useful, as in \textit{recursion 0} the draw fills the whole screen, resulting in more visible portals. The contents within portals cover much less screen-space, so it is less likely that portals can be seen within them. For each recursion the screen-space which is drawn will get even smaller. This means \textit{recursion 0} will likely need the most visible portals, while the future recursions will need less and less visible portals.
 
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{images/indexarray.png}
@@ -1073,9 +1073,9 @@ Figure~\ref{fig:nonplanarlayout} shows the two half-sphere portals and their sur
 	\label{fig:nonplanar}
 \end{figure}
 
-Figure~\ref{fig:nonplanar} shows the same two half-sphere portals from another viewpoint. The top picture is with a recursion count of 0, the bottom with a recursion count of 4. In this picture the light grey colour not only indicates the portals front face, but also at which pixels two recursions take place. At the dark grey pixels there is only one recursion. The front half-sphere portal will be referred as \gls{endpoint} A and the back half-sphere portals as \gls{endpoint} B.
+Figure~\ref{fig:nonplanar} shows the same two half-sphere portals from another viewpoint. The top picture is with a recursion count of 0, the bottom with a recursion count of 4. In this picture the light grey colour not only indicates the portals front face, but also which pixels needed two recursions for their colour in the bottom picture. At the dark grey pixels one recursion only one recursion is needed. The front half-sphere portal will be referred as \gls{endpoint} A and the back half-sphere portals as \gls{endpoint} B.
 
-Notice that in the bottom picture more parts of the purple bench behind the \gls{endpoint} A are visible. The two portal recursions cancel each other out. Additionally, parts of the blue rock which is inside \gls{endpoint} B can be seen. The contents of \gls{endpoint} A and B appear swapped. When looking through the hole in \gls{endpoint} A, the orange table next to \gls{endpoint} B can be seen. Inside \gls{endpoint} B a green colour can be seen, which is the same colour as the one from the wall next to \gls{endpoint} A.
+Notice that in the bottom picture more parts of the purple bench behind the \gls{endpoint} A are visible. The two portal cancel each other out. Additionally, parts of the blue rock which is inside \gls{endpoint} B can be seen. The contents of \gls{endpoint} A and B appear swapped. When looking through the hole in \gls{endpoint} A, the orange table next to \gls{endpoint} B can be seen. Inside \gls{endpoint} B a green colour can be seen, which is the same colour as the one from the wall next to \gls{endpoint} A.
 
 \section{Implementation Performance}
 \label{section:performancemeasurement}
@@ -1347,15 +1347,15 @@ Another application would be dynamically lowering the visible portal counts, if 
 \label{section:cullingportals}
 Table~\ref{tab:rendernothing} showed that a high maximum visible portal count can increase the time to render, even if nothing is rendered. Keeping this value low could improve performance drastically. A similar approach to the one suggested by \textcite{luebke:1995:portals} could be used.
 
-This process creates \glspl{psb} for each portal combination, which represents a volume containing a combination's projected view volume and space behind it. Multiple recursions are performed, which reuse the \glspl{psb} of the previous recursion, similar to the matrix array calculation of section \ref{section:generatingviewmatrices}.
+This process creates \glspl{psb} for each portal permutation, which represents a volume containing a permutation's projected view volume and space behind it. Multiple recursions are performed, which reuse the \glspl{psb} of the previous recursion, similar to the matrix array calculation of section \ref{section:generatingviewmatrices}.
 
-For \textit{recursion 0} each portal's vertices are multiplied with the view matrix. Next, the x- and y- components of these vertices are projected to normalised device coordinates screen-space. However, the z-component should be left intact, as it is useful for further calculations. Conceptionally the vertices are multiplied with the perspective matrix and then divided by their w component. Then the w gets discarded and the z coordinate is overridden with its original value.
+For \textit{recursion 0} each portal's vertices are multiplied with the view matrix. Next, the x- and y- components of these vertices are projected. However, the z-component should be left intact, as it is useful for further calculations. Conceptionally the vertices are multiplied with the perspective matrix and then divided by their w component. Then the w gets discarded and the z coordinate is overridden with its original value.
 
 Then an \gls{aabb} is created for the projected vertices. Next, this \gls{aabb} is intersected with the view volume's \gls{aabb} which ranges from (-1,-1,0) to (1, 1, +infinity). If the intersection's volume is zero, the portal is not visible and can be culled. Otherwise a \gls{psb} is created for the portal. It uses the intersection's values, except for the max z value. The \gls{psb}['s] max z value is always set to positive infinity, to include the space behind the intersection.
 
 In \textit{recursion 1} a same process is repeated for each portal of the \textit{recursion 0} with a non-empty volume. Instead of multiplying with the camera's view matrix, the vertices must be multiplied by the corresponding portal's \gls{viewmatrix} before projecting. Instead of performing the intersection with the view volume, it is performed with the \gls{psb} of the corresponding portal of \textit{recursion 0}. This yields a \gls{psb} for every visible two-portal-permutation.
 
-This is repeated \gls{recursioncount} times. Each recursion uses \glspl{psb} and \gls{viewmatrix} from the previous recursions portal permutation. 
+This is repeated \gls{recursioncount} times. Each recursion uses \glspl{psb} and \gls{viewmatrix} from the previous recursion's portal permutation.
 
 Instead of using a portal's vertices, the vertices of its bounding volume could be used instead. This reduces the number of calculations needed, but may overestimate the \glspl{psb} resulting in more false visible portals.
 
