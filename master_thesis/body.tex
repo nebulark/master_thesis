@@ -469,10 +469,6 @@ The \gls{cameramatrix} is calculated using the camera's rotation and position. T
 \subsection{Perspective Matrix}
 This implementation uses a perspective matrix with a far clipping plane set infinitely far away. Care needs to be taken, as Vulkan uses depth values from 0 to 1 \cite{khronos:vulkan:spec1.1} compared to open OpenGL's -1 to 1 \cite{khronos:openGL:spec4.6}. The prototype uses an inverse depth buffer. The perspective matrix must take this into account, as well as the configuration of the depth test.
 
-
-\section{Storing Mesh Data for Rendering}
-
-
 \section{Portal drawing}
 \label{section:portaldrawing}
 
