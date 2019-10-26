@@ -221,7 +221,7 @@ numbers=noendperiod]{scrbook}
 
   \renewcommand*{\doctypeprint}{\doctype}
   \ifstr{\doctypeprint}{MASTERTHESIS}{%
-    \renewcommand*{\doctypeprint}{MASTER THESIS}}{}
+    \renewcommand*{\doctypeprint}{MASTER THESIS - Corrected Version}}{}
   \ifstr{\doctypeprint}{BACHELORTHESIS}{%
     \renewcommand*{\doctypeprint}{BACHELOR PAPER}}{}
 
@@ -429,24 +429,25 @@ Medicine}}{}
 \ifdraft{\hspace*{-30pt}\scalebox{1.85}{\sffamily\textbf\doctypeprint -- DRAFT}}{\hspace*{-30pt}\scalebox{1.85}{\sffamily\textbf\doctypeprint}}
 \vspace{17pt}
 
-\hspace*{-34pt}\scalebox{1.5}{%
-  \ifstr{\degreecourse}{Technisches Umweltmanagement und
-    {\"O}kotoxikologie}
-  {
-    \begin{minipage}{0.64\linewidth}
-      \ifstr{\sprache}{german}{\ifstr{\doctype}{MASTERARBEIT}{zur Erlangung des akademischen Grades\\\glqq{}Master of Science in Engineering\grqq{}\\im Studiengang }{\ifstr{\doctype}{BACHELORARBEIT}{zur Erlangung des akademischen Grades\\\glqq{}Bachelor of Science in Engineering\grqq{}\\im Studiengang }{Im Studiengang}}}{\ifstr{\doctype}{MASTERTHESIS}{Thesis submitted in partial fulfillment of the requirements for the degree of Master of Science in Engineering at the University of Applied Sciences Technikum Wien - Degree Program }{\ifstr{\doctype}{BACHELORTHESIS}{Term paper submitted in partial fulfillment of the requirements for the degree of Bachelor of Science in Engineering at the University of Applied Sciences Technikum Wien - Degree Program }{In}}}
-      \degreecourse
-    \end{minipage}\vspace{5pt}}
-  {
-    \begin{minipage}{0.64\linewidth}
-      \ifstr{\sprache}{german}{\ifstr{\doctype}{MASTERARBEIT}{zur Erlangung des akademischen Grades\\\glqq{}Master of Science in Engineering\grqq{}\\im Studiengang }{\ifstr{\doctype}{BACHELORARBEIT}{zur Erlangung des akademischen Grades\\\glqq{}Bachelor of Science in Engineering\grqq{}\\im Studiengang }{Im Studiengang}}}{\ifstr{\doctype}{MASTERTHESIS}{Thesis submitted in partial fulfillment of the requirements for the degree of Master of Science in Engineering at the University of Applied Sciences Technikum Wien - Degree Program }{\ifstr{\doctype}{BACHELORTHESIS}{Term paper submitted in partial fulfillment of the requirements for the degree of Bachelor of Science in Engineering at the University of Applied Sciences Technikum Wien - Degree Program }{In}}}
-      \degreecourse\vspace{5pt}
-    \end{minipage}}}
+
+\hspace*{-34pt}\scalebox{1.5}
+
+
+{
+	
+
+
+\begin{minipage}{0.64\linewidth}
+\end{minipage}
+
+}
+
+
 
   \vspace{54.7pt}
   \hspace*{-30pt}\begin{minipage}{0.9625\linewidth}
    \huge\bfseries\sffamily \@title
-\end{minipage}\vspace{47pt}
+	\end{minipage}\vspace{47pt}
 
 \Large
 \hspace*{-34pt}%
@@ -739,6 +740,8 @@ Medicine}}{}
 
 
 \ifstr{\doctype}{MASTERTHESIS}{
+
+\iffalse
   \chapter*{Declaration}
     ``As author and creator of this work to hand, I confirm with my
     signature knowledge of the relevant copyright regulations
@@ -760,6 +763,7 @@ Medicine}}{}
     the upload tool.``\vspace{4\baselineskip}
 
   \noindent \@place, \today\hspace{0.4\linewidth}Signature
+\fi
   \ifx\@kurzfassung\@empty
   \ifx\@schlagworte\@empty
   \else\clearpage\null\vfill\paragraph*{Schlagworte:}\@schlagworte
